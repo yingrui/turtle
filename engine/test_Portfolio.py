@@ -13,8 +13,28 @@ class TestPortfolio(TestCase):
         ts_code = '600519.sh'
         portfolio = self._mock_empty_portfolio()
         shares, msg = portfolio.buy(ts_code=ts_code, price=1800)
-        self.assertEqual(shares, 100)
-        self.assertEqual(msg, 'Success')
+        self.assertEqual(100, shares)
+        self.assertEqual('Success', msg)
+        self.assertEqual(0, portfolio.benefit)
+        self.assertEqual(1, len(portfolio.investments))
+        self.assertEqual(0, portfolio.get_investment(ts_code).benefit)
+
+    def test_invest_new_stock_with_specify_shares(self):
+        ts_code = '600519.sh'
+        portfolio = self._mock_empty_portfolio(balance=400000)
+        shares, msg = portfolio.buy(ts_code=ts_code, price=1800, max_lots_of_stock=5)
+        self.assertEqual(200, shares)
+        self.assertEqual('Success', msg)
+        self.assertEqual(0, portfolio.benefit)
+        self.assertEqual(1, len(portfolio.investments))
+        self.assertEqual(0, portfolio.get_investment(ts_code).benefit)
+
+    def test_invest_new_stock_with_stock_control(self):
+        ts_code = '600519.sh'
+        portfolio = self._mock_empty_portfolio(balance=400000)
+        shares, msg = portfolio.buy(ts_code=ts_code, price=800, max_lots_of_stock=5, position_control=0.6)
+        self.assertEqual(300, shares)
+        self.assertEqual('Success', msg)
         self.assertEqual(0, portfolio.benefit)
         self.assertEqual(1, len(portfolio.investments))
         self.assertEqual(0, portfolio.get_investment(ts_code).benefit)
@@ -23,7 +43,7 @@ class TestPortfolio(TestCase):
         portfolio = self._mock_portfolio_with_100_shares_of_600519()
         shares, msg = portfolio.buy(ts_code='600519.sh', price=1800)
         self.assertEqual(0, shares)
-        self.assertEqual(msg, 'Insufficient balance')
+        self.assertEqual('Insufficient balance', msg)
 
     def test_merge_investments_with_same_code(self):
         ts_code = '600519.sh'
@@ -39,7 +59,7 @@ class TestPortfolio(TestCase):
         # buy another 100 shares
         shares, msg = portfolio.buy(ts_code=ts_code, price=1900)
         self.assertEqual(100, shares)
-        self.assertEqual(msg, 'Success')
+        self.assertEqual('Success', msg)
 
         self.assertEqual(410000, portfolio.total)
         self.assertEqual(30000, portfolio.balance)
@@ -52,11 +72,11 @@ class TestPortfolio(TestCase):
         portfolio = self._mock_portfolio_with_100_shares_of_600519()
 
         portfolio.update_current_price(StockTradeDataEngine().get_trade_data_on_date(date(2023, 1, 20)))
-        self.assertEqual(portfolio.investments[0].current_price, 1860.01)
+        self.assertEqual(1860.01, portfolio.investments[0].current_price)
 
         sell_shares, benefit = portfolio.sell(ts_code='600519.sh')
-        self.assertEqual(sell_shares, 100)
-        self.assertEqual(benefit, 6001)
+        self.assertEqual(100, sell_shares)
+        self.assertEqual(6001, benefit)
 
         self.assertEqual(6001, portfolio.benefit)
         self.assertEqual(206001, portfolio.total)

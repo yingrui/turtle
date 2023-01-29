@@ -13,7 +13,7 @@ class TestSimpleMovingAveragePolicy(TestCase):
         policy = SimpleMovingAveragePolicy(ts_code, df_trade_data)
 
         signal = policy.analysis()
-        self.assertEqual(signal.status, 1)
+        self.assertEqual(1, signal.status)
 
     def test_should_return_signal_of_buy(self):
         ts_code = '600519.SH'
@@ -22,7 +22,7 @@ class TestSimpleMovingAveragePolicy(TestCase):
         policy = SimpleMovingAveragePolicy(ts_code, df_trade_data)
 
         signal = policy.analysis()
-        self.assertEqual(signal.status, 2)
+        self.assertEqual(2, signal.status)
 
     def test_should_return_signal_of_sell(self):
         ts_code = '600519.SH'
@@ -31,4 +31,4 @@ class TestSimpleMovingAveragePolicy(TestCase):
         policy = SimpleMovingAveragePolicy(ts_code, df_trade_data)
 
         signal = policy.analysis()
-        self.assertEqual(signal.status, 0)
+        self.assertEqual(0, signal.status)

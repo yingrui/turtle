@@ -17,7 +17,9 @@ class Simulator:
                 df_trade_data = self._date_engine.get_trade_data_on_date(day)
 
                 self._portfolio.update_current_price(df_trade_data)
-                self._trade(self._trade_engine.get_signals(day), df_trade_data)
+                signals = self._trade_engine.get_signals(day)
+
+                self._trade(signals, df_trade_data)
                 print('{0}: {1}'.format(day.strftime('%Y-%m-%d'), self._portfolio))
 
     def _trade(self, signals, df_trade_data):
@@ -25,7 +27,7 @@ class Simulator:
             close_price = df_trade_data[df_trade_data['ts_code'] == signal.ts_code]['close'].values[0]
             if signal.status == 2:
                 print(signal)
-                self._portfolio.buy(signal.ts_code, close_price)
+                self._portfolio.buy(signal.ts_code, close_price, max_lots_of_stock=5, position_control=0.6)
             elif signal.status == 0:
                 print(signal)
                 self._portfolio.sell(signal.ts_code)

@@ -29,10 +29,10 @@ class Portfolio:
     def total(self):
         return self._total
 
-    def buy(self, ts_code, price):
+    def buy(self, ts_code, price, max_lots_of_stock=1, position_control=1):
         msg = 'Insufficient balance'
-        buy_share = self._min_investment_unit
-        if price * buy_share < self._balance:
+        buy_share = self._find_affordable_shares(price, max_lots_of_stock, position_control)
+        if buy_share > 0 and price * buy_share < self._balance:
             self._balance = self._balance - price * buy_share
             investment = Investment(ts_code, buy_share, price, price)
             exist_investment = self.get_investment(ts_code)
@@ -43,6 +43,15 @@ class Portfolio:
             msg = 'Success'
             return buy_share, msg
         return 0, msg
+
+    def _find_affordable_shares(self, price, max_lots_of_stock, position_control):
+        for n in range(max_lots_of_stock, 0, -1):
+            shares = n * self._min_investment_unit
+            if price * shares < self._balance:
+                position = 1 - (self._balance - price * shares) / self.total
+                if position <= position_control:
+                    return shares
+        return 0
 
     def sell(self, ts_code):
         investment = self.get_investment(ts_code)
