@@ -8,6 +8,13 @@ pip install pymysql
 pip install cryptography
 ```
 
+### Environment Variables
+Create .env file, and input your own sensitive information.
+```text
+TUSHARE_TOKEN={your-tushare-token}
+DB_URL=mysql+pymysql://{username}:{password}@{host}/{databasename}
+```
+
 ### MySQL
 
 ```bash
