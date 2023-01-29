@@ -24,6 +24,11 @@ class StockTradeDataEngine:
         df = self.get_trade_data_by_code(ts_code)
         return df[df['trade_date'] < pd.Timestamp(end_date)].tail(limit)
 
+    def get_stock_price_on_date(self, ts_code, end_date):
+        df = self.get_trade_data_by_code(ts_code)
+        last = df[df['trade_date'] <= pd.Timestamp(end_date)].tail(1)
+        return last['close'].values[0]
+
     @lru_cache(maxsize=32)
     def get_trade_data_on_date(self, day):
         sql = 'select * from stock_trade_daily where trade_date="{0}"'.format(day.strftime('%Y-%m-%d'))

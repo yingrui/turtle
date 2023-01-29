@@ -11,7 +11,9 @@ class TradeEngine:
         signals = []
         for ts_code in self._follow_stocks:
             time_series = self._data_engine.get_trade_data_by_date(ts_code, day, 200)
-            signals.append(self.analysis(ts_code, time_series))
+            signal = self.analysis(ts_code, time_series)
+            if signal is not None:
+                signals.append(signal)
         return signals
 
     @staticmethod

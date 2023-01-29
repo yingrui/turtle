@@ -52,8 +52,8 @@ class TestPortfolio(TestCase):
         portfolio.buy(ts_code=ts_code, price=1800)
 
         # the price is 1900 now.
-        portfolio.update_current_price(self._mock_stock_trade_data(ts_code.upper(), 1900))
-        self.assertEqual(410000, portfolio.total)
+        portfolio.update_current_price(date(2023, 1, 20))
+        self.assertEqual(406001, portfolio.total)
         self.assertEqual(220000, portfolio.balance)
 
         # buy another 100 shares
@@ -61,7 +61,7 @@ class TestPortfolio(TestCase):
         self.assertEqual(100, shares)
         self.assertEqual('Success', msg)
 
-        self.assertEqual(410000, portfolio.total)
+        self.assertEqual(406001, portfolio.total)
         self.assertEqual(30000, portfolio.balance)
         self.assertEqual(1, len(portfolio.investments))
         self.assertEqual(10000, portfolio.get_investment(ts_code).benefit)
@@ -71,7 +71,7 @@ class TestPortfolio(TestCase):
     def test_sold_out_100_shares(self):
         portfolio = self._mock_portfolio_with_100_shares_of_600519()
 
-        portfolio.update_current_price(StockTradeDataEngine().get_trade_data_on_date(date(2023, 1, 20)))
+        portfolio.update_current_price(date(2023, 1, 20))
         self.assertEqual(1860.01, portfolio.investments[0].current_price)
 
         sell_shares, benefit = portfolio.sell(ts_code='600519.sh')
@@ -84,7 +84,7 @@ class TestPortfolio(TestCase):
         self.assertEqual(0, len(portfolio.investments))
 
     def _mock_empty_portfolio(self, balance=200000):
-        return Portfolio('mock', [], balance, 0, balance)
+        return Portfolio('mock', [], balance, 0, balance, StockTradeDataEngine())
 
     def _mock_portfolio_with_100_shares_of_600519(self):
         portfolio = self._mock_empty_portfolio()

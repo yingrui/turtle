@@ -4,12 +4,13 @@ from util.math_methods import round_down
 
 class Portfolio:
 
-    def __init__(self, name, investments, balance, benefit, total):
+    def __init__(self, name, investments, balance, benefit, total, data_engine):
         self._name = name
         self._balance = balance
         self._benefit = benefit
         self._investments = investments
         self._total = total
+        self._data_engine = data_engine
 
         self._min_investment_unit = 100
 
@@ -33,7 +34,7 @@ class Portfolio:
         msg = 'Insufficient balance'
         buy_share = self._find_affordable_shares(price, max_lots_of_stock, position_control)
         if buy_share > 0 and price * buy_share < self._balance:
-            self._balance = self._balance - price * buy_share
+            self._balance = round_down(self._balance - price * buy_share)
             investment = Investment(ts_code, buy_share, price, price)
             exist_investment = self.get_investment(ts_code)
             if exist_investment is None:
@@ -65,13 +66,13 @@ class Portfolio:
     def get_investment(self, ts_code):
         return next(filter(lambda investment: investment.ts_code == ts_code, self._investments), None)
 
-    def update_current_price(self, df_trade_data):
-        if df_trade_data is None:
+    def update_current_price(self, current_date):
+        if current_date is None:
             return
 
         total = self._balance
         for investment in self._investments:
-            close_price = df_trade_data[df_trade_data['ts_code'] == investment.ts_code.upper()]['close'].values[0]
+            close_price = self._data_engine.get_stock_price_on_date(investment.ts_code, current_date)
             investment.set_current_price(close_price)
             total = total + investment.current_price * investment.hold_shares
 
