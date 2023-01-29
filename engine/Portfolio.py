@@ -10,7 +10,9 @@ class Portfolio:
         self._benefit = benefit
         self._investments = investments
         self._total = total
+        self._initial_investment = total
         self._data_engine = data_engine
+        self._investment_total = 0
 
         self._min_investment_unit = 100
 
@@ -71,12 +73,14 @@ class Portfolio:
             return
 
         total = self._balance
+        investment_total = 0
         for investment in self._investments:
             close_price = self._data_engine.get_stock_price_on_date(investment.ts_code, current_date)
             investment.set_current_price(close_price)
-            total = total + investment.current_price * investment.hold_shares
+            investment_total = investment_total + investment.current_price * investment.hold_shares
 
-        self._total = total
+        self._investment_total = round_down(investment_total)
+        self._total = total + round_down(investment_total)
 
     @staticmethod
     def _merge_investment(exist_investment: Investment, investment: Investment):
@@ -90,7 +94,8 @@ class Portfolio:
         exist_investment.set_current_price(investment.current_price)
 
     def __str__(self) -> str:
-        brief = "Portfolio name: {0}, balance: {1}, benefit: {2}, total asset: {3}".format(self._name, self._balance,
-                                                                                           self._benefit,
-                                                                                           self._total)
-        return brief
+        brief = "Portfolio: {0}, initial:{1},  balance: {2}, benefit: {3}, investment: {4}, total asset: {5}, ".format(
+            self._name, self._initial_investment, self._balance, self._benefit, self._investment_total, self._total)
+
+        return_rate = 'return rate: {0} %'.format(round_down(self._total / self._initial_investment * 100))
+        return brief + return_rate

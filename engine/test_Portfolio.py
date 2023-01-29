@@ -1,8 +1,6 @@
 from unittest import TestCase
 from datetime import date
 
-import pandas as pd
-
 from engine.Portfolio import Portfolio
 from engine.StockTradeDataEngine import StockTradeDataEngine
 
@@ -83,7 +81,8 @@ class TestPortfolio(TestCase):
         self.assertEqual(206001, portfolio.balance)
         self.assertEqual(0, len(portfolio.investments))
 
-    def _mock_empty_portfolio(self, balance=200000):
+    @staticmethod
+    def _mock_empty_portfolio(balance=200000):
         return Portfolio('mock', [], balance, 0, balance, StockTradeDataEngine())
 
     def _mock_portfolio_with_100_shares_of_600519(self):
@@ -96,7 +95,3 @@ class TestPortfolio(TestCase):
         portfolio.buy(ts_code='600519.sh', price=1800)
         portfolio.buy(ts_code='600519.sh', price=1800)
         return portfolio
-
-    @staticmethod
-    def _mock_stock_trade_data(ts_code, price):
-        return pd.DataFrame({'ts_code': [ts_code], 'close': [price]})
