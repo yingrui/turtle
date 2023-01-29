@@ -24,6 +24,8 @@ class Simulator:
         for signal in signals:
             close_price = df_trade_data[df_trade_data['ts_code'] == signal.ts_code]['close'].values[0]
             if signal.status == 2:
+                print(signal)
                 self._portfolio.buy(signal.ts_code, close_price)
-            else:
+            elif signal.status == 0:
+                print(signal)
                 self._portfolio.sell(signal.ts_code)

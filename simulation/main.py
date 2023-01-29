@@ -13,4 +13,4 @@ if __name__ == "__main__":
     trade_engine = TradeEngine(data_engine, follow_stocks=follow_stocks)
     simulator = Simulator(portfolio, trade_engine, data_engine)
 
-    simulator.run(start_date=date(2016, 1, 1), end_date=date(2016, 1, 31))
+    simulator.run(start_date=date(2016, 1, 1), end_date=date(2023, 1, 20))

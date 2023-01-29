@@ -22,7 +22,7 @@ class StockTradeDataEngine:
 
     def get_trade_data_by_date(self, ts_code, end_date, limit=500):
         df = self.get_trade_data_by_code(ts_code)
-        return df[df['trade_date'] < end_date].tail(limit)
+        return df[df['trade_date'] < pd.Timestamp(end_date)].tail(limit)
 
     @lru_cache(maxsize=32)
     def get_trade_data_on_date(self, day):

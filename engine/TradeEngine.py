@@ -1,20 +1,4 @@
-from random import randint
-
-
-class Signal:
-    __slots__ = ('ts_code', 'status')
-
-    def __init__(self, ts_code, status):
-        self.ts_code = ts_code
-        self.status = status
-
-    def __str__(self):
-        if self.status == 2:
-            return 'buy {0}'.format(self.ts_code)
-        elif self.status == 1:
-            return 'do nothing {0}'.format(self.ts_code)
-        else:
-            return 'sell {0}'.format(self.ts_code)
+from engine.Policy import SimpleMovingAveragePolicy
 
 
 class TradeEngine:
@@ -30,5 +14,7 @@ class TradeEngine:
             signals.append(self.analysis(ts_code, time_series))
         return signals
 
-    def analysis(self, ts_code, time_series):
-        return Signal(ts_code=ts_code, status=1)
+    @staticmethod
+    def analysis(ts_code, trade_data):
+        policy = SimpleMovingAveragePolicy(ts_code, trade_data)
+        return policy.analysis()
