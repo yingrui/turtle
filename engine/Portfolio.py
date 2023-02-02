@@ -17,8 +17,20 @@ class Portfolio:
         self._min_investment_unit = 100
 
     @property
+    def name(self):
+        return self._name
+
+    @property
     def investments(self):
         return self._investments
+
+    @property
+    def return_rate(self):
+        return round_down(self._total / self._initial_investment * 100)
+
+    @property
+    def investment_total(self):
+        return self._investment_total
 
     @property
     def balance(self):
@@ -97,5 +109,5 @@ class Portfolio:
         brief = "Portfolio: {0}, initial:{1},  balance: {2}, benefit: {3}, investment: {4}, total asset: {5}, ".format(
             self._name, self._initial_investment, self._balance, self._benefit, self._investment_total, self._total)
 
-        return_rate = 'return rate: {0} %'.format(round_down(self._total / self._initial_investment * 100))
+        return_rate = 'return rate: {0} %'.format(self.return_rate)
         return brief + return_rate

@@ -1,3 +1,11 @@
+## Installation
+
+### Python Environment
+
+```bash
+conda create -n stock python=3.8
+```
+
 ### Packages
 
 ```bash
@@ -18,9 +26,9 @@ DB_URL=mysql+pymysql://{username}:{password}@{host}/{databasename}
 ### MySQL
 
 ```bash
-docker run --name turtle-mysql -e MYSQL_ROOT_PASSWORD=your-secret-pw \
-           -e MYSQL_USER=investor -e MYSQL_PASSWORD=password \
-           -e MYSQL_DATABASE=stock -p 3306:3306 -d mysql:8.0 \
+docker run --name turtle-mysql -e MYSQL_ROOT_PASSWORD={your-secret-pw} \
+           -e MYSQL_USER={username} -e MYSQL_PASSWORD={password} \
+           -e MYSQL_DATABASE={databasename} -p 3306:3306 -d mysql:8.0 \
            --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 ```
 Login database with MySQL Client

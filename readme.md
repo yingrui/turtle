@@ -1,2 +1,2 @@
 # Turtle
-Turtle a personal trade system
+Turtle is a private trade system

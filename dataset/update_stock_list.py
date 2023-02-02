@@ -10,5 +10,6 @@ if __name__ == "__main__":
 
     # exchanges include: 上交所 SSE, 深交所 SZSE, 北交所 BSE
     df = ts_api.query('stock_basic', exchange='', fields=fields)
-    df.to_sql(con=sql_conn, name='stock', index=False, if_exists='append', method=insert_or_update)
+    count = df.to_sql(con=sql_conn, name='stock', index=False, if_exists='append', method=insert_or_update)
+    print('update count: {0}'.format(count))
     time.sleep(1)
