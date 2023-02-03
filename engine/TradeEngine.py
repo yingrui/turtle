@@ -3,9 +3,10 @@ from engine.Policy import SimpleMovingAveragePolicy
 
 class TradeEngine:
 
-    def __init__(self, data_engine, follow_stocks=None):
+    def __init__(self, data_engine, follow_stocks=None, parameters={}):
         self._data_engine = data_engine
         self._follow_stocks = [] if follow_stocks is None else follow_stocks
+        self._parameters = parameters
 
     def get_signals(self, day):
         signals = []
@@ -16,7 +17,6 @@ class TradeEngine:
                 signals.append(signal)
         return signals
 
-    @staticmethod
-    def analysis(ts_code, trade_data):
-        policy = SimpleMovingAveragePolicy(ts_code, trade_data)
+    def analysis(self, ts_code, trade_data):
+        policy = SimpleMovingAveragePolicy(ts_code, trade_data, self._parameters)
         return policy.analysis()

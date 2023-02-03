@@ -12,9 +12,14 @@ if __name__ == "__main__":
     follow_stocks = ['600519.SH', '600733.SH', '000625.SZ', '601127.SH', '601238.SH', '300750.SZ', '002460.SZ',
                      '300568.SZ', '002895.SZ', '300565.SZ', '600418.SH']
 
+    parameters = {
+        'window_1': 20,
+        'window_2': 70
+    }
+
     data_engine = StockTradeDataEngine()
     portfolio = Portfolio('test', [], initial_investment, 0, initial_investment, data_engine)
-    trade_engine = TradeEngine(data_engine, follow_stocks=follow_stocks)
+    trade_engine = TradeEngine(data_engine, follow_stocks=follow_stocks, parameters=parameters)
 
     simulator = Simulator(portfolio, trade_engine, data_engine)
 
