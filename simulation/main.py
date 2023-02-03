@@ -1,3 +1,4 @@
+import datetime
 from datetime import date
 
 from engine.Portfolio import Portfolio
@@ -17,4 +18,4 @@ if __name__ == "__main__":
 
     simulator = Simulator(portfolio, trade_engine, data_engine)
 
-    simulator.run(start_date=date(2016, 1, 1), end_date=date(2023, 2, 3))
+    simulator.run(start_date=date(2016, 1, 1), end_date=date.today() + datetime.timedelta(days=1))

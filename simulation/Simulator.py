@@ -26,6 +26,7 @@ class Simulator:
                 print('{0}: {1}'.format(day.strftime('%Y-%m-%d'), self._portfolio))
         initial_total, total, years, cagr = self._logger.get_summary()
         print('initial: {0}, after {2} years, total now: {1}, cagr: {3}'.format(initial_total, total, years, cagr))
+        self._logger.save()
 
     def _trade(self, signals):
         for signal in signals:

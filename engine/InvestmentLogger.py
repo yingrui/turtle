@@ -34,3 +34,6 @@ class InvestmentLogger:
 
     def get_daily_log(self):
         return self._df_daily
+
+    def save(self):
+        self._df_daily.to_csv('{0}.log'.format(self._name), index=False)
