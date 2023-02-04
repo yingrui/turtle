@@ -17,7 +17,9 @@ pip install cryptography
 ```
 
 ### Environment Variables
+
 Create .env file, and input your own sensitive information.
+
 ```text
 TUSHARE_TOKEN={your-tushare-token}
 DB_URL=mysql+pymysql://{username}:{password}@{host}/{databasename}
@@ -31,7 +33,9 @@ docker run --name turtle-mysql -e MYSQL_ROOT_PASSWORD={your-secret-pw} \
            -e MYSQL_DATABASE={databasename} -p 3306:3306 -d mysql:8.0 \
            --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 ```
+
 Login database with MySQL Client
+
 ```bash
 mysql --user investor --password stock
 ```

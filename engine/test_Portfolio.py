@@ -1,5 +1,5 @@
-from unittest import TestCase
 from datetime import date
+from unittest import TestCase
 
 from engine.Portfolio import Portfolio
 from engine.StockTradeDataEngine import StockTradeDataEngine

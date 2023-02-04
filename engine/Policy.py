@@ -27,4 +27,3 @@ class SimpleMovingAveragePolicy:
             return Signal(self._ts_code, 0)
         else:
             return Signal(self._ts_code, 1)
-

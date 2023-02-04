@@ -1,4 +1,3 @@
-
 class Stock:
 
     def __init__(self, ts_code, stock_info):

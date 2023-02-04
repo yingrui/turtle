@@ -1,7 +1,7 @@
-import pandas as pd
-
 from datetime import date
 from unittest import TestCase
+
+import pandas as pd
 
 from engine.InvestmentLogger import InvestmentLogger
 from engine.Portfolio import Portfolio
