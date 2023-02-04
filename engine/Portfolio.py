@@ -44,9 +44,9 @@ class Portfolio:
     def total(self):
         return self._total
 
-    def buy(self, ts_code, price, hold_date, max_lots_of_stock=1, position_control=1):
+    def buy(self, ts_code, price, hold_date, position_size=1, position_control=1):
         msg = 'Insufficient balance'
-        buy_share = self._find_affordable_shares(price, max_lots_of_stock, position_control)
+        buy_share = self._find_affordable_shares(price, position_size, position_control)
         if buy_share > 0 and price * buy_share < self._balance:
             self._balance = round_down(self._balance - price * buy_share)
             investment = Investment(ts_code, buy_share, price, price, hold_date)
@@ -72,7 +72,7 @@ class Portfolio:
         investment = self.get_investment(ts_code)
         if investment is not None:
             income = investment.hold_shares * investment.current_price
-            self._balance = self._balance + income
+            self._balance = round_down(self._balance + income)
             self._investments.remove(investment)
             self._benefit = round_down(self._benefit + investment.benefit)
             return investment.hold_shares, investment.benefit
@@ -89,10 +89,10 @@ class Portfolio:
         for investment in self._investments:
             close_price = self._data_engine.get_stock_price_on_date(investment.ts_code, current_date)
             investment.set_current_price(close_price)
-            investment_total = investment_total + investment.current_price * investment.hold_shares
+            investment_total = investment_total + investment.total
 
         self._investment_total = round_down(investment_total)
-        self._total = total + round_down(investment_total)
+        self._total = round_down(total + investment_total)
 
     @staticmethod
     def _merge_investment(exist_investment: Investment, investment: Investment):
@@ -106,8 +106,9 @@ class Portfolio:
         exist_investment.set_current_price(investment.current_price)
 
     def __str__(self) -> str:
-        brief = "Portfolio: {0}, initial:{1},  balance: {2}, benefit: {3}, investment: {4}, total asset: {5}, ".format(
+        brief = "Portfolio: {0}, initial:{1}, balance: {2}, benefit: {3}, investment: {4}, total asset: {5}, ".format(
             self._name, self._initial_investment, self._balance, self._benefit, self._investment_total, self._total)
 
         return_rate = 'return rate: {0} %'.format(self.return_rate)
-        return brief + return_rate
+        investments = '| '.join(map(lambda i: str(i), self._investments))
+        return brief + return_rate + '| ' + investments

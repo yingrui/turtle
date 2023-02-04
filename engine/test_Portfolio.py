@@ -9,7 +9,7 @@ class TestPortfolio(TestCase):
 
     def test_invest_new_stock(self):
         ts_code = '600519.sh'
-        portfolio = self._mock_empty_portfolio()
+        portfolio = StubPortfolio.empty_portfolio()
         shares, msg = portfolio.buy(ts_code=ts_code, price=1800, hold_date=date(2023, 1, 20))
         self.assertEqual(100, shares)
         self.assertEqual('Success', msg)
@@ -20,8 +20,8 @@ class TestPortfolio(TestCase):
 
     def test_invest_new_stock_with_specify_shares(self):
         ts_code = '600519.sh'
-        portfolio = self._mock_empty_portfolio(balance=400000)
-        shares, msg = portfolio.buy(ts_code=ts_code, price=1800, max_lots_of_stock=5, hold_date=date(2023, 1, 20))
+        portfolio = StubPortfolio.empty_portfolio(balance=400000)
+        shares, msg = portfolio.buy(ts_code=ts_code, price=1800, position_size=5, hold_date=date(2023, 1, 20))
         self.assertEqual(200, shares)
         self.assertEqual('Success', msg)
         self.assertEqual(0, portfolio.benefit)
@@ -30,8 +30,9 @@ class TestPortfolio(TestCase):
 
     def test_invest_new_stock_with_stock_control(self):
         ts_code = '600519.sh'
-        portfolio = self._mock_empty_portfolio(balance=400000)
-        shares, msg = portfolio.buy(ts_code=ts_code, price=800, max_lots_of_stock=5, position_control=0.6, hold_date=date(2023, 1, 20))
+        portfolio = StubPortfolio.empty_portfolio(balance=400000)
+        shares, msg = portfolio.buy(ts_code=ts_code, price=800, position_size=5, position_control=0.6,
+                                    hold_date=date(2023, 1, 20))
         self.assertEqual(300, shares)
         self.assertEqual('Success', msg)
         self.assertEqual(0, portfolio.benefit)
@@ -39,14 +40,14 @@ class TestPortfolio(TestCase):
         self.assertEqual(0, portfolio.get_investment(ts_code).benefit)
 
     def test_invest_but_with_insufficient_balance(self):
-        portfolio = self._mock_portfolio_with_100_shares_of_600519()
+        portfolio = StubPortfolio.portfolio_with_100_shares_of_600519()
         shares, msg = portfolio.buy(ts_code='600519.sh', price=1800, hold_date=date(2023, 1, 20))
         self.assertEqual(0, shares)
         self.assertEqual('Insufficient balance', msg)
 
     def test_merge_investments_with_same_code(self):
         ts_code = '600519.sh'
-        portfolio = self._mock_empty_portfolio(balance=400000)
+        portfolio = StubPortfolio.empty_portfolio(balance=400000)
         # buy 100 shares
         portfolio.buy(ts_code=ts_code, price=1800, hold_date=date(2023, 1, 20))
 
@@ -70,7 +71,7 @@ class TestPortfolio(TestCase):
         self.assertEqual('2023-01-20', portfolio.get_investment(ts_code).hold_date.strftime('%Y-%m-%d'))
 
     def test_sold_out_100_shares(self):
-        portfolio = self._mock_portfolio_with_100_shares_of_600519()
+        portfolio = StubPortfolio.portfolio_with_100_shares_of_600519()
 
         portfolio.update_current_price(date(2023, 1, 20))
         self.assertEqual(1860.01, portfolio.investments[0].current_price)
@@ -84,17 +85,22 @@ class TestPortfolio(TestCase):
         self.assertEqual(206001, portfolio.balance)
         self.assertEqual(0, len(portfolio.investments))
 
-    @staticmethod
-    def _mock_empty_portfolio(balance=200000):
-        return Portfolio('mock', [], balance, 0, balance, StockTradeDataEngine())
 
-    def _mock_portfolio_with_100_shares_of_600519(self):
-        portfolio = self._mock_empty_portfolio()
+class StubPortfolio:
+    @staticmethod
+    def empty_portfolio(balance=200000, data_engine=None):
+        return Portfolio('mock', [], balance, 0, balance,
+                         StockTradeDataEngine() if data_engine is None else data_engine)
+
+    @staticmethod
+    def portfolio_with_100_shares_of_600519():
+        portfolio = StubPortfolio.empty_portfolio()
         portfolio.buy(ts_code='600519.sh', price=1800, hold_date=date(2023, 1, 20))
         return portfolio
 
-    def _mock_portfolio_with_200_shares_of_600519(self):
-        portfolio = self._mock_empty_portfolio(balance=400000)
+    @staticmethod
+    def mock_portfolio_with_200_shares_of_600519():
+        portfolio = StubPortfolio.empty_portfolio(balance=400000)
         portfolio.buy(ts_code='600519.sh', price=1800, hold_date=date(2023, 1, 20))
         portfolio.buy(ts_code='600519.sh', price=1800, hold_date=date(2023, 1, 20))
         return portfolio

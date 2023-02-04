@@ -6,8 +6,8 @@ class SimpleMovingAveragePolicy:
     def __init__(self, ts_code, trade_data, parameters={}):
         self._ts_code = ts_code
         self._trade_data = trade_data
-        self._window_1 = parameters.get('window_1', 20)
-        self._window_2 = parameters.get('window_2', 70)
+        self._window_1 = parameters.get('trade_policy.moving_average.window_1', 20)
+        self._window_2 = parameters.get('trade_policy.moving_average.window_2', 70)
 
     def analysis(self):
         if self._trade_data.shape[0] <= 0:

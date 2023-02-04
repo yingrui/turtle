@@ -44,6 +44,10 @@ class Investment:
     def stop_loss_point(self):
         return self._stop_loss_point
 
+    @property
+    def total(self):
+        return round_down(self._current_price * self._hold_shares)
+
     def set_current_price(self, price):
         self._current_price = price
 
@@ -55,3 +59,6 @@ class Investment:
 
     def set_buy_price(self, price):
         self._buy_price = price
+
+    def __str__(self) -> str:
+        return "{0}: {1}-{2}".format(self._ts_code, int(self._hold_shares / 100), self.total)
