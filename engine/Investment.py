@@ -3,12 +3,13 @@ from util.math_methods import round_down
 
 class Investment:
 
-    def __init__(self, ts_code, hold_shares, buy_price, current_price):
+    def __init__(self, ts_code, hold_shares, buy_price, current_price, hold_date):
         self._ts_code = ts_code
         self._hold_shares = hold_shares
         self._payment = hold_shares * buy_price
         self._buy_price = buy_price
         self._current_price = current_price
+        self._hold_date = hold_date
 
     @property
     def ts_code(self):
@@ -21,6 +22,10 @@ class Investment:
     @property
     def hold_shares(self):
         return self._hold_shares
+
+    @property
+    def hold_date(self):
+        return self._hold_date
 
     @property
     def payment(self):

@@ -44,12 +44,12 @@ class Portfolio:
     def total(self):
         return self._total
 
-    def buy(self, ts_code, price, max_lots_of_stock=1, position_control=1):
+    def buy(self, ts_code, price, hold_date, max_lots_of_stock=1, position_control=1):
         msg = 'Insufficient balance'
         buy_share = self._find_affordable_shares(price, max_lots_of_stock, position_control)
         if buy_share > 0 and price * buy_share < self._balance:
             self._balance = round_down(self._balance - price * buy_share)
-            investment = Investment(ts_code, buy_share, price, price)
+            investment = Investment(ts_code, buy_share, price, price, hold_date)
             exist_investment = self.get_investment(ts_code)
             if exist_investment is None:
                 self._investments.append(investment)

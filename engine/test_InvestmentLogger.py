@@ -28,7 +28,7 @@ class TestInvestmentLogger(TestCase):
         name = 'mock'
         data_engine = StockTradeDataEngine()
         portfolio = Portfolio(name, [], 200000, 0, 200000, data_engine)
-        portfolio.buy(ts_code='600519.sh', price=1130)
+        portfolio.buy(ts_code='600519.sh', price=1130, hold_date=start_date)
 
         logger = InvestmentLogger(name)
 

@@ -21,19 +21,19 @@ class Simulator:
                 self._portfolio.update_current_price(day)
                 signals = self._trade_engine.get_signals(day)
 
-                self._trade(signals)
+                self._trade(signals, day)
                 self._logger.log(portfolio=self._portfolio, current_date=day)
                 print('{0}: {1}'.format(day.strftime('%Y-%m-%d'), self._portfolio))
         initial_total, total, years, cagr = self._logger.get_summary()
         print('initial: {0}, after {2} years, total now: {1}, cagr: {3}'.format(initial_total, total, years, cagr))
         self._logger.save()
 
-    def _trade(self, signals):
+    def _trade(self, signals, day):
         for signal in signals:
             if signal.status == 2:
                 print(signal)
                 self._portfolio.buy(signal.ts_code, self._get_close_price(signal.ts_code),
-                                    max_lots_of_stock=10, position_control=0.6)
+                                    max_lots_of_stock=10, position_control=0.6, hold_date=day)
             elif signal.status == 0:
                 print(signal)
                 self._portfolio.sell(signal.ts_code)
