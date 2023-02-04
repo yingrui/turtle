@@ -36,7 +36,8 @@ class Simulator:
 
     def _trade(self, signals, day):
         self._portfolio.update_current_price(day)
-        self._check_stop_loss_point()
+        if self._should_check_stop_loss_point:
+            self._check_stop_loss_point()
         self._trade_on_signals(day, signals)
         self._portfolio.update_current_price(day)
 
@@ -58,9 +59,6 @@ class Simulator:
                 self._portfolio.sell(signal.ts_code)
 
     def _check_stop_loss_point(self):
-        if not self._should_check_stop_loss_point:
-            return
-
         for investment in self._portfolio.investments:
             price = self._get_close_price(investment.ts_code)
             if price <= investment.stop_loss_point:
