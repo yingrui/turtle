@@ -1,15 +1,15 @@
 import pandas as pd
 
-from engine import Portfolio, TradeEngine
+from engine import Portfolio, TradeSignalMonitor
 from engine.InvestmentLogger import InvestmentLogger
 from engine.StockTradeDataEngine import StockTradeDataEngine
 
 
 class Simulator:
 
-    def __init__(self, portfolio: Portfolio, trade_engine: TradeEngine, data_engine: StockTradeDataEngine):
+    def __init__(self, portfolio: Portfolio, trade_monitor: TradeSignalMonitor, data_engine: StockTradeDataEngine):
         self._portfolio = portfolio
-        self._trade_engine = trade_engine
+        self._trade_monitor = trade_monitor
         self._data_engine = data_engine
         self._today = None
         self._logger = InvestmentLogger(portfolio.name)
@@ -19,7 +19,7 @@ class Simulator:
             if self._data_engine.is_trade_day(day):
                 self._today = day
                 self._portfolio.update_current_price(day)
-                signals = self._trade_engine.get_signals(day)
+                signals = self._trade_monitor.detect_signals(day)
 
                 self._trade(signals, day)
                 self._logger.log(portfolio=self._portfolio, current_date=day)

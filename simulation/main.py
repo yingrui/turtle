@@ -2,7 +2,7 @@ from datetime import date
 
 from engine.Portfolio import Portfolio
 from engine.StockTradeDataEngine import StockTradeDataEngine
-from engine.TradeEngine import TradeEngine
+from engine.TradeSignalMonitor import TradeSignalMonitor
 from simulation.Simulator import Simulator
 from util.date_methods import tomorrow
 
@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     data_engine = StockTradeDataEngine()
     portfolio = Portfolio('test', [], initial_investment, 0, initial_investment, data_engine)
-    trade_engine = TradeEngine(data_engine, follow_stocks=follow_stocks, parameters=parameters)
+    trade_engine = TradeSignalMonitor(data_engine, follow_stocks=follow_stocks, parameters=parameters)
 
     simulator = Simulator(portfolio, trade_engine, data_engine)
 
