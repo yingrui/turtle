@@ -3,15 +3,54 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def draw_line_chart_with_moving_average(x_series, y_series, sma_days_list=[5, 10, 20, 30]):
+def draw_line_chart_with_moving_average(x_series, y_series, sma_days_list=[5, 10, 20, 30],
+                                        xlabel='Trade Date', ylabel='Close Price', title=''):
     f = plt.figure()
     f.set_figwidth(20)
     plt.plot(x_series, y_series, label='y')
     for days in sma_days_list:
         plt.plot(x_series, y_series.rolling(days).mean(), label='MA' + str(days))
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     plt.legend(loc="upper left")
     plt.show()
 
+
+def draw_line_chart_with_atr(trade_date, close_price, high_price, low_price,
+                             ma_days=350, atr_days=20, up=7, down=3,
+                             xlabel='Trade Date', ylabel='Close Price', title=''):
+    sma = close_price.rolling(ma_days).mean()
+    daily_range = high_price - low_price
+    average_true_range = daily_range.rolling(atr_days).mean()
+
+    f = plt.figure()
+    f.set_figwidth(20)
+    plt.plot(trade_date, close_price, label=ylabel)
+    plt.plot(trade_date, sma + average_true_range * up, label='High')
+    plt.plot(trade_date, sma - average_true_range * down, label='Low')
+    plt.plot(trade_date, sma, label='MA' + str(ma_days))
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend(loc="upper left")
+    plt.show()
+
+
+def draw_line_chart_with_bolling(trade_date, close_price, ma_days=350, times=2.5, xlabel='Trade Date', ylabel='Close Price', title=''):
+    sma = close_price.rolling(ma_days).mean()
+    std = close_price.rolling(ma_days).std()
+    f = plt.figure()
+    f.set_figwidth(20)
+    plt.plot(trade_date, close_price, label='Close Price')
+    plt.plot(trade_date, sma, label='MA' + str(ma_days))
+    plt.plot(trade_date, sma + std*2.5, label='Up:' + str(times) + ' * std')
+    plt.plot(trade_date, sma - std*2.5, label='Lower: -' + str(times) + ' * std')
+    plt.title(title)
+    plt.xlabel('Trade Date')
+    plt.ylabel('Close Price')
+    plt.legend(loc="upper left")
+    plt.show()
 
 def draw_time_series_with_mean_and_std(x_series, y_series, xlabel='x', ylabel='y', title=''):
     desc = y_series.describe()

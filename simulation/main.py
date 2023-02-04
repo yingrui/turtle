@@ -1,10 +1,10 @@
-import datetime
 from datetime import date
 
 from engine.Portfolio import Portfolio
 from engine.StockTradeDataEngine import StockTradeDataEngine
 from engine.TradeEngine import TradeEngine
 from simulation.Simulator import Simulator
+from util.date_methods import tomorrow
 
 if __name__ == "__main__":
     initial_investment = 400000
@@ -23,4 +23,4 @@ if __name__ == "__main__":
 
     simulator = Simulator(portfolio, trade_engine, data_engine)
 
-    simulator.run(start_date=date(2016, 1, 1), end_date=date.today() + datetime.timedelta(days=1))
+    simulator.run(start_date=date(2016, 1, 1), end_date=tomorrow())
