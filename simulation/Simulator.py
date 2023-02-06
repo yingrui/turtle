@@ -21,6 +21,8 @@ class Simulator:
         self._max_position_size = parameters.get('risk_control.max_position_size', 10)
         self._should_check_stop_loss_point = parameters.get('risk_control.stop_loss_point.should_check', False)
         self._n_times_atr_for_stop_loss_point = parameters.get('risk_control.stop_loss_point.n_times_atr', 2)
+        self._should_check_max_holding_period = parameters.get('risk_control.max_holding_period.should_check', False)
+        self._max_holding_period = parameters.get('risk_control.max_holding_period.days', 80)
 
     def run(self, start_date, end_date):
         for day in pd.date_range(start=start_date, end=end_date):
@@ -38,6 +40,8 @@ class Simulator:
         self._portfolio.update_current_price(day)
         if self._should_check_stop_loss_point:
             self._check_stop_loss_point()
+        if self._should_check_max_holding_period:
+            self._check_max_holding_period()
         self._trade_on_signals(day, signals)
         self._portfolio.update_current_price(day)
 
@@ -63,6 +67,13 @@ class Simulator:
             price = self._get_close_price(investment.ts_code)
             if price <= investment.stop_loss_point:
                 print('sell {0}, due to reach the stop loss point'.format(investment.ts_code))
+                self._portfolio.sell(investment.ts_code)
+
+    def _check_max_holding_period(self):
+        for investment in self._portfolio.investments:
+            hold_date = investment.hold_date
+            if (self._today - hold_date).days > self._max_holding_period:
+                print('sell {0}, due to reach the max holding period'.format(investment.ts_code))
                 self._portfolio.sell(investment.ts_code)
 
     def _get_close_price(self, ts_code):

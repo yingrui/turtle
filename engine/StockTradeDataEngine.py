@@ -12,9 +12,13 @@ class StockTradeDataEngine:
 
     @lru_cache(maxsize=32)
     def get_trade_data_by_code(self, ts_code, start_date=None, end_date=None):
-        sql = 'select * from stock_trade_daily where ts_code="{0}"'.format(ts_code)
+        sql = 'select s.*, a.adj_factor from stock_trade_daily s ' \
+              'inner join stock_adj_daily a on a.ts_code=s.ts_code and a.trade_date=s.trade_date ' \
+              'where s.ts_code="{0}"'.format(ts_code)
         if start_date is not None and end_date is not None:
-            sql_template = 'select * from stock_trade_daily where ts_code="{0}" and trade_date between "{1}" and "{2}"'
+            sql_template = 'select s.*, a.adj_factor from stock_trade_daily s ' \
+              'inner join stock_adj_daily a on a.ts_code=s.ts_code and a.trade_date=s.trade_date ' \
+              'where s.ts_code="{0}" and s.trade_date between "{1}" and "{2}"'
             sql = sql_template.format(ts_code, start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
         df = pd.read_sql(sql, con=self._sql_conn)
         df['trade_date'] = df['trade_date'].apply(lambda x: pd.Timestamp(x))
@@ -31,7 +35,9 @@ class StockTradeDataEngine:
 
     @lru_cache(maxsize=32)
     def get_trade_data_on_date(self, day):
-        sql = 'select * from stock_trade_daily where trade_date="{0}"'.format(day.strftime('%Y-%m-%d'))
+        sql = 'select s.*, a.adj_factor from stock_trade_daily s ' \
+              'inner join stock_adj_daily a on a.ts_code=s.ts_code and a.trade_date=s.trade_date ' \
+              'where s.trade_date="{0}"'.format(day.strftime('%Y-%m-%d'))
         return pd.read_sql(sql, con=self._sql_conn)
 
     def is_trade_day(self, day):

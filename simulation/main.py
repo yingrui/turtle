@@ -14,9 +14,11 @@ if __name__ == "__main__":
         'trade_policy.moving_average.window_2': 70,
         'risk_control.bearable_trading_loss': 0.02,
         'risk_control.position_control': 1.0,
-        'risk_control.max_position_size': 100,
+        'risk_control.max_position_size': 50,
         'risk_control.stop_loss_point.should_check': True,
         'risk_control.stop_loss_point.n_times_atr': 2,
+        'risk_control.max_holding_period.should_check': True,
+        'risk_control.max_holding_period.days': 80,
     }
 
     data_engine = StockTradeDataEngine()
