@@ -1,3 +1,5 @@
+import datetime
+
 import pandas as pd
 
 from engine.TrendAnalyzer import TrendAnalyzer
@@ -18,7 +20,9 @@ class PortfolioFilter:
         df_stocks = self.filter_st_stocks(df_stocks)
 
         for index, stock in df_stocks.iterrows():
-            time_series = self._data_engine.get_trade_data_by_date(stock.ts_code, current_date)
+            start_date = current_date - datetime.timedelta(days=2 * 365)
+            end_date = current_date - datetime.timedelta(days=1)
+            time_series = self._data_engine.get_trade_data_by_code(stock.ts_code, start_date, end_date)
             trend_analyzer = TrendAnalyzer(ts_code=stock.ts_code, trade_data=time_series, parameters=self._parameters)
             trend = trend_analyzer.analysis_trend()
             print(stock.ts_code, stock['name'], stock.industry, trend)
