@@ -42,3 +42,8 @@ class StockTradeDataEngine:
             return True if df['is_open'].values[0] > 0 else False
         else:
             False
+
+    def list_stocks_on_date(self, day, ignore_st=True):
+        condition = "list_status='L'"
+        sql = "select * from stock where list_date<='{0}' and {1}".format(day.strftime('%Y-%m-%d'), condition)
+        return pd.read_sql(sql, con=self._sql_conn)
