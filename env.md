@@ -82,4 +82,13 @@ CREATE TABLE stock_trade_daily (
 
 CREATE INDEX index_trade_date_on_stock_trade_daily ON stock_trade_daily (trade_date);
 
+CREATE TABLE stock_adj_daily (
+    ts_code varchar(10), 
+    trade_date date, 
+    adj_factor decimal(10,4),
+    constraint pk_code_and_date_on_adj_daily primary key (ts_code, trade_date)
+);
+
+CREATE INDEX index_trade_date_on_stock_adj_daily ON stock_adj_daily (trade_date);
+
 ```
