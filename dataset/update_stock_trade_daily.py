@@ -12,7 +12,7 @@ def download_stock_trade_data(ts_api, sql_conn, day):
     df = ts_api.query('daily', ts_code='', start_date=day.strftime('%Y%m%d'), end_date=day.strftime('%Y%m%d'))
     count = df.to_sql(con=sql_conn, name='stock_trade_daily', index=False, if_exists='append',
                       method=insert_or_update)
-    print('{0}, {1}'.format(day.strftime('%Y-%m-%d'), count))
+    print('{0}, {1} trade data'.format(day.strftime('%Y-%m-%d'), count))
     time.sleep(1)
 
 
@@ -20,7 +20,7 @@ def download_stock_adj_data(ts_api, sql_conn, day):
     df = ts_api.query('adj_factor', ts_code='', trade_date=day.strftime('%Y%m%d'))
     count = df.to_sql(con=sql_conn, name='stock_adj_daily', index=False, if_exists='append',
                       method=insert_or_update)
-    print('{0}, {1}'.format(day.strftime('%Y-%m-%d'), count))
+    print('{0}, {1} restoration data'.format(day.strftime('%Y-%m-%d'), count))
     time.sleep(1)
 
 
