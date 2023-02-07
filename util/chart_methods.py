@@ -81,7 +81,7 @@ def draw_investment_log(df, xlabel='x', ylabel='y', title=''):
     f = plt.figure()
     f.set_figwidth(20)
     plt.plot(x_series, df.total / 10000, label='Total')
-    plt.plot(x_series, df.balance / 10000, label='Balance')
+    plt.plot(x_series, (df.total - df.balance) / 10000, label='Position')
     plt.legend(loc='upper left')
     plt.title(title)
     plt.xlabel(xlabel)
