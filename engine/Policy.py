@@ -13,7 +13,7 @@ class SimpleMovingAveragePolicy:
         if self._trade_data.shape[0] <= 0:
             return Signal(self._ts_code, 1)
 
-        time_series = self._trade_data.close
+        time_series = self._trade_data.qfq
         sma_1 = time_series.rolling(self._window_1).mean()
         sma_2 = time_series.rolling(self._window_2).mean()
         if sma_2.shape[0] < 2:
