@@ -91,7 +91,8 @@ class Portfolio:
                     cash_return = investment.withdraw_cash_return()
                     self._balance = self._balance + cash_return
                     self._benefit = self._benefit + cash_return
-                    self.update_current_price(current_date)
+
+        self.update_current_price(current_date)
 
     def update_current_price(self, current_date):
         if current_date is None:

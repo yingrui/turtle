@@ -16,7 +16,7 @@ class TestRiskController(TestCase):
 
         data_engine = StockTradeDataEngine()
         portfolio = StubPortfolio.empty_portfolio(balance=initial_investment, data_engine=data_engine)
-        risk_controller = RiskController(portfolio=portfolio, parameters=parameters)
+        risk_controller = RiskController(portfolio=portfolio, data_engine=data_engine, parameters=parameters)
 
         today = date(2023, 1, 20)
         trade_data = data_engine.get_trade_data_by_date(ts_code, today)
