@@ -27,4 +27,4 @@ if __name__ == "__main__":
 
     simulator = Simulator(portfolio, trade_engine, data_engine, parameters)
 
-    simulator.run(start_date=date(2020, 1, 1), end_date=tomorrow())
+    simulator.run(start_date=date(2016, 1, 1), end_date=tomorrow())

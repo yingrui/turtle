@@ -80,6 +80,19 @@ class Portfolio:
     def get_investment(self, ts_code):
         return next(filter(lambda investment: investment.ts_code == ts_code, self._investments), None)
 
+    def adjust_holding_shares(self, current_date):
+        for investment in self._investments:
+            dividents = self._data_engine.get_dividents_data_on_date(investment.ts_code, current_date)
+            if dividents.shape[0] > 0:
+                investment.process_dividents(dividents.stk_div.values[0], dividents.stk_bo_rate.values[0],
+                                             dividents.stk_co_rate.values[0], dividents.cash_div.values[0],
+                                             dividents.cash_div_tax.values[0], dividents.record_date.values[0])
+                if investment.cash_return > 0:
+                    cash_return = investment.withdraw_cash_return()
+                    self._balance = self._balance + cash_return
+                    self._benefit = self._benefit + cash_return
+                    self.update_current_price(current_date)
+
     def update_current_price(self, current_date):
         if current_date is None:
             return

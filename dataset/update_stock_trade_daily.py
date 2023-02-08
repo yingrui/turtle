@@ -24,12 +24,21 @@ def download_stock_adj_data(ts_api, sql_conn, day):
     time.sleep(1)
 
 
+def download_dividends_data(ts_api, sql_conn, day):
+    df = ts_api.query('dividend', ts_code='', ex_date=day.strftime('%Y%m%d'))
+    count = df.to_sql(con=sql_conn, name='dividends', index=False, if_exists='append',
+                      method=insert_or_update)
+    print('{0}, {1} dividends data'.format(day.strftime('%Y-%m-%d'), count))
+    time.sleep(1)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--start', type=str, default=date.today().strftime('%Y-%m-%d'), help='start date')
     parser.add_argument('--end', type=str, default=date.today().strftime('%Y-%m-%d'), help='end date')
-    parser.add_argument('--adj-data', type=bool, default=True, help='whether download adj data, default is False')
-    parser.add_argument('--trade-data', type=bool, default=True, help='whether download trade data, default is False')
+    parser.add_argument('--adj-data', type=bool, default=False, help='whether download adj data, default is False')
+    parser.add_argument('--trade-data', type=bool, default=False, help='whether download trade data, default is False')
+    parser.add_argument('--dividend', type=bool, default=True, help='whether download dividend data, default is False')
     opt = parser.parse_args()
 
     ts_api = get_ts_api()
@@ -41,3 +50,5 @@ if __name__ == "__main__":
                 download_stock_trade_data(ts_api, sql_conn, day)
             if opt.adj_data:
                 download_stock_adj_data(ts_api, sql_conn, day)
+            if opt.dividend:
+                download_dividends_data(ts_api, sql_conn, day)

@@ -45,6 +45,16 @@ class TestPortfolio(TestCase):
         self.assertEqual(0, shares)
         self.assertEqual('Insufficient balance', msg)
 
+    def test_adjust_holding_shares(self):
+        ts_code = '600519.sh'
+        portfolio = StubPortfolio.empty_portfolio(balance=400000)
+        # buy 100 shares
+        portfolio.buy(ts_code=ts_code, price=2030, hold_date=date(2022, 6, 29))
+        portfolio.adjust_holding_shares(date(2022, 6, 30))
+        self.assertEqual(401500 + 2167.5, portfolio.total)
+        self.assertEqual(2167.5, portfolio.benefit)
+        self.assertEqual(400000 - 203000 + 2167.5, portfolio.balance)
+
     def test_merge_investments_with_same_code(self):
         ts_code = '600519.sh'
         portfolio = StubPortfolio.empty_portfolio(balance=400000)

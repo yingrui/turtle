@@ -23,8 +23,11 @@ class StockTradeDataEngine:
 
     def get_trade_data_by_date(self, ts_code, end_date, qfq=False, limit=500):
         df = self.get_trade_data_by_code(ts_code)
-        if qfq and df.shape[0] > 0:
+        if qfq and not df.empty:
             df = df[df['trade_date'] < pd.Timestamp(end_date)].tail(limit)
+            if df.empty:
+                df['qfq'] = []
+                return df
             close_price_at_end_date = df.close.values[-1]
             df['qfq'] = pd.concat([df.pre_close, pd.Series(close_price_at_end_date)], ignore_index=True).iloc[1:].values
             return df
@@ -41,6 +44,11 @@ class StockTradeDataEngine:
         sql = 'select s.*, a.adj_factor from stock_trade_daily s ' \
               'inner join stock_adj_daily a on a.ts_code=s.ts_code and a.trade_date=s.trade_date ' \
               'where s.trade_date="{0}"'.format(day.strftime('%Y-%m-%d'))
+        return pd.read_sql(sql, con=self._sql_conn)
+
+    def get_dividents_data_on_date(self, ts_code, day):
+        sql = 'select * from dividends ' \
+              'where ts_code="{0}" and ex_date="{1}" and div_proc="实施"'.format(ts_code, day.strftime('%Y-%m-%d'))
         return pd.read_sql(sql, con=self._sql_conn)
 
     @lru_cache(maxsize=32)

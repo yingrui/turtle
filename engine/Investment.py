@@ -1,3 +1,5 @@
+import pandas as pd
+
 from util.math_methods import round_down
 
 
@@ -11,6 +13,7 @@ class Investment:
         self._current_price = current_price
         self._hold_date = hold_date
         self._stop_loss_point = stop_loss_point
+        self._cash_return = 0
 
     @property
     def ts_code(self):
@@ -33,8 +36,12 @@ class Investment:
         return self._payment
 
     @property
+    def cash_return(self):
+        return self._cash_return
+
+    @property
     def benefit(self):
-        return round_down(self._current_price * self._hold_shares - self._payment)
+        return round_down(self._current_price * self._hold_shares + self._cash_return - self._payment)
 
     @property
     def current_price(self):
@@ -46,10 +53,15 @@ class Investment:
 
     @property
     def total(self):
-        return round_down(self._current_price * self._hold_shares)
+        return round_down(self._current_price * self._hold_shares + self._cash_return)
 
     def set_current_price(self, price):
         self._current_price = price
+
+    def withdraw_cash_return(self):
+        ret = self._cash_return
+        self._cash_return = 0
+        return ret
 
     def set_hold_shares(self, shares):
         self._hold_shares = shares
@@ -59,6 +71,16 @@ class Investment:
 
     def set_buy_price(self, price):
         self._buy_price = price
+
+    def process_dividents(self, stk_div, stk_bo_rate, stk_co_rate, cash_div, cash_div_tax, record_date):
+        if pd.Timestamp(self.hold_date) > pd.Timestamp(record_date):
+            return
+
+        if cash_div > 0.0:
+            self._cash_return = self._cash_return + cash_div * self._hold_shares
+
+        if stk_div > 0.0:
+            self._hold_shares = self._hold_shares + stk_div * self._hold_shares
 
     def __str__(self) -> str:
         return "{0}: {1} {2}".format(self._ts_code, int(self._hold_shares / 100), self.total)

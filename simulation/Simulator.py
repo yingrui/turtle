@@ -37,6 +37,7 @@ class Simulator:
         self._logger.save()
 
     def _trade(self, signals, day):
+        self._portfolio.adjust_holding_shares(day)
         self._portfolio.update_current_price(day)
         if self._should_check_stop_loss_point:
             self._check_stop_loss_point()

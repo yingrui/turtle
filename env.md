@@ -91,4 +91,25 @@ CREATE TABLE stock_adj_daily (
 
 CREATE INDEX index_trade_date_on_stock_adj_daily ON stock_adj_daily (trade_date);
 
+CREATE TABLE dividends (
+    ts_code varchar(10), 
+    end_date date,
+    ann_date date, 
+    div_proc varchar(24), 
+    stk_div decimal(10,4),
+    stk_bo_rate decimal(10,4),
+    stk_co_rate decimal(10,4),
+    cash_div decimal(10,4),
+    cash_div_tax decimal(10,4),
+    record_date date,
+    ex_date date,
+    pay_date date,
+    div_listdate date,
+    imp_ann_date date,
+    base_date date,
+    base_share decimal(10,4),
+    update_flag varchar(12),
+    constraint pk_code_and_date_on_dividends primary key (ts_code, ex_date)
+);
+
 ```
