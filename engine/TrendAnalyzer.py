@@ -18,7 +18,7 @@ class TrendAnalyzer:
         if self._trade_data.shape[0] <= self._window_3:
             return Trend(self._ts_code, 'unknown')
 
-        time_series = self._trade_data.pre_close
+        time_series = self._trade_data.qfq
         norm = self._normalize(time_series)
         std = norm.std()
 

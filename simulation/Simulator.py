@@ -23,6 +23,7 @@ class Simulator:
             if self._data_engine.is_trade_day(day):
                 self._today = day
                 signals = self._trade_monitor.detect_signals(day)
+                self._portfolio.adjust_holding_shares(day)
                 self._trade(signals, day)
                 self._logger.log(portfolio=self._portfolio, current_date=day)
                 print('{0}| {1}'.format(day.strftime('%Y-%m-%d'), self._portfolio))
@@ -31,8 +32,6 @@ class Simulator:
         self._logger.save()
 
     def _trade(self, signals, day):
-        self._portfolio.adjust_holding_shares(day)
-
         self._risk_controller.execute_risk_control(day)
         self._trade_on_signals(day, signals)
 

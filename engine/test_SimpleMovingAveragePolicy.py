@@ -26,7 +26,7 @@ class TestSimpleMovingAveragePolicy(TestCase):
 
     def test_should_return_signal_of_sell(self):
         ts_code = '600519.SH'
-        df_trade_data = StockTradeDataEngine().get_trade_data_by_date(ts_code, date(2022, 8, 25), 200)
+        df_trade_data = StockTradeDataEngine().get_trade_data_by_date(ts_code, date(2022, 8, 27), 200)
 
         policy = SimpleMovingAveragePolicy(ts_code, df_trade_data)
 
