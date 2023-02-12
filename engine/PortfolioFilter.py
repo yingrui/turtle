@@ -10,7 +10,7 @@ class PortfolioFilter:
     def __init__(self, data_engine, parameters={}):
         self._data_engine = data_engine
         self._df_portfolio = pd.DataFrame({
-            'date': [], 'ts_code': [], 'trend': [], 'stationary': []
+            'date': [], 'ts_code': [], 'gradient': [], 'stationary': []
         })
         self._ignore_st = parameters.get('portfolio_filter.basic.ignore_st', False)
         self._parameters = parameters
@@ -28,7 +28,7 @@ class PortfolioFilter:
             print(stock.ts_code, stock['name'], stock.industry, trend)
             if trend.status == 'up':
                 df = pd.DataFrame({'date': [current_date], 'ts_code': [stock.ts_code],
-                                   'trend': [trend.trend], 'stationary': [trend.stationary]})
+                                   'gradient': [trend.gradient], 'stationary': [trend.stationary]})
                 self._df_portfolio = pd.concat([self._df_portfolio, df], ignore_index=True)
 
         return self._df_portfolio
@@ -39,4 +39,6 @@ class PortfolioFilter:
         return df_stocks
 
     def save(self, file='portfolio.csv'):
-        self._df_portfolio.to_csv(file, index=False)
+        df = self._df_portfolio[self._df_portfolio.gradient > 0.1]
+        df = df[df.stationary < 0.05]
+        df.sort_values(by=['stationary'], ascending=True).to_csv(file, index=False)

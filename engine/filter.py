@@ -17,5 +17,5 @@ if __name__ == "__main__":
     portfolio_filter.save()
 
     df = pd.read_csv('portfolio.csv')
-    df = df.sort_values(by=['trend'], ascending=False)
+    df = df.sort_values(by=['gradient'], ascending=False)
     print(df.head())

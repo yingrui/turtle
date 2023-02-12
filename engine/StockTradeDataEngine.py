@@ -35,8 +35,9 @@ class StockTradeDataEngine:
 
     @staticmethod
     def _add_qfq(df):
-        last_adj_factor_at_end_date = df.adj_factor.values[-1]
-        df['qfq'] = df.close * df.adj_factor / last_adj_factor_at_end_date
+        if not df.empty:
+            last_adj_factor_at_end_date = df.adj_factor.values[-1]
+            df['qfq'] = df.close * df.adj_factor / last_adj_factor_at_end_date
         return df
 
     def get_trade_data_by_date(self, ts_code, end_date, qfq=False, limit=500):
