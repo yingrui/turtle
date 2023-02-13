@@ -1,5 +1,8 @@
 ## Installation
 
+1. Prepare Python environment
+2. Prepare RDBMS (MySQL)
+
 ### Python Environment
 
 ```bash
