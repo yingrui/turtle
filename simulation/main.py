@@ -12,8 +12,9 @@ if __name__ == "__main__":
     parameters = {
         'trade_policy.moving_average.window_1': 20,
         'trade_policy.moving_average.window_2': 70,
-        'risk_control.bearable_trading_loss': 0.02,
+        'risk_control.bearable_trading_loss': 0.01,
         'risk_control.position_control': 1.0,
+        'risk_control.position_control.reserve_profit': 0.1,
         'risk_control.max_position_size': 50,
         'risk_control.stop_loss_point.should_check': True,
         'risk_control.stop_loss_point.n_times_atr': 2,

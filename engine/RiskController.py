@@ -8,6 +8,7 @@ class RiskController:
         self._data_engine = data_engine
         self._bearable_trading_loss = parameters.get('risk_control.bearable_trading_loss', 0.01)
         self._position_control = parameters.get('risk_control.position_control', 1)
+        self._reserve_profit = parameters.get('risk_control.position_control.reserve_profit', 0)
         self._max_position_size = parameters.get('risk_control.max_position_size', 10)
         self._should_check_stop_loss_point = parameters.get('risk_control.stop_loss_point.should_check', False)
         self._n_times_atr_for_stop_loss_point = parameters.get('risk_control.stop_loss_point.n_times_atr', 2)
@@ -23,7 +24,8 @@ class RiskController:
 
     @property
     def position_control(self):
-        return self._position_control
+        profit = self._portfolio.total - self._portfolio.initial_investment
+        return self._position_control - max(0, profit) * self._reserve_profit / max(1, self._portfolio.total)
 
     @property
     def max_position_size(self):

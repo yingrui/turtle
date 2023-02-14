@@ -25,6 +25,10 @@ class Portfolio:
         return self._investments
 
     @property
+    def initial_investment(self):
+        return self._initial_investment
+
+    @property
     def return_rate(self):
         return round_down(self._total / self._initial_investment * 100)
 
