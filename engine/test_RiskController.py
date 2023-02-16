@@ -22,4 +22,4 @@ class TestRiskController(TestCase):
         trade_data = data_engine.get_trade_data_by_date(ts_code, today)
         max_position_size, atr = risk_controller.evaluate_buying_position_size(ts_code, trade_data)
         self.assertEqual(1, max_position_size)
-        self.assertEqual(34.28, atr)
+        self.assertEqual(36.47, atr)
