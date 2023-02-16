@@ -17,6 +17,7 @@ pip install python-dotenv
 pip install sqlalchemy
 pip install pymysql
 pip install cryptography
+pip install pyyaml
 ```
 
 ### Environment Variables

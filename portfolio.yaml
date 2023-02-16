@@ -1,0 +1,56 @@
+---
+name: test-1
+follow_stocks:
+  - '002594.SZ'  # 比亚迪
+  - '000625.SZ'  # 长安汽车
+  - '600733.SH'  # 北汽蓝谷
+  - '601127.SH'  # 赛力斯
+  - '601238.SH'  # 广汽集团
+  - '600418.SH'  # 江淮汽车
+  - '300750.SZ'  # 宁德时代
+  - '002460.SZ'  # 赣锋锂业
+  - '600519.SH'  # 贵州茅台
+  - '600809.SH'  # 山西汾酒
+  - '000858.SZ'  # 五粮液
+  - '300896.SZ'  # 爱美客
+  - '600763.SH'  # 通策医疗
+  - '002230.SZ'  # 科大讯飞
+  - '603444.SH'  # 吉比特
+policies:
+  - trade_policy.name: moving_average
+    trade_policy.moving_average.triple: False
+    trade_policy.moving_average.window_1: 20
+    trade_policy.moving_average.window_2: 70
+    risk_control.bearable_trading_loss: 0.01
+    risk_control.position_control: 1.0
+    risk_control.position_control.reserve_profit: 0.1
+    risk_control.max_position_size: 50
+    risk_control.stop_loss_point.should_check: True
+    risk_control.stop_loss_point.n_times_atr: 2
+    risk_control.max_holding_period.should_check: True
+    risk_control.max_holding_period.days: 80
+  - trade_policy.name: donchian
+    trade_policy.donchian.ma_window_1: 20
+    trade_policy.donchian.ma_window_2: 70
+    trade_policy.donchian.up_days: 20
+    trade_policy.donchian.down_days: 10
+    risk_control.position_control: 1.0
+    risk_control.position_control.reserve_profit: 0.1
+    risk_control.max_position_size: 50
+    risk_control.stop_loss_point.should_check: True
+    risk_control.stop_loss_point.n_times_atr: 2
+    risk_control.max_holding_period.should_check: True
+    risk_control.max_holding_period.days: 80
+  - trade_policy.name: moving_average
+    trade_policy.moving_average.triple: True
+    trade_policy.moving_average.window_1: 10
+    trade_policy.moving_average.window_2: 60
+    trade_policy.moving_average.window_3: 70
+    risk_control.bearable_trading_loss: 0.01
+    risk_control.position_control: 1.0
+    risk_control.position_control.reserve_profit: 0.1
+    risk_control.max_position_size: 50
+    risk_control.stop_loss_point.should_check: True
+    risk_control.stop_loss_point.n_times_atr: 2
+    risk_control.max_holding_period.should_check: True
+    risk_control.max_holding_period.days: 80
