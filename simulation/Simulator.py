@@ -39,7 +39,7 @@ class Simulator:
 
     def _trade_on_signals(self, day, signals):
         for signal in signals:
-            if signal.status == 2:
+            if signal.status == 'buy':
                 trade_data = self._data_engine.get_trade_data_by_date(signal.ts_code, day)
                 position_size, atr = self._risk_controller.evaluate_buying_position_size(signal.ts_code, trade_data)
                 if position_size > self._risk_controller.max_position_size:
@@ -47,12 +47,14 @@ class Simulator:
                 price = self._get_close_price(signal.ts_code)
                 stop_loss_point = self._risk_controller.stop_loss_point(price, atr)
                 print(signal, position_size, price, stop_loss_point)
-                self._portfolio.buy(signal.ts_code, price=price, position_size=position_size,
-                                    position_control=self._risk_controller.position_control,
-                                    hold_date=day, stop_loss_point=stop_loss_point)
-            elif signal.status == 0:
-                print(signal)
-                self._portfolio.sell(signal.ts_code)
+                if not self._portfolio.has_stock(signal.ts_code):
+                    self._portfolio.buy(signal.ts_code, price=price, position_size=position_size,
+                                        position_control=self._risk_controller.position_control,
+                                        hold_date=day, stop_loss_point=stop_loss_point)
+            elif signal.status == 'sell':
+                if self._portfolio.has_stock(signal.ts_code):
+                    print(signal)
+                    self._portfolio.sell(signal.ts_code)
 
     def _get_close_price(self, ts_code):
         return self._data_engine.get_stock_price_on_date(ts_code, self._today)

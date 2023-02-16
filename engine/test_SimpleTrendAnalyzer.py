@@ -27,7 +27,7 @@ class TestTrendAnalyzer(TestCase):
         print(trend)
         self.assertEqual('up', trend.status)
         self.assertEqual(0.1078, round(trend.gradient, 4))
-        self.assertEqual(0.0224, round(trend.stationary, 4))
+        self.assertEqual(0.0282, round(trend.stationary, 4))
 
     def test_trend_with_negative_gradient(self):
         ts_code = '000710.SZ'

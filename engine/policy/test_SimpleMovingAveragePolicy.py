@@ -1,7 +1,7 @@
 from datetime import date
 from unittest import TestCase
 
-from engine.Policy import SimpleMovingAveragePolicy
+from engine.policy.SimpleMovingAveragePolicy import SimpleMovingAveragePolicy
 from engine.StockTradeDataEngine import StockTradeDataEngine
 
 
@@ -13,7 +13,7 @@ class TestSimpleMovingAveragePolicy(TestCase):
         policy = SimpleMovingAveragePolicy(ts_code, df_trade_data)
 
         signal = policy.analysis()
-        self.assertEqual(1, signal.status)
+        self.assertEqual('stay', signal.status)
 
     def test_should_return_signal_of_buy(self):
         ts_code = '600519.SH'
@@ -22,7 +22,7 @@ class TestSimpleMovingAveragePolicy(TestCase):
         policy = SimpleMovingAveragePolicy(ts_code, df_trade_data)
 
         signal = policy.analysis()
-        self.assertEqual(2, signal.status)
+        self.assertEqual('buy', signal.status)
 
     def test_should_return_signal_of_sell(self):
         ts_code = '600519.SH'
@@ -31,4 +31,4 @@ class TestSimpleMovingAveragePolicy(TestCase):
         policy = SimpleMovingAveragePolicy(ts_code, df_trade_data)
 
         signal = policy.analysis()
-        self.assertEqual(0, signal.status)
+        self.assertEqual('sell', signal.status)

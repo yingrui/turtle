@@ -16,7 +16,7 @@ class RiskController:
         self._max_holding_period = parameters.get('risk_control.max_holding_period.days', 80)
 
     def evaluate_buying_position_size(self, ts_code, trade_data):
-        daily_range = trade_data.high - trade_data.low
+        daily_range = trade_data[['high', 'pre_close']].max(axis=1) - trade_data[['low', 'pre_close']].min(axis=1)
         average_true_range = daily_range.rolling(20).mean()
         atr = round_down(average_true_range.values[-1])
         position_size = int((self._portfolio.total * self._bearable_trading_loss) / atr / 100)

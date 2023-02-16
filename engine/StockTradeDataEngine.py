@@ -53,6 +53,11 @@ class StockTradeDataEngine:
         last = df[df['trade_date'] <= pd.Timestamp(end_date)].tail(1)
         return last.close.values[0]
 
+    def is_open(self, ts_code, current_date):
+        sql = 'select s.ts_code, s.trade_date from stock_trade_daily s ' \
+              'where s.ts_code="{0}" and s.trade_date="{1}"'.format(ts_code, current_date.strftime('%Y-%m-%d'))
+        return pd.read_sql(sql, con=self._sql_conn).shape[0] > 0
+
     @lru_cache(maxsize=32)
     def get_trade_data_on_date(self, day):
         sql = 'select s.*, a.adj_factor from stock_trade_daily s ' \

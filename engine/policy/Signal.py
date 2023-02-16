@@ -6,9 +6,7 @@ class Signal:
         self.status = status
 
     def __str__(self):
-        if self.status == 2:
-            return 'buy {0}'.format(self.ts_code)
-        elif self.status == 1:
+        if self.status == 'stay':
             return 'do nothing {0}'.format(self.ts_code)
         else:
-            return 'sell {0}'.format(self.ts_code)
+            return '{0} {1}'.format(self.status, self.ts_code)

@@ -76,6 +76,26 @@ def draw_time_series_with_mean_and_std(x_series, y_series, xlabel='x', ylabel='y
     plt.show()
 
 
+def draw_line_chart_with_max_min_window(trade_date, close_price,
+                                        ma_days=150, up=20, down=10,
+                                        xlabel='Trade Date', ylabel='Close Price', title=''):
+    sma = close_price.rolling(ma_days).mean()
+    max_in_previous_days = close_price.rolling(up).max()
+    min_in_previous_days = close_price.rolling(down).min()
+
+    f = plt.figure()
+    f.set_figwidth(20)
+    plt.plot(trade_date, close_price, label=ylabel)
+    plt.plot(trade_date, max_in_previous_days, label='Max' + str(up))
+    plt.plot(trade_date, min_in_previous_days, label='Min' + str(down))
+    plt.plot(trade_date, sma, label='MA' + str(ma_days))
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend(loc="upper left")
+    plt.show()
+
+
 def draw_investment_log(df, xlabel='x', ylabel='y', title=''):
     x_series = pd.Series(df.date)
     f = plt.figure()
