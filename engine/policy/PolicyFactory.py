@@ -1,4 +1,5 @@
 from engine.policy.DonchianPolicy import DonchianPolicy
+from engine.policy.EnsemblePolicy import EnsemblePolicy
 from engine.policy.Policy import Policy
 from engine.policy.SimpleMovingAveragePolicy import SimpleMovingAveragePolicy
 
@@ -13,5 +14,8 @@ class PolicyFactory:
 
         if policy == 'donchian':
             return DonchianPolicy(ts_code, trade_data, parameters)
+
+        if policy == 'ensemble':
+            return EnsemblePolicy(ts_code, trade_data, parameters)
 
         raise Exception('Cannot create policy')

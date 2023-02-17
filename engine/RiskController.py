@@ -6,14 +6,14 @@ class RiskController:
     def __init__(self, portfolio=None, data_engine=None, parameters={}):
         self._portfolio = portfolio
         self._data_engine = data_engine
-        self._bearable_trading_loss = parameters.get('risk_control.bearable_trading_loss', 0.01)
-        self._position_control = parameters.get('risk_control.position_control', 1)
-        self._reserve_profit = parameters.get('risk_control.position_control.reserve_profit', 0)
-        self._max_position_size = parameters.get('risk_control.max_position_size', 10)
-        self._should_check_stop_loss_point = parameters.get('risk_control.stop_loss_point.should_check', False)
-        self._n_times_atr_for_stop_loss_point = parameters.get('risk_control.stop_loss_point.n_times_atr', 2)
-        self._should_check_max_holding_period = parameters.get('risk_control.max_holding_period.should_check', False)
-        self._max_holding_period = parameters.get('risk_control.max_holding_period.days', 80)
+        self._bearable_trading_loss = parameters.get('bearable_trading_loss', 0.01)
+        self._position_control = parameters.get('position_control', 1)
+        self._reserve_profit = parameters.get('position_control.reserve_profit', 0)
+        self._max_position_size = parameters.get('max_position_size', 10)
+        self._should_check_stop_loss_point = parameters.get('stop_loss_point.should_check', False)
+        self._n_times_atr_for_stop_loss_point = parameters.get('stop_loss_point.n_times_atr', 2)
+        self._should_check_max_holding_period = parameters.get('max_holding_period.should_check', False)
+        self._max_holding_period = parameters.get('max_holding_period.days', 80)
 
     def evaluate_buying_position_size(self, ts_code, trade_data):
         daily_range = trade_data[['high', 'pre_close']].max(axis=1) - trade_data[['low', 'pre_close']].min(axis=1)

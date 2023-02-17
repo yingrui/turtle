@@ -17,41 +17,35 @@ follow_stocks:
   - '600763.SH'  # 通策医疗
   - '002230.SZ'  # 科大讯飞
   - '603444.SH'  # 吉比特
+risk_control:
+  bearable_trading_loss: 0.01
+  position_control: 1.0
+  position_control.reserve_profit: 0.1
+  max_position_size: 50
+  stop_loss_point.should_check: True
+  stop_loss_point.n_times_atr: 2
+  max_holding_period.should_check: True
+  max_holding_period.days: 80
 policies:
+  - trade_policy.name: ensemble
+    trade_policy.moving_average.triple: False
+    trade_policy.moving_average.window_1: 20
+    trade_policy.moving_average.window_2: 70
+    trade_policy.donchian.ma_window_1: 20
+    trade_policy.donchian.ma_window_2: 70
+    trade_policy.donchian.up_days: 20
+    trade_policy.donchian.down_days: 10
   - trade_policy.name: moving_average
     trade_policy.moving_average.triple: False
     trade_policy.moving_average.window_1: 20
     trade_policy.moving_average.window_2: 70
-    risk_control.bearable_trading_loss: 0.01
-    risk_control.position_control: 1.0
-    risk_control.position_control.reserve_profit: 0.1
-    risk_control.max_position_size: 50
-    risk_control.stop_loss_point.should_check: True
-    risk_control.stop_loss_point.n_times_atr: 2
-    risk_control.max_holding_period.should_check: True
-    risk_control.max_holding_period.days: 80
   - trade_policy.name: donchian
     trade_policy.donchian.ma_window_1: 20
     trade_policy.donchian.ma_window_2: 70
     trade_policy.donchian.up_days: 20
     trade_policy.donchian.down_days: 10
-    risk_control.position_control: 1.0
-    risk_control.position_control.reserve_profit: 0.1
-    risk_control.max_position_size: 50
-    risk_control.stop_loss_point.should_check: True
-    risk_control.stop_loss_point.n_times_atr: 2
-    risk_control.max_holding_period.should_check: True
-    risk_control.max_holding_period.days: 80
   - trade_policy.name: moving_average
     trade_policy.moving_average.triple: True
     trade_policy.moving_average.window_1: 10
     trade_policy.moving_average.window_2: 60
     trade_policy.moving_average.window_3: 70
-    risk_control.bearable_trading_loss: 0.01
-    risk_control.position_control: 1.0
-    risk_control.position_control.reserve_profit: 0.1
-    risk_control.max_position_size: 50
-    risk_control.stop_loss_point.should_check: True
-    risk_control.stop_loss_point.n_times_atr: 2
-    risk_control.max_holding_period.should_check: True
-    risk_control.max_holding_period.days: 80

@@ -7,7 +7,7 @@ from engine.TradeSignalMonitor import TradeSignalMonitor
 
 class Simulator:
 
-    def __init__(self, portfolio, follow_stocks, data_engine):
+    def __init__(self, portfolio, follow_stocks, data_engine, risk_control):
         self._risk_controller = None
         self._trade_monitor = None
         self._today = None
@@ -15,10 +15,10 @@ class Simulator:
         self._data_engine = data_engine
         self._logger = InvestmentLogger(portfolio.name)
         self._follow_stocks = follow_stocks
+        self._risk_controller = RiskController(self._portfolio, self._data_engine, risk_control)
 
     def set_policy(self, parameters):
         self._trade_monitor = TradeSignalMonitor(self._data_engine, self._follow_stocks, parameters)
-        self._risk_controller = RiskController(self._portfolio, self._data_engine, parameters)
 
     def run(self, start_date, end_date):
         for day in pd.date_range(start=start_date, end=end_date):
