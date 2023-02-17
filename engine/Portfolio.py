@@ -153,7 +153,7 @@ class Portfolio:
         for i in exists_investments:
             current_price, high, low = data_engine.get_stock_price_on_date(i['ts_code'], start_date)
             investment = Investment(i['ts_code'], i['hold_shares'], i['buy_price'],
-                                    current_price, pd.Timestamp(start_date))
+                                    current_price, pd.Timestamp(start_date), i['stop_loss_point'])
             investments.append(investment)
             investment_total = investment_total + investment.total
 

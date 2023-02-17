@@ -10,6 +10,7 @@ class RiskController:
         self._position_control = parameters.get('position_control', 1)
         self._reserve_profit = parameters.get('position_control.reserve_profit', 0)
         self._max_position_size = parameters.get('max_position_size', 10)
+        self._max_position_ratio = parameters.get('max_position_ratio', 0.5)
         self._should_check_stop_loss_point = parameters.get('stop_loss_point.should_check', False)
         self._n_times_atr_for_stop_loss_point = parameters.get('stop_loss_point.n_times_atr', 2)
         self._should_check_max_holding_period = parameters.get('max_holding_period.should_check', False)
@@ -20,6 +21,9 @@ class RiskController:
         average_true_range = daily_range.rolling(20).mean()
         atr = round_down(average_true_range.values[-1])
         position_size = int((self._portfolio.total * self._bearable_trading_loss) / atr / 100)
+        price = trade_data.close.values[-1]
+        while position_size * 100 * price > self._portfolio.total * self._max_position_ratio:
+            position_size = position_size - 1
         return position_size, atr
 
     @property

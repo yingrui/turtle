@@ -41,19 +41,12 @@ risk_control:
   position_control: 1.0
   position_control.reserve_profit: 0.1
   max_position_size: 50
+  max_position_ratio: 0.5
   stop_loss_point.should_check: True
   stop_loss_point.n_times_atr: 2
   max_holding_period.should_check: True
   max_holding_period.days: 80
 policies:
-  - trade_policy.name: ensemble
-    trade_policy.moving_average.triple: False
-    trade_policy.moving_average.window_1: 20
-    trade_policy.moving_average.window_2: 70
-    trade_policy.donchian.ma_window_1: 20
-    trade_policy.donchian.ma_window_2: 70
-    trade_policy.donchian.up_days: 20
-    trade_policy.donchian.down_days: 10
   - trade_policy.name: moving_average
     trade_policy.moving_average.triple: False
     trade_policy.moving_average.window_1: 20
@@ -68,3 +61,11 @@ policies:
     trade_policy.moving_average.window_1: 10
     trade_policy.moving_average.window_2: 60
     trade_policy.moving_average.window_3: 70
+  - trade_policy.name: ensemble
+    trade_policy.moving_average.triple: False
+    trade_policy.moving_average.window_1: 20
+    trade_policy.moving_average.window_2: 70
+    trade_policy.donchian.ma_window_1: 20
+    trade_policy.donchian.ma_window_2: 70
+    trade_policy.donchian.up_days: 20
+    trade_policy.donchian.down_days: 10

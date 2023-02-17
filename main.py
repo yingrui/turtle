@@ -10,12 +10,12 @@ if __name__ == "__main__":
     # config = load_yaml('portfolio.yaml')
     config = load_yaml('test.yaml')
 
-    default_start_date = date(2022, 1, 1)
+    default_start_date = date(2020, 1, 1)
     start_date = config.get('start_date', default_start_date)
     end_date = tomorrow()
 
     portfolio = Portfolio.create_portfolio(config, start_date)
     simulator = Simulator(portfolio, config['follow_stocks'], StockTradeDataEngine(), config['risk_control'])
 
-    simulator.set_policy(config['policies'][3])
+    simulator.set_policy(config['policies'][0])
     simulator.run(start_date=start_date, end_date=end_date)
