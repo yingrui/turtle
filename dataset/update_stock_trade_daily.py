@@ -32,6 +32,15 @@ def download_dividends_data(ts_api, sql_conn, day):
     time.sleep(1)
 
 
+def update_stock_list(ts_api, sql_conn):
+    fields = 'ts_code,symbol,name,area,industry,market,exchange,curr_type,list_status,list_date,delist_date,is_hs'
+    # exchanges include: 上交所 SSE, 深交所 SZSE, 北交所 BSE
+    df = ts_api.query('stock_basic', exchange='', fields=fields)
+    count = df.to_sql(con=sql_conn, name='stock', index=False, if_exists='append', method=insert_or_update)
+    print('update count: {0}'.format(count))
+    time.sleep(1)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--start', type=str, default=date.today().strftime('%Y-%m-%d'), help='start date')
@@ -43,6 +52,9 @@ if __name__ == "__main__":
 
     ts_api = get_ts_api()
     sql_conn = get_sql_connection()
+
+    update_stock_list(ts_api, sql_conn)
+
     # exchanges include: 上交所 SSE, 深交所 SZSE, 北交所 BSE
     for day in pd.date_range(start=opt.start, end=opt.end):
         if day.day_of_week < 5:

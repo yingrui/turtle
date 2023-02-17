@@ -1,25 +1,6 @@
 ---
-name: portfolio
-start_date: 2023-02-17
-initial_investment: 414741.73
-balance: 55897.73
-investments:
-  - ts_code: 600519.SH
-    hold_shares: 100
-    buy_price: 1637.47
-    stop_loss_point: 1750.0
-  - ts_code: 300750.SZ
-    hold_shares: 300
-    buy_price: 429.25
-    stop_loss_point: 403.57
-  - ts_code: 603444.SH
-    hold_shares: 100
-    buy_price: 379.60
-    stop_loss_point: 359.60
-  - ts_code: 002230.SZ
-    hold_shares: 300
-    buy_price: 50.25
-    stop_loss_point: 42.25
+name: test
+initial_investment: 400000
 follow_stocks:
   - '002594.SZ'  # 比亚迪
   - '000625.SZ'  # 长安汽车

@@ -1,4 +1,7 @@
+import pandas as pd
+
 from engine.Investment import Investment
+from engine.StockTradeDataEngine import StockTradeDataEngine
 from util.math_methods import round_down
 
 
@@ -112,7 +115,7 @@ class Portfolio:
         total = self._balance
         investment_total = 0
         for investment in self._investments:
-            close_price = self._data_engine.get_stock_price_on_date(investment.ts_code, current_date)
+            close_price, high, low = self._data_engine.get_stock_price_on_date(investment.ts_code, current_date)
             investment.set_current_price(close_price)
             investment_total = investment_total + investment.total
 
@@ -137,3 +140,23 @@ class Portfolio:
         return_rate = 'return rate: {0} %'.format(self.return_rate)
         investments = ' | '.join(map(lambda i: str(i), self._investments))
         return brief + return_rate + ' | ' + investments
+
+    @staticmethod
+    def create_portfolio(config, start_date):
+        name = config['name']
+        initial_investment = config['initial_investment']
+        balance = config.get('balance', 0)
+        exists_investments = config.get('investments', [])
+        investments = []
+        investment_total = 0
+        data_engine = StockTradeDataEngine()
+        for i in exists_investments:
+            current_price, high, low = data_engine.get_stock_price_on_date(i['ts_code'], start_date)
+            investment = Investment(i['ts_code'], i['hold_shares'], i['buy_price'],
+                                    current_price, pd.Timestamp(start_date))
+            investments.append(investment)
+            investment_total = investment_total + investment.total
+
+        benefit = initial_investment - balance - investment_total
+        balance = balance + benefit
+        return Portfolio(name, investments, balance, 0, initial_investment, data_engine)

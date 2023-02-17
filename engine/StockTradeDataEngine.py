@@ -51,7 +51,7 @@ class StockTradeDataEngine:
     def get_stock_price_on_date(self, ts_code, end_date):
         df = self.get_trade_data_by_code(ts_code)
         last = df[df['trade_date'] <= pd.Timestamp(end_date)].tail(1)
-        return last.close.values[0]
+        return last.close.values[0], last.high.values[0], last.low.values[0]
 
     def is_open(self, ts_code, current_date):
         sql = 'select s.ts_code, s.trade_date from stock_trade_daily s ' \

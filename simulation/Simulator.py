@@ -1,22 +1,24 @@
 import pandas as pd
 
-from engine import Portfolio, TradeSignalMonitor
 from engine.InvestmentLogger import InvestmentLogger
 from engine.RiskController import RiskController
-from engine.StockTradeDataEngine import StockTradeDataEngine
-from util.math_methods import round_down
+from engine.TradeSignalMonitor import TradeSignalMonitor
 
 
 class Simulator:
 
-    def __init__(self, portfolio: Portfolio, trade_monitor: TradeSignalMonitor, data_engine: StockTradeDataEngine,
-                 parameters={}):
-        self._portfolio = portfolio
-        self._trade_monitor = trade_monitor
-        self._data_engine = data_engine
+    def __init__(self, portfolio, follow_stocks, data_engine):
+        self._risk_controller = None
+        self._trade_monitor = None
         self._today = None
+        self._portfolio = portfolio
+        self._data_engine = data_engine
         self._logger = InvestmentLogger(portfolio.name)
-        self._risk_controller = RiskController(portfolio, data_engine, parameters)
+        self._follow_stocks = follow_stocks
+
+    def set_policy(self, parameters):
+        self._trade_monitor = TradeSignalMonitor(self._data_engine, self._follow_stocks, parameters)
+        self._risk_controller = RiskController(self._portfolio, self._data_engine, parameters)
 
     def run(self, start_date, end_date):
         for day in pd.date_range(start=start_date, end=end_date):
@@ -44,7 +46,7 @@ class Simulator:
                 position_size, atr = self._risk_controller.evaluate_buying_position_size(signal.ts_code, trade_data)
                 if position_size > self._risk_controller.max_position_size:
                     position_size = self._risk_controller.max_position_size
-                price = self._get_close_price(signal.ts_code)
+                price, high, low = self._get_close_price(signal.ts_code)
                 stop_loss_point = self._risk_controller.stop_loss_point(price, atr)
                 print(signal, position_size, price, stop_loss_point)
                 if not self._portfolio.has_stock(signal.ts_code):
@@ -52,8 +54,8 @@ class Simulator:
                                         position_control=self._risk_controller.position_control,
                                         hold_date=day, stop_loss_point=stop_loss_point)
             elif signal.status == 'sell':
+                print(signal)
                 if self._portfolio.has_stock(signal.ts_code):
-                    print(signal)
                     self._portfolio.sell(signal.ts_code)
 
     def _get_close_price(self, ts_code):

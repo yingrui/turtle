@@ -3,18 +3,19 @@ from datetime import date
 from configurer import load_yaml
 from engine.Portfolio import Portfolio
 from engine.StockTradeDataEngine import StockTradeDataEngine
-from engine.TradeSignalMonitor import TradeSignalMonitor
 from simulation.Simulator import Simulator
 from util.date_methods import tomorrow
 
 if __name__ == "__main__":
-    config = load_yaml('portfolio.yaml')
-    initial_investment = 400000
+    # config = load_yaml('portfolio.yaml')
+    config = load_yaml('test.yaml')
 
-    data_engine = StockTradeDataEngine()
-    portfolio = Portfolio(config['name'], [], initial_investment, 0, initial_investment, data_engine)
-    trade_engine = TradeSignalMonitor(data_engine, follow_stocks=config['follow_stocks'], parameters=config['policies'][0])
+    default_start_date = date(2016, 1, 1)
+    start_date = config.get('start_date', default_start_date)
+    end_date = tomorrow()
 
-    simulator = Simulator(portfolio, trade_engine, data_engine, config['policies'][0])
+    portfolio = Portfolio.create_portfolio(config, start_date)
+    simulator = Simulator(portfolio, config['follow_stocks'], StockTradeDataEngine())
 
-    simulator.run(start_date=date(2023, 1, 1), end_date=tomorrow())
+    simulator.set_policy(config['policies'][0])
+    simulator.run(start_date=start_date, end_date=end_date)

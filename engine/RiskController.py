@@ -42,7 +42,7 @@ class RiskController:
 
     def _check_stop_loss_point(self, today):
         for investment in self._portfolio.investments:
-            price = self._data_engine.get_stock_price_on_date(investment.ts_code, today)
+            price, high, low = self._data_engine.get_stock_price_on_date(investment.ts_code, today)
             if price <= investment.stop_loss_point:
                 print('sell {0}, due to reach the stop loss point'.format(investment.ts_code))
                 self._portfolio.sell(investment.ts_code)
