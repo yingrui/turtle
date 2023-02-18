@@ -149,8 +149,8 @@ class Portfolio:
         return brief + return_rate + ' | ' + investments
 
     @staticmethod
-    def create_portfolio(config, start_date):
-        name = config['name']
+    def create_portfolio(config, start_date, policy_id):
+        name = '{0}-{1}'.format(config['name'], policy_id)
         initial_investment = config['initial_investment']
         balance = config.get('balance', 0)
         exists_investments = config.get('investments', [])

@@ -1,3 +1,4 @@
+import os
 from datetime import date
 
 import pandas as pd
@@ -7,7 +8,7 @@ from util.math_methods import round_down
 
 class InvestmentLogger:
 
-    def __init__(self, name):
+    def __init__(self, name, folder='logs'):
         self._name = name
         self._df_daily = pd.DataFrame({
             'date': [], 'return_rate': [], 'balance': [], 'benefit': [], 'investment_total': [], 'total': []
@@ -16,6 +17,7 @@ class InvestmentLogger:
             'date': [], 'ts_code': [], 'hold_shares': [], 'hold_date': [], 'buy_price': [],
             'sell_price': [], 'total_cash_return': [], 'benefit': [], 'reason': []
         })
+        self._folder = folder
 
     def log(self, portfolio, current_date):
         self._log_daily_information(current_date, portfolio)
@@ -50,5 +52,7 @@ class InvestmentLogger:
         return self._df_daily
 
     def save(self):
-        self._df_daily.to_csv('{0}.log'.format(self._name), index=False)
-        self._df_trade.to_csv('{0}-trade.log'.format(self._name), index=False)
+        if not os.path.exists(self._folder):
+            os.makedirs(self._folder)
+        self._df_daily.to_csv('{0}/{1}.log'.format(self._folder, self._name), index=False)
+        self._df_trade.to_csv('{0}/trade_{1}.log'.format(self._folder, self._name), index=False)
