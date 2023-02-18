@@ -58,6 +58,13 @@ class Portfolio:
 
         return False
 
+    def get_stock(self, ts_code):
+        for investment in self._investments:
+            if investment.ts_code == ts_code:
+                return investment
+
+        return None
+
     def buy(self, ts_code, price, hold_date, position_size=1, position_control=1, stop_loss_point=0):
         msg = 'Insufficient balance'
         buy_share = self._find_affordable_shares(price, position_size, position_control)

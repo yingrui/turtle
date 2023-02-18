@@ -3,9 +3,10 @@ from util.math_methods import round_down
 
 class RiskController:
 
-    def __init__(self, portfolio=None, data_engine=None, parameters={}):
+    def __init__(self, portfolio=None, data_engine=None, parameters={}, logger=None):
         self._portfolio = portfolio
         self._data_engine = data_engine
+        self._logger = logger
         self._bearable_trading_loss = parameters.get('bearable_trading_loss', 0.01)
         self._position_control = parameters.get('position_control', 1)
         self._reserve_profit = parameters.get('position_control.reserve_profit', 0)
@@ -49,6 +50,7 @@ class RiskController:
             price, high, low = self._data_engine.get_stock_price_on_date(investment.ts_code, today)
             if price <= investment.stop_loss_point:
                 print('sell {0}, due to reach the stop loss point'.format(investment.ts_code))
+                self._logger.log_sell_action(self._portfolio.get_stock(investment.ts_code), today, 'stop loss point')
                 self._portfolio.sell(investment.ts_code)
 
     def _check_max_holding_period(self, today):
@@ -56,4 +58,5 @@ class RiskController:
             hold_date = investment.hold_date
             if (today - hold_date).days > self._max_holding_period:
                 print('sell {0}, due to reach the max holding period'.format(investment.ts_code))
+                self._logger.log_sell_action(self._portfolio.get_stock(investment.ts_code), today, 'hold period limit')
                 self._portfolio.sell(investment.ts_code)

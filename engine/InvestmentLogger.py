@@ -12,9 +12,22 @@ class InvestmentLogger:
         self._df_daily = pd.DataFrame({
             'date': [], 'return_rate': [], 'balance': [], 'benefit': [], 'investment_total': [], 'total': []
         })
+        self._df_trade = pd.DataFrame({
+            'date': [], 'ts_code': [], 'hold_shares': [], 'hold_date': [], 'buy_price': [],
+            'sell_price': [], 'total_cash_return': [], 'benefit': [], 'reason': []
+        })
 
     def log(self, portfolio, current_date):
         self._log_daily_information(current_date, portfolio)
+
+    def log_sell_action(self, investment, current_date, reason):
+        df = pd.DataFrame({
+            'date': [current_date], 'ts_code': [investment.ts_code], 'hold_shares': [investment.hold_shares],
+            'hold_date': [investment.hold_date], 'buy_price': [investment.buy_price],
+            'sell_price': [investment.current_price], 'total_cash_return': [investment.total_cash_return],
+            'benefit': [investment.benefit], 'reason': [reason]
+        })
+        self._df_trade = pd.concat([self._df_trade, df], ignore_index=True)
 
     def _log_daily_information(self, current_date, portfolio):
         df = pd.DataFrame({
@@ -38,3 +51,4 @@ class InvestmentLogger:
 
     def save(self):
         self._df_daily.to_csv('{0}.log'.format(self._name), index=False)
+        self._df_trade.to_csv('{0}-trade.log'.format(self._name), index=False)

@@ -15,7 +15,7 @@ class Simulator:
         self._data_engine = data_engine
         self._logger = InvestmentLogger(portfolio.name)
         self._follow_stocks = follow_stocks
-        self._risk_controller = RiskController(self._portfolio, self._data_engine, risk_control)
+        self._risk_controller = RiskController(self._portfolio, self._data_engine, risk_control, self._logger)
 
     def set_policy(self, parameters):
         self._trade_monitor = TradeSignalMonitor(self._data_engine, self._follow_stocks, parameters)
@@ -56,6 +56,7 @@ class Simulator:
             elif signal.status == 'sell':
                 print(signal)
                 if self._portfolio.has_stock(signal.ts_code):
+                    self._logger.log_sell_action(self._portfolio.get_stock(signal.ts_code), day, 'sell signal')
                     self._portfolio.sell(signal.ts_code)
 
     def _get_close_price(self, ts_code):

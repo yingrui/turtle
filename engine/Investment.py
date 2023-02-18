@@ -14,6 +14,7 @@ class Investment:
         self._hold_date = hold_date
         self._stop_loss_point = stop_loss_point
         self._cash_return = 0
+        self._total_cash_return = 0
 
     @property
     def ts_code(self):
@@ -40,8 +41,12 @@ class Investment:
         return self._cash_return
 
     @property
+    def total_cash_return(self):
+        return self._total_cash_return
+
+    @property
     def benefit(self):
-        return round_down(self._current_price * self._hold_shares + self._cash_return - self._payment)
+        return round_down(self._current_price * self._hold_shares + self._total_cash_return - self._payment)
 
     @property
     def current_price(self):
@@ -60,6 +65,7 @@ class Investment:
 
     def withdraw_cash_return(self):
         ret = self._cash_return
+        self._total_cash_return = round_down(self._total_cash_return + ret)
         self._cash_return = 0
         return ret
 
