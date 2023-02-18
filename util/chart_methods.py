@@ -17,11 +17,10 @@ def draw_line_chart_with_moving_average(x_series, y_series, sma_days_list=[5, 10
     plt.show()
 
 
-def draw_line_chart_with_atr(trade_date, close_price, high_price, low_price,
+def draw_line_chart_with_atr(trade_date, close_price, daily_range,
                              ma_days=350, atr_days=20, up=7, down=3,
                              xlabel='Trade Date', ylabel='Close Price', title=''):
     sma = close_price.rolling(ma_days).mean()
-    daily_range = high_price - low_price
     average_true_range = daily_range.rolling(atr_days).mean()
 
     f = plt.figure()
@@ -45,11 +44,11 @@ def draw_line_chart_with_bolling(trade_date, close_price, ma_days=350, times=2.5
     f.set_figwidth(20)
     plt.plot(trade_date, close_price, label='Close Price')
     plt.plot(trade_date, sma, label='MA' + str(ma_days))
-    plt.plot(trade_date, sma + std * 2.5, label='Up:' + str(times) + ' * std')
+    plt.plot(trade_date, sma + std * 2.5, label='Up: ' + str(times) + ' * std')
     plt.plot(trade_date, sma - std * 2.5, label='Lower: -' + str(times) + ' * std')
     plt.title(title)
-    plt.xlabel('Trade Date')
-    plt.ylabel('Close Price')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     plt.legend(loc="upper left")
     plt.show()
 
