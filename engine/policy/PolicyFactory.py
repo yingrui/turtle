@@ -1,3 +1,5 @@
+from engine.policy.AtrPolicy import AtrPolicy
+from engine.policy.BollingPolicy import BollingPolicy
 from engine.policy.DonchianPolicy import DonchianPolicy
 from engine.policy.EnsemblePolicy import EnsemblePolicy
 from engine.policy.Policy import Policy
@@ -14,6 +16,12 @@ class PolicyFactory:
 
         if policy == 'donchian':
             return DonchianPolicy(ts_code, trade_data, parameters)
+
+        if policy == 'atr':
+            return AtrPolicy(ts_code, trade_data, parameters)
+
+        if policy == 'bolling':
+            return BollingPolicy(ts_code, trade_data, parameters)
 
         if policy == 'ensemble':
             return EnsemblePolicy(ts_code, trade_data, parameters)

@@ -69,3 +69,12 @@ policies:
     trade_policy.donchian.ma_window_2: 70
     trade_policy.donchian.up_days: 20
     trade_policy.donchian.down_days: 10
+  - trade_policy.name: atr
+    trade_policy.atr.ma_days: 150
+    trade_policy.atr.atr_days: 20
+    trade_policy.atr.up: 5
+    trade_policy.atr.down: 3
+  - trade_policy.name: bolling
+    trade_policy.bolling.ma_days: 30
+    trade_policy.bolling.up: 2
+    trade_policy.bolling.down: 1.5

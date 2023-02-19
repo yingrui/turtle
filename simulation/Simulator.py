@@ -29,9 +29,11 @@ class Simulator:
                 self._trade(signals, day)
                 self._logger.log(portfolio=self._portfolio, current_date=day)
                 print('{0}| {1}'.format(day.strftime('%Y-%m-%d'), self._portfolio))
+        self._logger.save()
+
+    def print_summary(self):
         initial_total, total, years, cagr = self._logger.get_summary()
         print('initial: {0}, after {2} years, total now: {1}, cagr: {3}'.format(initial_total, total, years, cagr))
-        self._logger.save()
 
     def _trade(self, signals, day):
         self._risk_controller.execute_risk_control(day)
