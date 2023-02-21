@@ -65,7 +65,6 @@ class Investment:
 
     def withdraw_cash_return(self):
         ret = self._cash_return
-        self._total_cash_return = round_down(self._total_cash_return + ret)
         self._cash_return = 0
         return ret
 
@@ -84,6 +83,7 @@ class Investment:
 
         if cash_div > 0.0:
             self._cash_return = self._cash_return + cash_div * self._hold_shares
+            self._total_cash_return = round_down(self._total_cash_return + cash_div * self._hold_shares)
 
         if stk_div > 0.0:
             self._hold_shares = self._hold_shares + stk_div * self._hold_shares

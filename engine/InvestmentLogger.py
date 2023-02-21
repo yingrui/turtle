@@ -15,7 +15,11 @@ class InvestmentLogger:
         })
         self._df_trade = pd.DataFrame({
             'date': [], 'ts_code': [], 'hold_shares': [], 'hold_date': [], 'buy_price': [],
-            'sell_price': [], 'total_cash_return': [], 'benefit': [], 'reason': []
+            'sell_price': [], 'total_cash_return': [], 'benefit': [], 'reason': [], 'status': []
+        })
+        self._df_hold_shares = pd.DataFrame({
+            'date': [], 'ts_code': [], 'hold_shares': [], 'hold_date': [], 'buy_price': [],
+            'sell_price': [], 'total_cash_return': [], 'benefit': [], 'reason': [], 'status': []
         })
         self._folder = folder
 
@@ -27,9 +31,20 @@ class InvestmentLogger:
             'date': [current_date], 'ts_code': [investment.ts_code], 'hold_shares': [investment.hold_shares],
             'hold_date': [investment.hold_date], 'buy_price': [investment.buy_price],
             'sell_price': [investment.current_price], 'total_cash_return': [investment.total_cash_return],
-            'benefit': [investment.benefit], 'reason': [reason]
+            'benefit': [investment.benefit], 'reason': [reason], 'status': ['win' if investment.benefit > 0 else 'loss']
         })
         self._df_trade = pd.concat([self._df_trade, df], ignore_index=True)
+
+    def log_holding_shares(self, portfolio, current_date):
+        for investment in portfolio.investments:
+            df = pd.DataFrame({
+                'date': [current_date], 'ts_code': [investment.ts_code], 'hold_shares': [investment.hold_shares],
+                'hold_date': [investment.hold_date], 'buy_price': [investment.buy_price],
+                'sell_price': [investment.current_price], 'total_cash_return': [investment.total_cash_return],
+                'benefit': [investment.benefit], 'reason': [''],
+                'status': ['holding']
+            })
+            self._df_hold_shares = pd.concat([self._df_hold_shares, df], ignore_index=True)
 
     def _log_daily_information(self, current_date, portfolio):
         df = pd.DataFrame({
@@ -55,4 +70,5 @@ class InvestmentLogger:
         if not os.path.exists(self._folder):
             os.makedirs(self._folder)
         self._df_daily.to_csv('{0}/{1}.log'.format(self._folder, self._name), index=False)
-        self._df_trade.to_csv('{0}/trade_{1}.log'.format(self._folder, self._name), index=False)
+        df = pd.concat([self._df_trade, self._df_hold_shares], ignore_index=True)
+        df.to_csv('{0}/trade_{1}.log'.format(self._folder, self._name), index=False)
