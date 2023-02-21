@@ -13,6 +13,8 @@ class RiskController:
         self._max_position_size = parameters.get('max_position_size', 10)
         self._max_position_ratio = parameters.get('max_position_ratio', 0.5)
         self._should_check_stop_loss_point = parameters.get('stop_loss_point.should_check', False)
+        self._should_update_stop_loss_point = parameters.get('stop_loss_point.should_update', False)
+        self._keep_profit = parameters.get('stop_loss_point.keep_profit', 0.1)
         self._n_times_atr_for_stop_loss_point = parameters.get('stop_loss_point.n_times_atr', 2)
         self._should_check_max_holding_period = parameters.get('max_holding_period.should_check', False)
         self._max_holding_period = parameters.get('max_holding_period.days', 80)
@@ -52,6 +54,12 @@ class RiskController:
                 print('sell {0}, due to reach the stop loss point'.format(investment.ts_code))
                 self._logger.log_sell_action(self._portfolio.get_stock(investment.ts_code), today, 'stop loss point')
                 self._portfolio.sell(investment.ts_code)
+            elif self._should_update_stop_loss_point:
+                increased_price = price - investment.buy_price
+                increased_ratio = increased_price / investment.buy_price
+                new_stop_loss_point = investment.buy_price + increased_price * self._keep_profit
+                if increased_ratio > 0.1 and new_stop_loss_point > investment.stop_loss_point:
+                    investment.set_stop_loss_point(new_stop_loss_point)
 
     def _check_max_holding_period(self, today):
         for investment in self._portfolio.investments:

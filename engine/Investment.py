@@ -60,6 +60,9 @@ class Investment:
     def total(self):
         return round_down(self._current_price * self._hold_shares + self._cash_return)
 
+    def set_stop_loss_point(self, new_stop_loss_point):
+        self._stop_loss_point = new_stop_loss_point
+
     def set_current_price(self, price):
         self._current_price = price
 
