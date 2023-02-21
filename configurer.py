@@ -12,6 +12,11 @@ def get_sql_connection():
     return engine.connect()
 
 
+def get_connection_pool():
+    load_dotenv()
+    return create_engine(os.getenv('DB_URL'), encoding="utf8")
+
+
 def get_ts_api():
     load_dotenv()
     return ts.pro_api(token=os.getenv('TUSHARE_TOKEN'))
