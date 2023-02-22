@@ -11,15 +11,17 @@ from util.date_methods import tomorrow
 
 def run_simulation(config, start_date, end_date, policy_id):
     portfolio = Portfolio.create_portfolio(config, start_date, policy_id)
-    simulator = Simulator(portfolio, config['follow_stocks'], StockTradeDataEngine(), config['risk_control'])
 
-    simulator.set_policy(config['policies'][policy_id])
+    policy_parameter = config['policies'][policy_id]
+    risk_control_parameter = {**policy_parameter, **config['risk_control']}
+    simulator = Simulator(portfolio, config['follow_stocks'], StockTradeDataEngine(), risk_control_parameter)
+    simulator.set_policy(policy_parameter)
     simulator.run(start_date=start_date, end_date=end_date)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--configure', type=str, default='test.yaml', help='configure file')
+    parser.add_argument('--configure', type=str, default='portfolio.yaml', help='configure file')
     parser.add_argument('--start-date', type=str, default='2016-01-01', help='start date')
     parser.add_argument('--policy', type=int, default=None, help='specify policy index in configure file')
     opt = parser.parse_args()

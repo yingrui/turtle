@@ -32,6 +32,7 @@ class Simulator:
                 self._logger.log('{0}| {1}'.format(day.strftime('%Y-%m-%d'), self._portfolio))
         self._logger.log_holding_shares(self._portfolio, day)
         self._logger.save()
+        print('{0}| {1}'.format(day.strftime('%Y-%m-%d'), self._portfolio))
 
     def print_summary(self):
         self._logger.log('{0}'.format(self._portfolio))

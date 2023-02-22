@@ -51,7 +51,7 @@ class RiskController:
         for investment in self._portfolio.investments:
             price, high, low = self._data_engine.get_stock_price_on_date(investment.ts_code, today)
             if price <= investment.stop_loss_point:
-                print('sell {0}, due to reach the stop loss point'.format(investment.ts_code))
+                self._logger.log('sell {0}, due to reach the stop loss point'.format(investment.ts_code))
                 self._logger.log_sell_action(self._portfolio.get_stock(investment.ts_code), today, 'stop loss point')
                 self._portfolio.sell(investment.ts_code)
             elif self._should_update_stop_loss_point:
@@ -65,6 +65,6 @@ class RiskController:
         for investment in self._portfolio.investments:
             hold_date = investment.hold_date
             if (today - hold_date).days > self._max_holding_period:
-                print('sell {0}, due to reach the max holding period'.format(investment.ts_code))
+                self._logger.log('sell {0}, due to reach the max holding period'.format(investment.ts_code))
                 self._logger.log_sell_action(self._portfolio.get_stock(investment.ts_code), today, 'hold period limit')
                 self._portfolio.sell(investment.ts_code)

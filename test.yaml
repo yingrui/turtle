@@ -37,6 +37,7 @@ policies:
     trade_policy.moving_average.triple: False
     trade_policy.moving_average.window_1: 20
     trade_policy.moving_average.window_2: 70
+    stop_loss_point.should_update: False
   - trade_policy.name: donchian
     trade_policy.donchian.ma_window_1: 20
     trade_policy.donchian.ma_window_2: 70
@@ -47,6 +48,7 @@ policies:
     trade_policy.moving_average.window_1: 10
     trade_policy.moving_average.window_2: 60
     trade_policy.moving_average.window_3: 70
+    stop_loss_point.should_update: False
   - trade_policy.name: ensemble
     trade_policy.moving_average.triple: False
     trade_policy.moving_average.window_1: 20
