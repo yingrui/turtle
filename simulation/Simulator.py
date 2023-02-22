@@ -13,7 +13,7 @@ class Simulator:
         self._today = None
         self._portfolio = portfolio
         self._data_engine = data_engine
-        self._logger = InvestmentLogger(portfolio.name)
+        self._logger = InvestmentLogger(portfolio.name, folder='logs')
         self._follow_stocks = follow_stocks
         self._risk_controller = RiskController(self._portfolio, self._data_engine, risk_control, self._logger)
 
@@ -21,19 +21,20 @@ class Simulator:
         self._trade_monitor = TradeSignalMonitor(self._data_engine, self._follow_stocks, parameters)
 
     def run(self, start_date, end_date):
+        self._logger.log('----- start')
         for day in pd.date_range(start=start_date, end=end_date):
             if self._data_engine.is_trade_day(day):
                 self._today = day
                 signals = self._trade_monitor.detect_signals(day)
                 self._portfolio.adjust_holding_shares(day)
                 self._trade(signals, day)
-                self._logger.log(portfolio=self._portfolio, current_date=day)
-                print('{0}| {1}'.format(day.strftime('%Y-%m-%d'), self._portfolio))
+                self._logger.log_portfolio(portfolio=self._portfolio, current_date=day)
+                self._logger.log('{0}| {1}'.format(day.strftime('%Y-%m-%d'), self._portfolio))
         self._logger.log_holding_shares(self._portfolio, day)
         self._logger.save()
 
     def print_summary(self):
-        print('{0}'.format(self._portfolio))
+        self._logger.log('{0}'.format(self._portfolio))
         # initial_total, total, years, cagr = self._logger.get_summary()
         # print('initial: {0}, after {2} years, total now: {1}, cagr: {3}'.format(initial_total, total, years, cagr))
 
@@ -52,13 +53,13 @@ class Simulator:
                     position_size = self._risk_controller.max_position_size
                 price, high, low = self._get_close_price(signal.ts_code)
                 stop_loss_point = self._risk_controller.stop_loss_point(price, atr)
-                print(signal, position_size, price, stop_loss_point)
+                self._logger.log('{0} {1} {2} {3}'.format(signal, position_size, price, stop_loss_point))
                 if not self._portfolio.has_stock(signal.ts_code):
                     self._portfolio.buy(signal.ts_code, price=price, position_size=position_size,
                                         position_control=self._risk_controller.position_control,
                                         hold_date=day, stop_loss_point=stop_loss_point)
             elif signal.status == 'sell':
-                print(signal)
+                self._logger.log('{0}'.format(signal))
                 if self._portfolio.has_stock(signal.ts_code):
                     self._logger.log_sell_action(self._portfolio.get_stock(signal.ts_code), day, 'sell signal')
                     self._portfolio.sell(signal.ts_code)

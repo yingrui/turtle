@@ -8,7 +8,7 @@ from util.math_methods import round_down
 
 class InvestmentLogger:
 
-    def __init__(self, name, folder='logs'):
+    def __init__(self, name, folder):
         self._name = name
         self._df_daily = pd.DataFrame({
             'date': [], 'return_rate': [], 'balance': [], 'benefit': [], 'investment_total': [], 'total': []
@@ -22,8 +22,12 @@ class InvestmentLogger:
             'sell_price': [], 'total_cash_return': [], 'benefit': [], 'reason': [], 'status': []
         })
         self._folder = folder
+        self._log_file = open('{0}/console_{1}.log'.format(self._folder, self._name), mode='a')
 
-    def log(self, portfolio, current_date):
+    def log(self, msg):
+        print(msg, file=self._log_file)
+
+    def log_portfolio(self, portfolio, current_date):
         self._log_daily_information(current_date, portfolio)
 
     def log_sell_action(self, investment, current_date, reason):

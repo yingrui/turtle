@@ -30,11 +30,11 @@ class TestInvestmentLogger(TestCase):
         portfolio = Portfolio(name, [], 200000, 0, 200000, data_engine)
         portfolio.buy(ts_code='600519.sh', price=1130, hold_date=start_date)
 
-        logger = InvestmentLogger(name)
+        logger = InvestmentLogger(name, '../logs')
 
         for current_date in pd.date_range(start=start_date, end=end_date):
             if data_engine.is_trade_day(current_date):
                 portfolio.update_current_price(current_date)
-                logger.log(portfolio, current_date)
+                logger.log_portfolio(portfolio, current_date)
 
         return logger, portfolio
