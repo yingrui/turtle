@@ -2,6 +2,7 @@ import datetime
 
 import pandas as pd
 
+from statsmodels.tsa.stattools import adfuller
 from engine.TrendAnalyzer import TrendAnalyzer
 
 
@@ -10,7 +11,8 @@ class PortfolioFilter:
     def __init__(self, data_engine, parameters={}):
         self._data_engine = data_engine
         self._df_portfolio = pd.DataFrame({
-            'date': [], 'ts_code': [], 'gradient': [], 'stationary': []
+            'date': [], 'ts_code': [], 'industry': [], 'adf': [], 'trend': [], 'gradient': [],
+            'stationary': []
         })
         self._ignore_st = parameters.get('portfolio_filter.basic.ignore_st', False)
         self._parameters = parameters
@@ -23,13 +25,15 @@ class PortfolioFilter:
             start_date = current_date - datetime.timedelta(days=2 * 365)
             end_date = current_date - datetime.timedelta(days=1)
             time_series = self._data_engine.get_trade_data_by_code(stock.ts_code, start_date, end_date)
+            adfuller_p_value = adfuller(time_series.qfq)[1] if time_series.shape[0] > 100 else -1
             trend_analyzer = TrendAnalyzer(ts_code=stock.ts_code, trade_data=time_series, parameters=self._parameters)
             trend = trend_analyzer.analysis_trend()
-            print(stock.ts_code, stock['name'], stock.industry, trend)
-            if trend.status == 'up':
-                df = pd.DataFrame({'date': [current_date], 'ts_code': [stock.ts_code],
-                                   'gradient': [trend.gradient], 'stationary': [trend.stationary]})
-                self._df_portfolio = pd.concat([self._df_portfolio, df], ignore_index=True)
+            print(stock.ts_code, stock.area, stock.industry, trend)
+            # if trend.status == 'up':
+            df = pd.DataFrame({'date': [current_date], 'ts_code': [stock.ts_code], 'industry': [stock.industry],
+                               'trend': [trend.status], 'adf': [adfuller_p_value],
+                               'gradient': [trend.gradient], 'stationary': [trend.stationary]})
+            self._df_portfolio = pd.concat([self._df_portfolio, df], ignore_index=True)
 
         return self._df_portfolio
 
@@ -39,6 +43,7 @@ class PortfolioFilter:
         return df_stocks
 
     def save(self, file='portfolio.csv'):
-        df = self._df_portfolio[self._df_portfolio.gradient > 0.1]
-        df = df[df.stationary < 0.05]
-        df.sort_values(by=['stationary'], ascending=True).to_csv(file, index=False)
+        df = self._df_portfolio
+        # df = self._df_portfolio[self._df_portfolio.gradient > 0.1]
+        # df = df[df.stationary < 0.05]
+        df.sort_values(by=['adf'], ascending=False).to_csv(file, index=False)

@@ -36,7 +36,7 @@ def draw_line_chart_with_atr(trade_date, close_price, daily_range,
     plt.show()
 
 
-def draw_line_chart_with_bolling(trade_date, close_price, ma_days=350, times=2.5, xlabel='Trade Date',
+def draw_line_chart_with_bolling(trade_date, close_price, ma_days=350, up=2, down=1.5, xlabel='Trade Date',
                                  ylabel='Close Price', title=''):
     sma = close_price.rolling(ma_days).mean()
     std = close_price.rolling(ma_days).std()
@@ -44,8 +44,8 @@ def draw_line_chart_with_bolling(trade_date, close_price, ma_days=350, times=2.5
     f.set_figwidth(20)
     plt.plot(trade_date, close_price, label='Close Price')
     plt.plot(trade_date, sma, label='MA' + str(ma_days))
-    plt.plot(trade_date, sma + std * 2.5, label='Up: ' + str(times) + ' * std')
-    plt.plot(trade_date, sma - std * 2.5, label='Lower: -' + str(times) + ' * std')
+    plt.plot(trade_date, sma + std * up, label='Up: ' + str(up) + ' * std')
+    plt.plot(trade_date, sma - std * down, label='Lower: -' + str(down) + ' * std')
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)

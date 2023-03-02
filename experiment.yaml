@@ -1,58 +1,36 @@
 ---
-name: portfolio
-start_date: 2023-02-17
-initial_investment: 414741.73
-balance: 55897.73
-investments:
-  - ts_code: 600519.SH
-    hold_shares: 100
-    buy_price: 1637.47
-    stop_loss_point: 1750.0
-  - ts_code: 300750.SZ
-    hold_shares: 300
-    buy_price: 429.25
-    stop_loss_point: 403.57
-  - ts_code: 603444.SH
-    hold_shares: 100
-    buy_price: 379.60
-    stop_loss_point: 359.60
-  - ts_code: 002230.SZ
-    hold_shares: 300
-    buy_price: 50.25
-    stop_loss_point: 42.25
+name: experiment
+initial_investment: 400000
 follow_stocks:
-  - '002594.SZ'  # 比亚迪
-  - '000625.SZ'  # 长安汽车
-  - '600733.SH'  # 北汽蓝谷
-  - '601127.SH'  # 赛力斯
-  - '601238.SH'  # 广汽集团
-  - '600418.SH'  # 江淮汽车
-  - '300750.SZ'  # 宁德时代
-  - '002460.SZ'  # 赣锋锂业
-  - '600519.SH'  # 贵州茅台
-  - '600809.SH'  # 山西汾酒
-  - '000858.SZ'  # 五粮液
-  - '300896.SZ'  # 爱美客
-  - '600763.SH'  # 通策医疗
-  - '002230.SZ'  # 科大讯飞
-  - '603444.SH'  # 吉比特
+  - '002528.SZ'
+  - '000721.SZ'
+  - '002336.SZ'
+  - '000716.SZ'
+  - '000610.SZ'
+  - '600790.SH'
+  - '002033.SZ'
+  - '300051.SZ'
+  - '688377.SH'
+  - '002186.SZ'
 risk_control:
   bearable_trading_loss: 0.01
   position_control: 1.0
-  position_control.reserve_profit: 0.1
+  position_control.reserve_profit: 0
   max_position_size: 50
   max_position_ratio: 0.5
   stop_loss_point.should_check: True
   stop_loss_point.n_times_atr: 2
+  stop_loss_point.should_update: True
+  stop_loss_point.keep_profit: 0.2
   max_holding_period.should_check: True
-  max_holding_period.days: 80
+  max_holding_period.days: 60
 policies:
   - trade_policy.name: moving_average
     trade_policy.moving_average.triple: False
     trade_policy.moving_average.window_1: 20
     trade_policy.moving_average.window_2: 70
     trade_policy.moving_average.should_price_higher_than_ma: True
-    stop_loss_point.should_check: False
+    stop_loss_point.should_update: False
   - trade_policy.name: donchian
     trade_policy.donchian.ma_window_1: 20
     trade_policy.donchian.ma_window_2: 70
@@ -63,7 +41,7 @@ policies:
     trade_policy.moving_average.window_1: 10
     trade_policy.moving_average.window_2: 60
     trade_policy.moving_average.window_3: 70
-    stop_loss_point.should_check: False
+    stop_loss_point.should_update: False
   - trade_policy.name: ensemble
     trade_policy.moving_average.triple: False
     trade_policy.moving_average.window_1: 20
@@ -73,10 +51,10 @@ policies:
     trade_policy.donchian.up_days: 20
     trade_policy.donchian.down_days: 10
   - trade_policy.name: atr
-    trade_policy.atr.ma_days: 150
+    trade_policy.atr.ma_days: 30
     trade_policy.atr.atr_days: 20
-    trade_policy.atr.up: 5
-    trade_policy.atr.down: 3
+    trade_policy.atr.up: 3
+    trade_policy.atr.down: 1
   - trade_policy.name: bolling
     trade_policy.bolling.ma_days: 30
     trade_policy.bolling.up: 2

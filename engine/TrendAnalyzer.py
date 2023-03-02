@@ -42,10 +42,10 @@ class TrendAnalyzer:
             sma = self._zero_normalize(sma_3.tail(days))
             gradient = (sma.iloc[-1] - sma.iloc[-days]) / days
 
-        if (sma_1.iloc[-1] - sma_3.iloc[-1]) > 0 and (sma_2.iloc[-1] - sma_3.iloc[-1]) > 0:
+        if (sma_1.iloc[-1] - sma_2.iloc[-1]) > 0 and (sma_2.iloc[-1] - sma_3.iloc[-1]) > 0:
             return Trend(self._ts_code, 'up', gradient=gradient, stationary=std)
 
-        if (sma_1.iloc[-1] - sma_3.iloc[-1]) < 0 and (sma_2.iloc[-1] - sma_3.iloc[-1]) < 0:
+        if (sma_1.iloc[-1] - sma_2.iloc[-1]) < 0 and (sma_2.iloc[-1] - sma_3.iloc[-1]) < 0:
             return Trend(self._ts_code, 'down', gradient=gradient, stationary=std)
 
         return Trend(self._ts_code, 'unknown', gradient=gradient, stationary=std)

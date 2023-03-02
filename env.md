@@ -18,6 +18,7 @@ pip install sqlalchemy
 pip install pymysql
 pip install cryptography
 pip install pyyaml
+pip install statsmodels
 ```
 
 ### Environment Variables
