@@ -50,10 +50,10 @@ class StockTradeDataEngine:
     def get_trade_data_by_date(self, ts_code, end_date, qfq=False, limit=500):
         df = self._get_all_trade_data_by_code(ts_code)
         if qfq and not df.empty:
-            df = df[df['trade_date'] < pd.Timestamp(end_date)].tail(limit)
+            df = df[df['trade_date'] <= pd.Timestamp(end_date)].tail(limit)
             return self._add_qfq(df)
 
-        return df[df['trade_date'] < pd.Timestamp(end_date)].tail(limit)
+        return df[df['trade_date'] <= pd.Timestamp(end_date)].tail(limit)
 
     def get_stock_price_on_date(self, ts_code, end_date):
         df = self.get_trade_data_by_code(ts_code)

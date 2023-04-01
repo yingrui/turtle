@@ -18,7 +18,7 @@ class TestRiskController(TestCase):
         portfolio = StubPortfolio.empty_portfolio(balance=initial_investment, data_engine=data_engine)
         risk_controller = RiskController(portfolio=portfolio, data_engine=data_engine, parameters=parameters)
 
-        today = date(2023, 1, 20)
+        today = date(2023, 1, 19)
         trade_data = data_engine.get_trade_data_by_date(ts_code, today)
         max_position_size, atr = risk_controller.evaluate_buying_position_size(ts_code, trade_data)
         self.assertEqual(1, max_position_size)
