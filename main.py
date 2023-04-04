@@ -1,5 +1,5 @@
 import argparse
-from datetime import datetime
+from datetime import datetime, date
 import multiprocess as mp
 
 from configurer import load_yaml
@@ -23,12 +23,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--configure', type=str, default='portfolio.yaml', help='configure file')
     parser.add_argument('--start-date', type=str, default='2016-01-01', help='start date')
+    parser.add_argument('--end-date', type=str, default=date.today().strftime('%Y-%m-%d'), help='end date')
     parser.add_argument('--policy', type=int, default=None, help='specify policy index in configure file')
     opt = parser.parse_args()
 
     config = load_yaml(opt.configure)
     start_date = config.get('start_date', datetime.strptime(opt.start_date, "%Y-%m-%d").date())
-    end_date = tomorrow()
+    end_date = config.get('end_date', datetime.strptime(opt.end_date, "%Y-%m-%d").date())
 
     process_list = []
     policies = range(0, len(config['policies'])) if opt.policy is None else [opt.policy]
