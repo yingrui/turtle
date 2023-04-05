@@ -54,6 +54,10 @@ class RiskController:
             yesterday = today + datetime.timedelta(days=-1)
             yesterday_price, y_h, y_l = self._data_engine.get_stock_price_on_date(investment.ts_code, yesterday)
             price, high, low = self._data_engine.get_stock_price_on_date(investment.ts_code, today)
+            if yesterday_price > investment.stop_loss_point >= price:
+                message = '{0}| RiskController: {1}, reach the stop loss point, sell it tomorrow'
+                self._logger.log(message.format(today.strftime('%Y-%m-%d'), investment.ts_code))
+
             if yesterday_price <= investment.stop_loss_point:
                 reach_stop_loss_point_message = '{0}| RiskController: sell {1}, due to reach the stop loss point'
                 self._logger.log(reach_stop_loss_point_message.format(today.strftime('%Y-%m-%d'), investment.ts_code))
