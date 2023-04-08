@@ -92,4 +92,4 @@ class Investment:
             self._hold_shares = self._hold_shares + stk_div * self._hold_shares
 
     def __str__(self) -> str:
-        return "{0}: {1} {2}".format(self._ts_code, int(self._hold_shares / 100), self.total)
+        return "{0}: {1} {2} {3}".format(self._ts_code, int(self._hold_shares / 100), self.total, self.stop_loss_point)
