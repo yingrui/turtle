@@ -61,17 +61,22 @@ class RiskController:
             yesterday = today + datetime.timedelta(days=-1)
             yesterday_price, y_h, y_l = self._data_engine.get_stock_price_on_date(investment.ts_code, yesterday)
             price, high, low = self._data_engine.get_stock_price_on_date(investment.ts_code, today)
-            if yesterday_price > investment.stop_loss_point >= price:
-                message = '{0}| RiskController: {1}, reach the stop loss point, sell it tomorrow'
-                self._logger.log(message.format(str_today, investment.ts_code))
-
+            self.warn_if_reach_stop_loss_point(investment, price, str_today, yesterday_price)
             if yesterday_price <= investment.stop_loss_point:
-                reach_stop_loss_point_message = '{0}| RiskController: sell {1}, due to reach the stop loss point'
-                self._logger.log(reach_stop_loss_point_message.format(str_today, investment.ts_code))
-                self._logger.log_sell_action(self._portfolio.get_stock(investment.ts_code), today, 'stop loss point')
-                self._portfolio.sell(investment.ts_code)
+                self.process_reaching_stop_loss_point(investment, str_today, today)
             elif self._should_update_stop_loss_point:
                 self._update_stop_loss_point_with_atr(investment, price, today)
+
+    def process_reaching_stop_loss_point(self, investment, str_today, today):
+        reach_stop_loss_point_message = '{0}| RiskController: sell {1}, due to reach the stop loss point'
+        self._logger.log(reach_stop_loss_point_message.format(str_today, investment.ts_code))
+        self._logger.log_sell_action(self._portfolio.get_stock(investment.ts_code), today, 'stop loss point')
+        self._portfolio.sell(investment.ts_code)
+
+    def warn_if_reach_stop_loss_point(self, investment, price, str_today, yesterday_price):
+        if yesterday_price > investment.stop_loss_point >= price:
+            message = '{0}| RiskController: {1}, reach the stop loss point, sell it tomorrow'
+            self._logger.log(message.format(str_today, investment.ts_code))
 
     def _update_stop_loss_point(self, investment, price, today):
         str_today = today.strftime('%Y-%m-%d')
