@@ -38,9 +38,23 @@ class Simulator:
     def detect_signals(self, day):
         signals = self._trade_monitor.detect_signals(day)
         for signal in signals:
-            if signal.status != 'stay':
+            if signal.status == 'sell':
                 self._logger.log('{0}| detected signal: {1}'.format(day.strftime('%Y-%m-%d'), signal))
+            if signal.status == 'buy':
+                position_size, price, stop_loss_point = self._evaluate_position(day, signal)
+                self._logger.log('{0}| detected signal: {1} {2} {3} {4}'.format(
+                    day.strftime('%Y-%m-%d'), signal, position_size, price, stop_loss_point))
+
         return signals
+
+    def _evaluate_position(self, day, signal):
+        trade_data = self._data_engine.get_trade_data_by_date(signal.ts_code, day)
+        position_size, atr = self._risk_controller.evaluate_buying_position_size(signal.ts_code, trade_data)
+        if position_size > self._risk_controller.max_position_size:
+            position_size = self._risk_controller.max_position_size
+        price, high, low = self._get_close_price(signal.ts_code)
+        stop_loss_point = self._risk_controller.stop_loss_point(price, atr)
+        return position_size, price, stop_loss_point
 
     def print_summary(self):
         self._logger.log('{0}'.format(self._portfolio))
@@ -56,13 +70,9 @@ class Simulator:
     def _trade_on_signals(self, day, signals):
         for signal in signals:
             if signal.status == 'buy':
-                trade_data = self._data_engine.get_trade_data_by_date(signal.ts_code, day)
-                position_size, atr = self._risk_controller.evaluate_buying_position_size(signal.ts_code, trade_data)
-                if position_size > self._risk_controller.max_position_size:
-                    position_size = self._risk_controller.max_position_size
-                price, high, low = self._get_close_price(signal.ts_code)
-                stop_loss_point = self._risk_controller.stop_loss_point(price, atr)
-                self._logger.log('{0}| {1} {2} {3} {4}'.format(day.strftime('%Y-%m-%d'), signal, position_size, price, stop_loss_point))
+                position_size, price, stop_loss_point = self._evaluate_position(day, signal)
+                self._logger.log('{0}| {1} {2} {3} {4}'.format(day.strftime('%Y-%m-%d'), signal, position_size, price,
+                                                               stop_loss_point))
                 if not self._portfolio.has_stock(signal.ts_code):
                     self._portfolio.buy(signal.ts_code, price=price, position_size=position_size,
                                         position_control=self._risk_controller.position_control,

@@ -78,16 +78,6 @@ class RiskController:
             message = '{0}| RiskController: {1}, reach the stop loss point, sell it tomorrow'
             self._logger.log(message.format(str_today, investment.ts_code))
 
-    def _update_stop_loss_point(self, investment, price, today):
-        str_today = today.strftime('%Y-%m-%d')
-        increased_price = price - investment.buy_price
-        increased_ratio = increased_price / investment.buy_price
-        new_stop_loss_point = investment.buy_price + increased_price * self._keep_profit
-        if increased_ratio > 0.1 and new_stop_loss_point > investment.stop_loss_point:
-            message = '{0}| RiskController: {1}, increase the stop loss point to {2}'
-            self._logger.log(message.format(str_today, investment.ts_code, new_stop_loss_point))
-            investment.set_stop_loss_point(new_stop_loss_point)
-
     def _update_stop_loss_point_with_atr(self, investment, price, today):
         str_today = today.strftime('%Y-%m-%d')
         increased_price = price - investment.buy_price
