@@ -29,6 +29,8 @@ follow_stocks:
   - '600585.SH'  # 海螺水泥,房地产
   - '001979.SZ'  # 招商蛇口,房地产
   - '000002.SZ'  # 万科A,房地产
+  - '601226.SH'  # 华电重工,氢能源,电力
+  - '000811.SZ'  # 冰轮环境,氢能源
 risk_control:
   bearable_trading_loss: 0.01
   position_control: 1.0
@@ -38,16 +40,14 @@ risk_control:
   stop_loss_point.should_check: True
   stop_loss_point.n_times_atr: 2
   stop_loss_point.should_update: True
-  stop_loss_point.keep_profit: 0.2
   max_holding_period.should_check: True
   max_holding_period.days: 80
 policies:
   - trade_policy.name: moving_average
     trade_policy.moving_average.triple: False
-    trade_policy.moving_average.window_1: 20
-    trade_policy.moving_average.window_2: 70
+    trade_policy.moving_average.window_1: 10
+    trade_policy.moving_average.window_2: 60
     trade_policy.moving_average.should_price_higher_than_ma: True
-    stop_loss_point.should_update: False
   - trade_policy.name: donchian
     trade_policy.donchian.ma_window_1: 20
     trade_policy.donchian.ma_window_2: 70
@@ -55,14 +55,13 @@ policies:
     trade_policy.donchian.down_days: 10
   - trade_policy.name: moving_average
     trade_policy.moving_average.triple: True
-    trade_policy.moving_average.window_1: 20
-    trade_policy.moving_average.window_2: 70
-    trade_policy.moving_average.window_3: 150
-    stop_loss_point.should_update: False
+    trade_policy.moving_average.window_1: 10
+    trade_policy.moving_average.window_2: 60
+    trade_policy.moving_average.window_3: 70
   - trade_policy.name: ensemble
     trade_policy.moving_average.triple: False
-    trade_policy.moving_average.window_1: 20
-    trade_policy.moving_average.window_2: 70
+    trade_policy.moving_average.window_1: 10
+    trade_policy.moving_average.window_2: 60
     trade_policy.donchian.ma_window_1: 20
     trade_policy.donchian.ma_window_2: 70
     trade_policy.donchian.up_days: 20

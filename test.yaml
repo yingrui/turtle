@@ -35,10 +35,9 @@ risk_control:
 policies:
   - trade_policy.name: moving_average
     trade_policy.moving_average.triple: False
-    trade_policy.moving_average.window_1: 20
-    trade_policy.moving_average.window_2: 70
+    trade_policy.moving_average.window_1: 10
+    trade_policy.moving_average.window_2: 60
     trade_policy.moving_average.should_price_higher_than_ma: True
-    stop_loss_point.should_update: False
   - trade_policy.name: donchian
     trade_policy.donchian.ma_window_1: 20
     trade_policy.donchian.ma_window_2: 70
@@ -46,14 +45,13 @@ policies:
     trade_policy.donchian.down_days: 10
   - trade_policy.name: moving_average
     trade_policy.moving_average.triple: True
-    trade_policy.moving_average.window_1: 20
-    trade_policy.moving_average.window_2: 70
-    trade_policy.moving_average.window_3: 150
-    stop_loss_point.should_update: False
+    trade_policy.moving_average.window_1: 10
+    trade_policy.moving_average.window_2: 60
+    trade_policy.moving_average.window_3: 70
   - trade_policy.name: ensemble
     trade_policy.moving_average.triple: False
-    trade_policy.moving_average.window_1: 20
-    trade_policy.moving_average.window_2: 70
+    trade_policy.moving_average.window_1: 10
+    trade_policy.moving_average.window_2: 60
     trade_policy.donchian.ma_window_1: 20
     trade_policy.donchian.ma_window_2: 70
     trade_policy.donchian.up_days: 20

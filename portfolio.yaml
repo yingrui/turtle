@@ -43,22 +43,20 @@ follow_stocks:
 risk_control:
   bearable_trading_loss: 0.01
   position_control: 1.0
-  position_control.reserve_profit: 0.1
+  position_control.reserve_profit: 0
   max_position_size: 50
   max_position_ratio: 0.5
   stop_loss_point.should_check: True
   stop_loss_point.n_times_atr: 2
   stop_loss_point.should_update: True
-  stop_loss_point.keep_profit: 0.2
   max_holding_period.should_check: True
   max_holding_period.days: 80
 policies:
   - trade_policy.name: moving_average
     trade_policy.moving_average.triple: False
-    trade_policy.moving_average.window_1: 20
-    trade_policy.moving_average.window_2: 70
+    trade_policy.moving_average.window_1: 10
+    trade_policy.moving_average.window_2: 60
     trade_policy.moving_average.should_price_higher_than_ma: True
-    stop_loss_point.should_check: False
   - trade_policy.name: donchian
     trade_policy.donchian.ma_window_1: 20
     trade_policy.donchian.ma_window_2: 70
@@ -69,20 +67,19 @@ policies:
     trade_policy.moving_average.window_1: 10
     trade_policy.moving_average.window_2: 60
     trade_policy.moving_average.window_3: 70
-    stop_loss_point.should_check: False
   - trade_policy.name: ensemble
     trade_policy.moving_average.triple: False
-    trade_policy.moving_average.window_1: 20
-    trade_policy.moving_average.window_2: 70
+    trade_policy.moving_average.window_1: 10
+    trade_policy.moving_average.window_2: 60
     trade_policy.donchian.ma_window_1: 20
     trade_policy.donchian.ma_window_2: 70
     trade_policy.donchian.up_days: 20
     trade_policy.donchian.down_days: 10
   - trade_policy.name: atr
-    trade_policy.atr.ma_days: 150
+    trade_policy.atr.ma_days: 30
     trade_policy.atr.atr_days: 20
-    trade_policy.atr.up: 5
-    trade_policy.atr.down: 3
+    trade_policy.atr.up: 3
+    trade_policy.atr.down: 1
   - trade_policy.name: bolling
     trade_policy.bolling.ma_days: 30
     trade_policy.bolling.up: 2
