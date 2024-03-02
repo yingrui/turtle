@@ -78,8 +78,8 @@ class Simulator:
                                         position_control=self._risk_controller.position_control,
                                         hold_date=day, stop_loss_point=stop_loss_point)
             elif signal.status == 'sell':
-                self._logger.log('{0}| {1}'.format(day.strftime('%Y-%m-%d'), signal))
                 if self._portfolio.has_stock(signal.ts_code):
+                    self._logger.log('{0}| {1}'.format(day.strftime('%Y-%m-%d'), signal))
                     self._logger.log_sell_action(self._portfolio.get_stock(signal.ts_code), day, 'sell signal')
                     self._portfolio.sell(signal.ts_code)
 

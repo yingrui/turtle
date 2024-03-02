@@ -1,3 +1,5 @@
+from engine.policy.AtrPolicy import AtrPolicy
+from engine.policy.BollingPolicy import BollingPolicy
 from engine.policy.DonchianPolicy import DonchianPolicy
 from engine.policy.Policy import Policy
 from engine.policy.Signal import Signal
@@ -13,16 +15,33 @@ class EnsemblePolicy(Policy):
             DonchianPolicy(ts_code, trade_data, parameters)
         ]
 
+    def _all_status_are_same(self, signals):
+        # if all status of signals are same, return True
+        status = signals[0].status
+        for signal in signals:
+            if signal.status != status:
+                return False
+        return True
+
+    def _vote_buy(self, signals):
+        # if buy signals are more than sell signal, return True
+        buy_count = 0
+        sell_count = 0
+        for signal in signals:
+            if signal.status == 'buy':
+                buy_count += 1
+            if signal.status == 'sell':
+                sell_count += 1
+        return buy_count > sell_count
+
     def analysis(self) -> Signal:
         signals = []
         for policy in self._policies:
             signals.append(policy.analysis())
 
-        if signals[0].status == signals[1].status:
+        if self._all_status_are_same(signals):
             return signals[0]
-        elif signals[0].status == 'stay':
-            return signals[1]
-        elif signals[1].status == 'stay':
-            return signals[0]
+        elif self._vote_buy(signals):
+            return Signal(self._ts_code, 'buy')
         else:
             return Signal(self._ts_code, 'sell')

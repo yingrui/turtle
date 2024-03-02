@@ -45,9 +45,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--start', type=str, default=date.today().strftime('%Y-%m-%d'), help='start date')
     parser.add_argument('--end', type=str, default=date.today().strftime('%Y-%m-%d'), help='end date')
-    parser.add_argument('--adj-data', type=bool, default=True, help='whether download adj data, default is False')
-    parser.add_argument('--trade-data', type=bool, default=True, help='whether download trade data, default is False')
-    parser.add_argument('--dividend', type=bool, default=True, help='whether download dividend data, default is False')
+    parser.add_argument('--adj-data', type=bool, default=True, help='whether download adj data, default is True')
+    parser.add_argument('--trade-data', type=bool, default=True, help='whether download trade data, default is True')
+    parser.add_argument('--dividend', type=bool, default=True, help='whether download dividend data, default is True')
     opt = parser.parse_args()
 
     ts_api = get_ts_api()
