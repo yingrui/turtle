@@ -13,6 +13,10 @@ class Stock:
         self._list_status = record['list_status'].values[0]
 
     @property
+    def ts_code(self):
+        return self._ts_code
+
+    @property
     def symbol(self):
         return self._symbol
 
@@ -48,4 +52,4 @@ class Stock:
             return None
 
     def __str__(self) -> str:
-        return "ts_code: {0}, symbol: {1}".format(self._ts_code, self._symbol)
+        return "ts_code: {0}, name: {1}".format(self._ts_code, self._name)

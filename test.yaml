@@ -1,6 +1,7 @@
 ---
 name: test
-initial_investment: 400000
+start_date: 2023-03-01
+initial_investment: 150000
 follow_stocks:
   - '002594.SZ'  # 比亚迪,新能源,汽车
   - '000625.SZ'  # 长安汽车,新能源,汽车
