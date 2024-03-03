@@ -20,6 +20,10 @@ pip install cryptography
 pip install pyyaml
 pip install statsmodels
 ```
+Or install all packages in requirements.txt
+```bash
+pip install -r requirements.txt
+```
 
 ### Environment Variables
 
@@ -117,4 +121,11 @@ CREATE TABLE dividends (
     constraint pk_code_and_date_on_dividends primary key (ts_code, ex_date)
 );
 
+```
+
+### Run Test
+
+Run all test cases
+```bash
+PYTHONPATH=src:test python -m unittest discover -s ./test -t .
 ```

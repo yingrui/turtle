@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from engine.RiskController import RiskController
 from engine.StockTradeDataEngine import StockTradeDataEngine
-from engine.test_Portfolio import StubPortfolio
+from engine_testcase.StubPortfolio import StubPortfolio
 
 
 class TestRiskController(TestCase):
