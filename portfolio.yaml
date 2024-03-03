@@ -2,6 +2,11 @@
 name: portfolio
 start_date: 2023-02-17
 initial_investment: 250000
+increase_investments:
+  - date: 2023-03-17
+    amount: 100000
+  - date: 2024-01-01
+    amount: 100000
 follow_stocks:
   - '601328.SH'  # 交通银行,蓝筹,银行
   - '600941.SH'  # 中国移动,蓝筹,电信

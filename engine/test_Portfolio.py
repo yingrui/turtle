@@ -7,6 +7,16 @@ from engine.StockTradeDataEngine import StockTradeDataEngine
 
 class TestPortfolio(TestCase):
 
+    def test_increase_investment(self):
+        ts_code = '600519.sh'
+        portfolio = StubPortfolio.empty_portfolio(balance=400000)
+        shares, msg = portfolio.buy(ts_code=ts_code, price=1800, position_size=5, hold_date=date(2023, 1, 20))
+        self.assertEqual(200, shares)
+        self.assertEqual(40000, portfolio.balance)
+        portfolio.increase_investment(100000)
+        self.assertEqual(140000, portfolio.balance)
+        self.assertEqual(500000, portfolio.total)
+
     def test_invest_new_stock(self):
         ts_code = '600519.sh'
         portfolio = StubPortfolio.empty_portfolio()

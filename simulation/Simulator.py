@@ -7,7 +7,7 @@ from engine.TradeSignalMonitor import TradeSignalMonitor
 
 class Simulator:
 
-    def __init__(self, portfolio, follow_stocks, data_engine, risk_control):
+    def __init__(self, portfolio, follow_stocks, data_engine, risk_control, increase_investments=[]):
         self._risk_controller = None
         self._trade_monitor = None
         self._today = None
@@ -16,6 +16,7 @@ class Simulator:
         self._logger = InvestmentLogger(portfolio.name, folder='logs')
         self._follow_stocks = follow_stocks
         self._risk_controller = RiskController(self._portfolio, self._data_engine, risk_control, self._logger)
+        self._increase_investments = increase_investments
 
     def set_policy(self, parameters):
         self._trade_monitor = TradeSignalMonitor(self._data_engine, self._follow_stocks, parameters)
@@ -24,6 +25,7 @@ class Simulator:
         self._logger.log('----- start')
         signals = []
         for day in pd.date_range(start=start_date, end=end_date):
+            self._check_increase_investment(day)
             if self._data_engine.is_trade_day(day):
                 self._today = day
                 self._portfolio.adjust_holding_shares(day)
@@ -85,3 +87,8 @@ class Simulator:
 
     def _get_close_price(self, ts_code):
         return self._data_engine.get_stock_price_on_date(ts_code, self._today)
+
+    def _check_increase_investment(self, current_date):
+        for increase_investment in self._increase_investments:
+            if increase_investment['date'].strftime('%Y-%m-%d') == current_date.strftime('%Y-%m-%d'):
+                self._portfolio.increase_investment(increase_investment['amount'])

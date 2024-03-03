@@ -22,7 +22,8 @@ class InvestmentLogger:
             'sell_price': [], 'total_cash_return': [], 'benefit': [], 'reason': [], 'status': []
         })
         self._folder = folder
-        self._log_file = open('{0}/console_{1}.log'.format(self._folder, self._name), mode='a')
+        # overwrite the log messages to the file for every simulation test, just in case the log file is too large.
+        self._log_file = open('{0}/console_{1}.log'.format(self._folder, self._name), mode='w')
 
     def log(self, msg):
         print(msg, file=self._log_file)

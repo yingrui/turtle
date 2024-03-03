@@ -129,6 +129,10 @@ class Portfolio:
         self._investment_total = round_down(investment_total)
         self._total = round_down(total + investment_total)
 
+    def increase_investment(self, amount):
+        self._balance = self._balance + amount
+        self._total = self._total + amount
+
     @staticmethod
     def _merge_investment(exist_investment: Investment, investment: Investment):
         hold_shares = exist_investment.hold_shares + investment.hold_shares
