@@ -14,15 +14,15 @@ Please read [env.md](env.md) to prepare Python environment and Database.
 
 Run scripts to download data from tushare when you first run the system.
 ```bash
-PYTHONPATH=. python3 dataset/update_stock_trade_daily.py --start 2015-01-01
-PYTHONPATH=. python3 dataset/update_trade_calendar.py
+PYTHONPATH=src python3 src/dataset/update_stock_trade_daily.py --start 2015-01-01
+PYTHONPATH=src python3 src/dataset/update_trade_calendar.py
 ```
 每天收盘后运行以下脚本，更新当日的数据。
 
 Run scripts to update daily.
 
 ```bash
-PYTHONPATH=. python3 dataset/update_stock_trade_daily.py
+PYTHONPATH=src python3 src/dataset/update_stock_trade_daily.py
 ```
 注意: 如果出现找不到模块的错误，请检查并添加PYTHONPATH环境变量。
 
@@ -33,13 +33,13 @@ Note: If throw no module found error, please add PYTHONPATH environment variable
 
 Run scripts to simulate
 ```bash
-PYTHONPATH=. python3 simulation/main.py
+PYTHONPATH=src python3 src/main.py
 ```
 可以指定不同的投资组合和开始时间并进行回测。
 
 You can specify different portfolio and start time to simulate.
 ```bash
-PYTHONPATH=. python3 simulation/main.py --configure test.yaml --start-date 2022-01-01
+PYTHONPATH=src python3 src/main.py --configure test.yaml --start-date 2022-01-01
 ```
 
 ### 设置投资组合以及回测参数 Set Portfolio and Simulation Parameters
