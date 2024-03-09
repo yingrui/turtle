@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import date
 
 from configurer import load_yaml
+from engine.StockRepository import StockRepository
 from util.chart_methods import draw_investment_log
 from util.math_methods import round_down
 
@@ -13,6 +14,7 @@ def show_simulation_result_analysis_page():
     options = ["portfolio", "test"]
     portfolio_name = st.selectbox('Enter portfolio name', options=options)
     config = load_yaml("{0}.{1}".format(portfolio_name, "yaml"))
+    follow_stocks = config['follow_stocks']
     total_policies = len(config['policies'])
 
     with st.form(key='analysis_policy_form'):
@@ -22,9 +24,9 @@ def show_simulation_result_analysis_page():
 
     if start_button:
         if selected_policy_id == "all":
-            analysis_all_policies(portfolio_name, total_policies)
+            analysis_all_policies(portfolio_name, total_policies, follow_stocks)
         else:
-            df_list, df_trade_list, df_benefit = load_simulation_logs(portfolio_name, total_policies)
+            df_list, df_trade_list, df_benefit = load_simulation_logs(portfolio_name, total_policies, follow_stocks)
             policy_id = int(selected_policy_id)
             st.text(calculate_cagr(df_list[policy_id]))
             f = draw_investment_log(df_list[policy_id], xlabel='Trade Date', ylabel='Asset (unit: 10K)',
@@ -34,8 +36,8 @@ def show_simulation_result_analysis_page():
             st.dataframe(df_trade_list[policy_id].tail(60))
 
 
-def analysis_all_policies(portfolio_name, total_policies):
-    df_list, df_trade_list, df_benefit = load_simulation_logs(portfolio_name, total_policies)
+def analysis_all_policies(portfolio_name, total_policies, follow_stocks):
+    df_list, df_trade_list, df_benefit = load_simulation_logs(portfolio_name, total_policies, follow_stocks)
     cagr_info = []
     for policy_id in range(0, total_policies):
         cagr_info.append(calculate_cagr(df_list[policy_id]))
@@ -89,7 +91,11 @@ def get_stock_benefit(policy_id, df_trade_list):
     return df_benefit
 
 
-def load_simulation_logs(portfolio_name, total_policies):
+def load_simulation_logs(portfolio_name, total_policies, follow_stocks):
+    stock_repo = StockRepository()
+    stocks = [stock_repo.find_stock(stock) for stock in follow_stocks]
+    df_stocks = pd.DataFrame([{'ts_code': stock.ts_code, 'name': stock.name} for stock in stocks])
+
     df_list = []
     for id in range(0, total_policies):
         df = pd.read_csv('./logs/{0}-{1}.log'.format(portfolio_name, id), parse_dates=['date'],
@@ -100,9 +106,11 @@ def load_simulation_logs(portfolio_name, total_policies):
     for policy_id in range(0, total_policies):
         df_trade = pd.read_csv('./logs/trade_{0}-{1}.log'.format(portfolio_name, policy_id),
                                parse_dates=['date', 'hold_date'], date_parser=pd.to_datetime)
+        df_trade = pd.merge(df_trade, df_stocks, on='ts_code', how='left')
         df_trade_list.append(df_trade)
 
     df_benefit = get_stock_benefit(0, df_trade_list)
+    df_benefit = pd.merge(df_stocks, df_benefit, on='ts_code', how='left')
     for policy_id in range(1, total_policies):
         df_benefit = pd.merge(df_benefit, get_stock_benefit(policy_id, df_trade_list), on='ts_code', how='outer')
 

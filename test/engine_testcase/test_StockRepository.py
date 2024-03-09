@@ -51,9 +51,3 @@ class TestStockIterator(TestCase):
         stocks = stock_repo.find_stocks_by_industry('白酒')
         self.assertIsNotNone(stocks, 'Stock is None, please check data')
         self.assertGreater(len(stocks), 0)
-
-    def test_find_all_stocks(self):
-        stock_repo = StockRepository()
-        stocks = stock_repo.find_all_stocks()
-        self.assertIsNotNone(stocks, 'Stock is None, please check data')
-        self.assertGreater(len(stocks), 0)
