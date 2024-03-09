@@ -49,4 +49,5 @@ def show_stock_analysis_page():
                                            ylabel='percentage changes'))
 
 
+st.set_page_config(layout="wide", page_title="Stock Analysis") # Wide layout
 show_stock_analysis_page()

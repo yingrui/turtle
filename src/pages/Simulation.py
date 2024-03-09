@@ -33,4 +33,5 @@ def show_simulation_page():
             st.text(simulation_result.stderr)
 
 
+st.set_page_config(layout="wide", page_title="Simulation") # Wide layout
 show_simulation_page()

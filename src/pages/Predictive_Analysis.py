@@ -46,4 +46,5 @@ def show_predictive_analysis_page():
         st.text(model.summary())
 
 
+st.set_page_config(layout="wide", page_title="Predictive Analysis") # Wide layout
 show_predictive_analysis_page()

@@ -117,4 +117,5 @@ def load_simulation_logs(portfolio_name, total_policies, follow_stocks):
     return df_list, df_trade_list, df_benefit
 
 
+st.set_page_config(layout="wide", page_title="Simulation Result Analysis") # Wide layout
 show_simulation_result_analysis_page()
