@@ -2,22 +2,20 @@ import streamlit as st
 import subprocess
 import pandas as pd
 from datetime import date
-import matplotlib.pyplot as plt
 
 from configurer import load_yaml
 from engine.StockTradeDataEngine import StockTradeDataEngine
 from engine.StockRepository import StockRepository
 from util.chart_methods import draw_line_chart_with_moving_average
+from util.chart_methods import draw_time_series_with_mean_and_std
+from util.chart_methods import draw_line_chart_with_atr
+from util.chart_methods import draw_line_chart_with_bolling
+from util.chart_methods import draw_line_chart_with_max_min_window
 
-from statsmodels.tsa.stattools import adfuller
-from statsmodels.tsa.arima.model import ARIMA
-from statsmodels.graphics.tsaplots import plot_acf
-from statsmodels.graphics.tsaplots import plot_pacf
 
-
-# Function to display predictive analysis UI
-def show_predictive_analysis_page():
-    st.subheader("Predictive Analysis")
+# Function to display stock analysis UI
+def show_stock_analysis_page():
+    st.subheader("Stock Analysis")
     options = ["portfolio", "test"]
     portfolio_name = st.selectbox('Enter portfolio name', options=options)
     config = load_yaml("{0}.{1}".format(portfolio_name, "yaml"))
@@ -38,14 +36,17 @@ def show_predictive_analysis_page():
         st.pyplot(
             draw_line_chart_with_moving_average(x_series=df.trade_date, y_series=df.qfq, sma_days_list=[20, 70, 100],
                                                 title='Double Moving Average System'))
+        st.pyplot(draw_line_chart_with_max_min_window(trade_date=df.trade_date, close_price=df.qfq, ma_days=70, up=20,
+                                                      down=10, title='Donchian System'))
+        daily_range = df[['high', 'pre_close']].max(axis=1) - df[['low', 'pre_close']].min(axis=1)
+        st.pyplot(
+            draw_line_chart_with_atr(trade_date=df.trade_date, close_price=df.qfq, daily_range=daily_range, ma_days=30,
+                                     up=3, down=1, title='ATR System'))
+        st.pyplot(draw_line_chart_with_bolling(df.trade_date, df.qfq, ma_days=30, up=2, down=1.5,
+                                               title='Bolling System'))
+        st.pyplot(draw_time_series_with_mean_and_std(df.trade_date, df.pct_chg,
+                                           title='Percentage change is a stable random variable', xlabel='date',
+                                           ylabel='percentage changes'))
 
-        arima_model = ARIMA(df.qfq, order=(1, 1, 1))
-        model = arima_model.fit()
 
-        f = plt.figure()
-        f.set_figwidth(20)
-        plt.plot(df.trade_date, df.qfq, label='time series')
-        plt.plot(df.trade_date, model.predict(dynamic=False), label='predict')
-        st.pyplot(f)
-        st.text(model.forecast(steps=10))
-        st.text(model.summary())
+show_stock_analysis_page()

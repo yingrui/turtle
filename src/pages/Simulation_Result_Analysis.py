@@ -115,3 +115,6 @@ def load_simulation_logs(portfolio_name, total_policies, follow_stocks):
         df_benefit = pd.merge(df_benefit, get_stock_benefit(policy_id, df_trade_list), on='ts_code', how='outer')
 
     return df_list, df_trade_list, df_benefit
+
+
+show_simulation_result_analysis_page()

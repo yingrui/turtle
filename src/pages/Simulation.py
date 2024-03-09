@@ -31,3 +31,6 @@ def show_simulation_page():
         else:
             st.error('Simulation failed. Check logs for errors.')
             st.text(simulation_result.stderr)
+
+
+show_simulation_page()

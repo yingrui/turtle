@@ -32,3 +32,8 @@ def show_data_collection_page():
         else:
             st.error('Data collection failed. Check logs for errors.')
             st.error(data_collection_result.stderr)
+
+
+st.set_page_config(layout="wide", page_title="Data Collection") # Wide layout
+st.title("Turtle Trading System")
+show_data_collection_page()
