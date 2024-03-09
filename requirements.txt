@@ -7,3 +7,4 @@ pyyaml==6.0
 statsmodels==0.13.5
 streamlit==1.28.2
 multiprocess==0.70.14
+matplotlib==3.6.3

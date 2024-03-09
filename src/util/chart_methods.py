@@ -14,7 +14,7 @@ def draw_line_chart_with_moving_average(x_series, y_series, sma_days_list=[5, 10
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend(loc="upper left")
-    plt.show()
+    return f
 
 
 def draw_line_chart_with_atr(trade_date, close_price, daily_range,
@@ -33,7 +33,7 @@ def draw_line_chart_with_atr(trade_date, close_price, daily_range,
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend(loc="upper left")
-    plt.show()
+    return f
 
 
 def draw_line_chart_with_bolling(trade_date, close_price, ma_days=350, up=2, down=1.5, xlabel='Trade Date',
@@ -50,7 +50,7 @@ def draw_line_chart_with_bolling(trade_date, close_price, ma_days=350, up=2, dow
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend(loc="upper left")
-    plt.show()
+    return f
 
 
 def draw_time_series_with_mean_and_std(x_series, y_series, xlabel='x', ylabel='y', title=''):
@@ -72,7 +72,7 @@ def draw_time_series_with_mean_and_std(x_series, y_series, xlabel='x', ylabel='y
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend(loc="lower center", ncol=6)
-    plt.show()
+    return f
 
 
 def draw_line_chart_with_max_min_window(trade_date, close_price,
@@ -92,7 +92,7 @@ def draw_line_chart_with_max_min_window(trade_date, close_price,
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend(loc="upper left")
-    plt.show()
+    return f
 
 
 def draw_investment_log(df, xlabel='x', ylabel='y', title=''):
@@ -105,4 +105,4 @@ def draw_investment_log(df, xlabel='x', ylabel='y', title=''):
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.show()
+    return f

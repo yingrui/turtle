@@ -22,6 +22,7 @@ follow_stocks:
   - '603259.SH'  # 药明康德
   - '600276.SH'  # 恒瑞医药
   - '000736.SZ'  # 中交地产,房地产
+  - '601138.SH'  # 工业富联,电子
 risk_control:
   bearable_trading_loss: 0.01
   position_control: 1.0
@@ -45,6 +46,7 @@ policies:
     trade_policy.donchian.up_days: 20
     trade_policy.donchian.down_days: 10
   - trade_policy.name: moving_average
+    bearable_trading_loss: 0.02
     trade_policy.moving_average.triple: True
     trade_policy.moving_average.window_1: 10
     trade_policy.moving_average.window_2: 60
