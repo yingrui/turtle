@@ -47,7 +47,7 @@ PYTHONPATH=src python3 src/main.py --configure test.yaml --start-date 2022-01-01
 ### 通过Web UI访问
 当数据收集成功之后，可以通过以下命令启动Streamlit应用。
 ```bash
-PYTHONPATH=src python3 src/Home.py
+PYTHONPATH=src streamlit run src/Home.py
 ```
 
 也可以通过以下命令启动jupyter在notebook中分析数据。详情请参考src/notebook目录下的notebook文件。
