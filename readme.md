@@ -9,7 +9,9 @@ Turtle is a simple trade system based on a book named "Turtle Trading Rules".
 
 Please read [env.md](env.md) to prepare Python environment and Database.
 
-## 数据收集 Data Collection
+## 使用 Usage
+
+### 数据收集 Data Collection
 第一次运行系统时，运行以下脚本，从tushare下载数据。
 
 Run scripts to download data from tushare when you first run the system.
@@ -28,7 +30,7 @@ PYTHONPATH=src python3 src/dataset/update_stock_trade_daily.py
 
 Note: If throw no module found error, please add PYTHONPATH environment variable.
 
-## 回测 Simulation
+### 回测 Simulation
 运行以下脚本进行回测。
 
 Run scripts to simulate
@@ -40,6 +42,17 @@ PYTHONPATH=src python3 src/main.py
 You can specify different portfolio and start time to simulate.
 ```bash
 PYTHONPATH=src python3 src/main.py --configure test.yaml --start-date 2022-01-01
+```
+
+### 通过Web UI访问
+当数据收集成功之后，可以通过以下命令启动Streamlit应用。
+```bash
+PYTHONPATH=src python3 src/Home.py
+```
+
+也可以通过以下命令启动jupyter在notebook中分析数据。详情请参考src/notebook目录下的notebook文件。
+```bash
+jupyter lab
 ```
 
 ### 设置投资组合以及回测参数 Set Portfolio and Simulation Parameters
