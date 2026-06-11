@@ -1,0 +1,32 @@
+---
+description: Keep docs in sync when committing meaningful changes
+alwaysApply: true
+---
+
+# Docs before commit
+
+If the user asks for a commit (or you are committing), review staged changes and update **only what changed**:
+
+| File | When |
+|------|------|
+| `docs/architecture.md` | New modules, flows, layout, ports |
+| `docs/features/<area>.md` | Features and UI surfaces for that area |
+| `docs/features/api-reference.md` | New / changed HTTP endpoints |
+| `docs/features/data-models.md` | New tables / columns / schemas |
+| `docs/features/configuration.md` | New or changed `STOCK_*` / env vars |
+| `docs/design-system.md` | Shared SCSS tokens, patterns, or design-system file layout |
+| `docs/developer/setup.md` | Dev workflow, Alembic, Postgres setup |
+| `docs/operations/docker.md` | Compose services, ports, volumes |
+
+`docs/functionalities.md` is the routing index — only edit when adding or removing a feature page.
+
+## Verify before commit
+
+If staged changes touch `docs/**`, `mkdocs.yml`, or `docs/requirements.txt`, run before committing:
+
+```bash
+pip install -r docs/requirements.txt
+mkdocs build --strict --site-dir _site
+```
+
+Stage doc updates with the code commit.

@@ -1,0 +1,156 @@
+// Cross-route utilities: prefer tokens over inline TSX styles.
+
+.page-subtitle--error {
+  color: var(--color-error);
+}
+
+.page-subtitle--accent {
+  color: var(--color-accent);
+}
+
+.table-empty {
+  text-align: center;
+  padding: var(--space-6);
+  color: var(--color-text-muted);
+}
+
+.openkms-inline-code {
+  font-size: var(--text-md);
+}
+
+.document-detail-extract-warnings {
+  margin-top: var(--space-2);
+}
+
+.document-detail-warning {
+  color: var(--color-warning);
+  font-size: var(--text-md);
+}
+
+.openkms-flex-row-gap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.openkms-mt-2 {
+  margin-top: var(--space-2);
+}
+
+.openkms-mt-4 {
+  margin-top: var(--space-4);
+}
+
+.openkms-mt-0 {
+  margin-top: 0;
+}
+
+.openkms-link-spaced {
+  margin-top: var(--space-4);
+  display: inline-flex;
+}
+
+.km-map-graph-loading.km-map-graph-loading--padded {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-8);
+}
+
+.openkms-hidden {
+  display: none !important;
+}
+
+/* Error surfaces */
+.error-banner {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.error-banner__dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1);
+  font-size: var(--text-xl);
+  line-height: 1;
+  color: inherit;
+}
+
+.openkms-error-boundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 12.5rem;
+  padding: var(--space-8);
+  font-family: var(--font-sans);
+}
+
+.openkms-error-boundary__title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-xl);
+  line-height: var(--text-xl--line);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.openkms-error-boundary__pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: var(--space-4);
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line);
+  margin-bottom: var(--space-4);
+  color: var(--color-text);
+}
+
+.openkms-error-boundary__retry {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line);
+  cursor: pointer;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border: none;
+  border-radius: var(--radius-sm);
+}
+
+.openkms-error-boundary__retry:hover {
+  background: var(--color-accent-hover);
+}
+
+.openkms-table-picker-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.openkms-flex-1 {
+  flex: 1;
+  min-width: 0;
+}
+
+.console-modal-hint--block {
+  margin-top: var(--space-1);
+  display: block;
+}
+
+.document-detail-muted--flush {
+  margin-top: 0;
+}
+
+.openkms-min-h-14 {
+  min-height: 3.5rem;
+}
+

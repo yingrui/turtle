@@ -1,0 +1,13 @@
+---
+description: DB schema changes only via Alembic
+alwaysApply: true
+---
+
+# Alembic
+
+- Any change to `backend/app/models/` or market-data DDL → **new migration** in `backend/alembic/versions/`, **review**, then upgrade.
+- Run from `backend/` with the project venv: `python -m alembic upgrade head` (not bare system `alembic`).
+- Register new ORM models in `backend/alembic/env.py` imports so autogenerate sees them.
+- Market data tables belong in schema **`tushare`** — use `op.execute("CREATE SCHEMA IF NOT EXISTS tushare")` and qualify table names; keep in sync with `app/core/tushare_schema.py`.
+- **Local:** `backend/dev.sh` → `scripts/ensure_pgvector.py`, then Alembic, then uvicorn. **Docker:** image CMD runs Alembic then uvicorn.
+- Prefer Alembic as canonical DDL. `Base.metadata.create_all` in `app/main.py` lifespan is a dev convenience only — do not rely on it for new tables.

@@ -1,0 +1,76 @@
+# Full stack: PostgreSQL (pgvector), backend API, frontend (nginx).
+# Postgres image matches openKMS: pgvector/pgvector:pg16 (vector extension for future semantic search).
+#
+# From repo root:
+#   docker compose -f docker/docker-compose.yml up -d --build
+#   docker compose -f docker/docker-compose.yml down
+#
+# UI: http://localhost:3200
+
+x-stock-db-env: &stock_db_env
+  STOCK_DATABASE_HOST: ${STOCK_DATABASE_HOST:-postgres}
+  STOCK_DATABASE_PORT: ${STOCK_DATABASE_PORT:-5432}
+  STOCK_DATABASE_USER: ${STOCK_DATABASE_USER:-stock}
+  STOCK_DATABASE_PASSWORD: ${STOCK_DATABASE_PASSWORD:-stock}
+  STOCK_DATABASE_NAME: ${STOCK_DATABASE_NAME:-stock}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${STOCK_DATABASE_USER:-stock}
+      POSTGRES_PASSWORD: ${STOCK_DATABASE_PASSWORD:-stock}
+      POSTGRES_DB: ${STOCK_DATABASE_NAME:-stock}
+    # Volume name includes PG major so upgrading the image does not reuse an incompatible cluster.
+    volumes:
+      - stock_postgres_pg16:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${STOCK_DATABASE_USER:-stock} -d ${STOCK_DATABASE_NAME:-stock}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: backend
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8200/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    environment:
+      <<: *stock_db_env
+      TUSHARE_TOKEN: ${TUSHARE_TOKEN:-}
+      STOCK_SECRET_KEY: ${STOCK_SECRET_KEY:-stock-dev-secret-change-in-production}
+      STOCK_AUTH_MODE: local
+      STOCK_ALLOW_SIGNUP: ${STOCK_ALLOW_SIGNUP:-true}
+      STOCK_LOGS_DIR: /app/logs
+      STOCK_FRONTEND_URL: http://localhost:3200
+    volumes:
+      - stock_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        VITE_API_URL: ""
+    ports:
+      - "3200:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  stock_postgres_pg16: {}
+  stock_logs: {}

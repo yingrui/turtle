@@ -1,0 +1,24 @@
+---
+description: Stock trading system layout and stack
+alwaysApply: true
+---
+
+# 股票交易系统
+
+Personal stock trading web app: market data sync (Tushare), portfolios, screening, backtest simulation.
+
+| Area | Path |
+|------|------|
+| Backend | `backend/app/` (FastAPI, sync SQLAlchemy) |
+| Trading engine | `backend/app/core/` |
+| Frontend | `frontend/src/` (React 19, Vite, openKMS-derived design system) |
+| Docker | `docker/docker-compose.yml` |
+| Docs | `docs/` (`mkdocs.yml` at repo root) |
+
+**Ports:** backend **8200**, frontend **3200** (Vite dev and Docker nginx). **Config:** `STOCK_*` / `TUSHARE_TOKEN` in `backend/.env` or `docker/.env`; `frontend/src/config.ts` for API base.
+
+**DB:** app tables in `public`; market data in schema **`tushare`** (`backend/app/core/tushare_schema.py`). 
+
+**Dev:** `cd backend && ./dev.sh` (venv, `python -m alembic upgrade head`, uvicorn). Use backend venv for Alembic — not system `alembic` (wrong `app` package on PYTHONPATH).
+
+**Wording / UI copy:** see `writing-style.mdc`.

@@ -1,0 +1,60 @@
+// Compile-time design tokens (use with SCSS @use).
+// Runtime theming stays on CSS custom properties in `_css-variables.scss`.
+// Prefer `var(--space-*)` in rules when possible; use `$space-*` only for calc() / Sass math.
+
+// --- Breakpoints (align with existing layouts) ---
+$bp-xs-max: 640px;
+$bp-sm-min: 720px;
+$bp-md-min: 768px;
+
+// Narrow / wide layout pairs (legacy literals consolidated here)
+$bp-phone-max: 480px;
+$bp-tight-max: 520px;
+$bp-comfort-max: 560px;
+$bp-lg-max: 960px;
+$bp-lg-min: 961px; // paired with $bp-lg-max (desktop-first)
+$bp-split-min: 880px; // e.g. KB settings two-column grid
+
+// Knowledge Map: master/detail + HTML copilot grid (also used for ~900px content caps elsewhere)
+$km-layout-max: 900px;
+
+// Auto-fill grids: minimum column width before wrap
+$grid-min-model-panel: 280px;
+$grid-min-job-card: 380px;
+$grid-min-eval-card: 300px;
+
+// Model playground transcript column
+$playground-messages-min-height: 300px;
+$playground-messages-max-height: 500px;
+
+// Small modal cap (evaluation create dialog)
+$bp-dialog-sm: 440px;
+
+// Account / settings forms (account-page.scss)
+$account-form-max-width: 400px;
+$account-input-min-flex: 200px;
+$account-select-min-width: 11rem;
+
+// In-page overlay stack (below --z-dropdown; wiki settings import/modal)
+$z-settings-modal-overlay: 50;
+$z-settings-import-overlay: 60;
+
+// --- Spacing (4px grid; mirrors :root --space-* ) ---
+$space-0: 0;
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-5: 20px;
+$space-6: 24px;
+$space-8: 32px;
+$space-10: 40px;
+$space-12: 48px;
+$space-16: 64px;
+
+// --- Stacking (mirrors --z-* when you need a raw number in Sass) ---
+$z-sticky: 10;
+$z-dropdown: 100;
+$z-popover: 200;
+$z-modal: 300;
+$z-toast: 400;

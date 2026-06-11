@@ -1,0 +1,24 @@
+---
+description: Wording, UI copy, and how to write replies/commits in this repo
+alwaysApply: true
+---
+
+# Writing style (股票交易系统)
+
+## SPA (`frontend/src/`)
+
+User-visible text: **what** the feature does (sync data, run simulation, edit portfolio), not **how** it is stored or called. Avoid schema names (`tushare`), raw `/api/…` URLs, env vars, and engine internals—unless the screen is clearly for operators. Use design-system tokens (`var(--color-*)`, `var(--space-*)`) in SCSS; see `docs/design-system.md`.
+
+## Assistant replies (Cursor)
+
+- Match answer length to the task; no filler or “say the word” closings.
+- Use **markdown links** for web URLs; use code citation blocks for repo code.
+- Prefer plain words over buzzwords; spell out uncommon acronyms once if needed.
+
+## Commits and PRs
+
+Short **imperative** subject (`Fix empty latest-date when market data missing`). Body only when the reason or risk is not obvious.
+
+## Docs in `docs/`
+
+Technical detail is fine there (Alembic revisions, `STOCK_*`, `tushare` DDL). Keep tables and headings consistent with surrounding files. Follow openKMS-style layout (`index.md`, `features/`, `developer/`, `operations/`).

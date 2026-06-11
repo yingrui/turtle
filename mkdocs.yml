@@ -1,0 +1,57 @@
+site_name: Stock Trading System
+site_description: 个人股票交易系统 — backtest, screen, and analyze Chinese A-shares.
+docs_dir: docs
+dev_addr: 127.0.0.1:8201
+
+theme:
+  name: material
+  features:
+    - navigation.tracking
+    - navigation.indexes
+    - navigation.top
+    - toc.follow
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - tables
+  - toc:
+      permalink: true
+
+exclude_docs: |
+  README.md
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Architecture: architecture.md
+  - Features:
+      - Index: functionalities.md
+      - Data sync: features/data-sync.md
+      - Portfolios: features/portfolios.md
+      - Simulation: features/simulation.md
+      - Screening & analysis: features/screening-and-analysis.md
+      - Auth: features/auth.md
+      - Configuration: features/configuration.md
+      - Data models: features/data-models.md
+      - API reference: features/api-reference.md
+  - Operations:
+      - Docker: operations/docker.md
+  - Developer:
+      - Setup: developer/setup.md
+      - Design system: design-system.md

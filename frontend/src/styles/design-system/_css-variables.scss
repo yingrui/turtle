@@ -1,0 +1,202 @@
+// Global CSS custom properties (light + dark). Consumed by all CSS/SCSS via var(--*).
+
+:root {
+  /* --- Palette: warm stone base + teal accent --- */
+  --color-bg: #faf9f7;
+  --color-bg-elevated: #ffffff;
+  --color-bg-muted: #f3f2ef;
+  --color-border: #e8e6e1;
+  --color-border-strong: #d4d1c9;
+
+  --color-text: #2c2925;
+  --color-text-secondary: #5c5750;
+  --color-text-muted: #8a8379;
+  --color-muted: var(--color-text-muted);
+  --color-fg: var(--color-text);
+  --color-surface: var(--color-bg-elevated);
+  --color-bg-subtle: var(--color-bg-muted);
+
+  --color-accent: #0d9488;
+  --color-accent-hover: #0f766e;
+  --color-accent-muted: #ccfbf1;
+  --color-accent-subtle: #f0fdfa;
+  --color-on-accent: #ffffff;
+
+  /* KB Q&A ontology / graph source accent (violet; distinct from teal accent) */
+  --color-ontology-source: #6d28d9;
+  --color-ontology-source-soft: #a78bfa;
+  --color-ontology-fg: #5b21b6;
+  --color-ontology-fg-muted: #ddd6fe;
+  --color-error-contrast: #ffffff;
+
+  --color-warning: #d97706;
+  --color-success: #059669;
+  --color-error: #dc2626;
+  --color-danger: var(--color-error);
+
+  /* Intent surfaces (alerts, inline banners, chips) */
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fecaca;
+  --color-warning-bg: #fffbeb;
+  --color-warning-fg: #92400e;
+  --color-warning-border: #fde68a;
+  --color-success-bg: #ecfdf5;
+  --color-success-fg: #166534;
+  --color-success-border: #bbf7d0;
+  --color-info-bg: #eff6ff;
+  --color-info-fg: #1d4ed8;
+  --color-info-border: #bfdbfe;
+
+  /* Document pipeline status pills (light) */
+  --status-doc-uploaded-bg: #e5e7eb;
+  --status-doc-uploaded-fg: #374151;
+  --status-doc-pending-bg: #fef3c7;
+  --status-doc-pending-fg: #92400e;
+  --status-doc-running-bg: #dbeafe;
+  --status-doc-running-fg: #1d4ed8;
+  --status-doc-completed-bg: #dcfce7;
+  --status-doc-completed-fg: #166534;
+  --status-doc-failed-bg: #fee2e2;
+  --status-doc-failed-fg: #991b1b;
+
+  /* Typography — stacks */
+  --font-sans:
+    'DM Sans', 'Noto Sans SC', -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei',
+    system-ui, sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, serif;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --text-xs: 0.75rem;
+  --text-xs--line: 1.45;
+  --text-sm: 0.8125rem;
+  --text-sm--line: 1.45;
+  --text-md: 0.875rem;
+  --text-md--line: 1.5;
+  --text-base: 1rem;
+  --text-base--line: 1.5;
+  --text-lg: 1.125rem;
+  --text-lg--line: 1.55;
+  --text-xl: 1.25rem;
+  --text-xl--line: 1.4;
+  --text-2xl: 1.5rem;
+  --text-2xl--line: 1.35;
+  --text-page-title: 1.75rem;
+  --text-page-title--line: 1.25;
+
+  /* Spacing — 4px grid */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Half-step rhythm (4px grid): 6px gap, 10×14 compact chip padding */
+  --gap-compact: calc((var(--space-1) + var(--space-2)) / 2);
+  --padding-compact-y: calc(var(--space-2) + var(--space-1) / 2);
+  --padding-compact-x: calc(var(--space-3) + var(--space-1) / 2);
+
+  /* Radius & chrome */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --sidebar-width: 220px;
+  --header-height: 56px;
+
+  --shadow-sm: 0 1px 2px rgba(44, 41, 37, 0.06);
+  --shadow-md: 0 4px 12px rgba(44, 41, 37, 0.08);
+  --shadow-lg: 0 12px 40px rgba(44, 41, 37, 0.1);
+  --shadow-auth-card: 0 4px 24px rgba(44, 41, 37, 0.1);
+  --shadow-elevated: 0 8px 32px rgba(44, 41, 37, 0.18);
+  --overlay-backdrop: rgba(24, 22, 18, 0.45);
+
+  /* Stacking (shell + overlays) */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-dropdown: 100;
+  --z-popover: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+
+  /* Motion */
+  --duration-instant: 50ms;
+  --duration-fast: 150ms;
+  --duration-medium: 250ms;
+  --ease-standard: ease;
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+
+  /* Focus (a11y) */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: var(--color-accent);
+}
+
+[data-theme='dark'] {
+  --color-bg: #1a1816;
+  --color-bg-elevated: #242220;
+  --color-bg-muted: #2d2a27;
+  --color-border: #3d3935;
+  --color-border-strong: #524d47;
+
+  --color-text: #f5f3f0;
+  --color-text-secondary: #c4bfb6;
+  --color-text-muted: #8a857c;
+
+  --color-accent-muted: #134e4a;
+  --color-accent-subtle: #0d3d3a;
+
+  --color-ontology-source: #a78bfa;
+  --color-ontology-source-soft: #c4b5fd;
+  --color-ontology-fg: #e9d5ff;
+  --color-ontology-fg-muted: #f5f3ff;
+
+  --color-error-bg: #450a0a;
+  --color-error-border: #7f1d1d;
+  --color-warning-bg: #422006;
+  --color-warning-fg: #fcd34d;
+  --color-warning-border: #78350f;
+  --color-success-bg: #14532d;
+  --color-success-fg: #86efac;
+  --color-success-border: #166534;
+  --color-info-bg: #1e3a5f;
+  --color-info-fg: #93c5fd;
+  --color-info-border: #1d4ed8;
+
+  --status-doc-uploaded-bg: #374151;
+  --status-doc-uploaded-fg: #d1d5db;
+  --status-doc-pending-bg: #422006;
+  --status-doc-pending-fg: #fcd34d;
+  --status-doc-running-bg: #1e3a5f;
+  --status-doc-running-fg: #93c5fd;
+  --status-doc-completed-bg: #14532d;
+  --status-doc-completed-fg: #86efac;
+  --status-doc-failed-bg: #450a0a;
+  --status-doc-failed-fg: #fca5a5;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-auth-card: 0 4px 24px rgba(0, 0, 0, 0.45);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.42);
+  --overlay-backdrop: rgba(0, 0, 0, 0.58);
+}
+
+/* Paper palette for @media print (readable output regardless of live theme) */
+@media print {
+  :root {
+    --print-paper-bg: #ffffff;
+    --print-ink: #0a0a0a;
+    --print-border-muted: #d7d7d7;
+    --print-surface-muted: #f7f7f7;
+  }
+}

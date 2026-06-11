@@ -1,0 +1,32 @@
+// Shared responsive, layout, and a11y helpers for SCSS modules.
+
+@mixin max-width($px) {
+  @media (max-width: $px) {
+    @content;
+  }
+}
+
+@mixin min-width($px) {
+  @media (min-width: $px) {
+    @content;
+  }
+}
+
+/// Focus ring aligned with `--focus-ring-*` tokens in `_css-variables.scss`.
+@mixin focus-ring-accent {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/// Single-line ellipsis (needs `display: block` or `inline-block` + optional max-width).
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/// Sets duration + easing. Also set `transition-property` on the same rule.
+@mixin motion-tokens {
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}

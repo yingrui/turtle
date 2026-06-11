@@ -1,9 +1,40 @@
-src/.env
-.idea
-.ipynb_checkpoints
-__pycache__
-logs
+# Environment & secrets
+.env
+backend/.env
+docker/.env
 
-*.DS_store
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Backend runtime / test artifacts
+backend/test_stock.db
+logs/
 *.log
 portfolio.csv
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# MkDocs
+_site/
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+.ipynb_checkpoints
