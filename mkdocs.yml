@@ -38,11 +38,13 @@ exclude_docs: |
 
 nav:
   - Home: index.md
+  - Product roadmap: product-roadmap.md
   - Quickstart: quickstart.md
   - Architecture: architecture.md
   - Features:
       - Index: functionalities.md
       - Data sync: features/data-sync.md
+      - Market quotes: features/stock-universe.md
       - Portfolios: features/portfolios.md
       - Simulation: features/simulation.md
       - Screening & analysis: features/screening-and-analysis.md

@@ -63,11 +63,29 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/search` | Symbol search |
-| GET | `/` | List symbols |
-| GET | `/{ts_code}/ohlcv` | OHLCV series |
+| GET | `/search` | Symbol search (up to 20 matches by code, name, pinyin) |
+| GET | `/universe/meta` | Latest trade date, listed count, exchange/market/industry facets |
+| GET | `/universe/industry-summary` | Circ-mv-weighted change% by industry (`daily_basic.circ_mv` × `stock_trade_daily.pct_chg`) |
+| GET | `/universe` | Paginated universe list with latest-day quote join |
+| GET | `/` | List symbols in a portfolio (`?portfolio=name`) |
+| GET | `/{ts_code}/snapshot` | Basic info + latest daily quote for one symbol |
+| GET | `/{ts_code}/ohlcv` | QFQ-adjusted OHLCV series (`?limit=250`, max 2000) |
 | GET | `/{ts_code}/indicators` | Technical indicators |
 | POST | `/{ts_code}/forecast` | Forecast job |
+
+### `GET /universe` query parameters
+
+`q`, `exchange` (SH/SZ/BJ), `market`, `industry`, `list_status` (default `L`), `exclude_st` (default `true`), `page`, `page_size`, `sort`, `order`.
+
+Sort fields: `ts_code`, `name`, `industry`, `list_date`, `open`, `high`, `low`, `close`, `pct_chg`, `vol`, `amount`.
+
+Quote object on each universe item: `open`, `high`, `low`, `close`, `pre_close`, `pct_chg`, `vol`, `amount`, `trade_date`.
+
+## Portfolios — watchlist
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/portfolios/{name}/watchlist` | Append `ts_code` to portfolio `follow_stocks` (deduped) |
 
 ## Health
 

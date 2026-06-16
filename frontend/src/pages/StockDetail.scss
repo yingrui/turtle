@@ -1,0 +1,124 @@
+.stock-detail-breadcrumb {
+  margin-bottom: var(--space-4);
+}
+
+.stock-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.stock-detail-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.stock-detail-code {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+}
+
+.stock-detail-meta {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin-top: var(--space-1);
+}
+
+.stock-detail-delayed {
+  color: var(--color-text-muted);
+}
+
+.stock-detail-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.stock-detail-watchlist-pick {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.stock-detail-quote-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4) var(--space-6);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+}
+
+.stock-detail-price {
+  font-size: 2rem;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+
+  &.up { color: var(--color-error); }
+  &.down { color: #16a34a; }
+}
+
+.stock-detail-pct {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-medium);
+
+  &.up { color: var(--color-error); }
+  &.down { color: #16a34a; }
+}
+
+.stock-detail-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+
+  div {
+    display: flex;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  dt {
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+.stock-detail-tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.stock-detail-tab {
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+
+  &--active {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+    font-weight: var(--font-weight-medium);
+  }
+}

@@ -25,6 +25,7 @@ Synced from Tushare via data collection jobs. Migration: `002_market_data.py`.
 | `tushare.stock_basic` | Symbol metadata |
 | `tushare.stock_trade_daily` | Daily OHLCV (`ts_code`, `trade_date` PK) |
 | `tushare.stock_adj_daily` | Adjustment factors |
+| `tushare.daily_basic` | Daily valuation & share structure — PE/PB, `circ_mv`, `total_mv`, turnover, limit status |
 | `tushare.dividends` | Dividend events |
 
 Code references the schema via `app/core/tushare_schema.py` (`TUSHARE_SCHEMA`, `tushare_table()`).

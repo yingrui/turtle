@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../utils/api';
 import { LineChart } from '../components/Chart';
@@ -15,14 +16,23 @@ const CHART_TYPES = [
 
 export function StockAnalysis() {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const urlTsCode = searchParams.get('ts_code') ?? '';
+
   const [portfolios, setPortfolios] = useState<string[]>([]);
   const [portfolio, setPortfolio] = useState('');
   const [stocks, setStocks] = useState<Stock[]>([]);
-  const [tsCode, setTsCode] = useState('');
+  const [tsCode, setTsCode] = useState(urlTsCode);
+  const [searchQ, setSearchQ] = useState('');
+  const [searchHits, setSearchHits] = useState<Stock[]>([]);
   const [chartType, setChartType] = useState('ma');
   const [chart, setChart] = useState<{ dates: string[]; series: { name: string; data: (number | null)[] }[] } | null>(
     null,
   );
+
+  useEffect(() => {
+    if (urlTsCode) setTsCode(urlTsCode);
+  }, [urlTsCode]);
 
   useEffect(() => {
     apiFetch<{ portfolios: string[] }>('/api/portfolios').then((d) => {
@@ -33,11 +43,24 @@ export function StockAnalysis() {
 
   useEffect(() => {
     if (!portfolio) return;
-    apiFetch<{ stocks: Stock[] }>(`/api/stocks?portfolio=${portfolio}`).then((d) => {
+    apiFetch<{ stocks: Stock[] }>(`/api/stocks?portfolio=${encodeURIComponent(portfolio)}`).then((d) => {
       setStocks(d.stocks);
-      if (d.stocks.length) setTsCode(d.stocks[0].ts_code);
+      if (!urlTsCode && d.stocks.length) setTsCode(d.stocks[0].ts_code);
     });
-  }, [portfolio]);
+  }, [portfolio, urlTsCode]);
+
+  useEffect(() => {
+    if (!searchQ.trim()) {
+      setSearchHits([]);
+      return;
+    }
+    const tmr = setTimeout(() => {
+      apiFetch<{ stocks: Stock[] }>(`/api/stocks/search?q=${encodeURIComponent(searchQ.trim())}`)
+        .then((d) => setSearchHits(d.stocks))
+        .catch(() => setSearchHits([]));
+    }, 300);
+    return () => clearTimeout(tmr);
+  }, [searchQ]);
 
   useEffect(() => {
     if (!tsCode) return;
@@ -46,8 +69,19 @@ export function StockAnalysis() {
     ).then(setChart);
   }, [tsCode, chartType]);
 
+  const selectOptions = stocks.length ? stocks : searchHits;
+
   return (
     <div className="page-card">
+      <p style={{ marginBottom: 'var(--space-4)' }}>
+        <Link to="/market">{t('quote.backToQuotes')}</Link>
+        {tsCode && (
+          <>
+            {' · '}
+            <Link to={`/stocks/${encodeURIComponent(tsCode)}`}>{t('stockDetail.tab.kline')}</Link>
+          </>
+        )}
+      </p>
       <h1 className="page-title">{t('nav.stocks')}</h1>
       <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
         <div className="form-row" style={{ maxWidth: 200 }}>
@@ -58,10 +92,18 @@ export function StockAnalysis() {
             ))}
           </select>
         </div>
+        <div className="form-row" style={{ maxWidth: 200 }}>
+          <label>{t('quote.search')}</label>
+          <input
+            value={searchQ}
+            onChange={(e) => setSearchQ(e.target.value)}
+            placeholder={t('quote.searchPlaceholder')}
+          />
+        </div>
         <div className="form-row" style={{ maxWidth: 280 }}>
           <label>Stock</label>
           <select value={tsCode} onChange={(e) => setTsCode(e.target.value)}>
-            {stocks.map((s) => (
+            {selectOptions.map((s) => (
               <option key={s.ts_code} value={s.ts_code}>{s.ts_code} — {s.name}</option>
             ))}
           </select>

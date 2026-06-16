@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 const features = [
   { to: '/data', title: 'Data Collection', desc: 'Sync OHLCV, adj factors, dividends, and trade calendar from Tushare.' },
   { to: '/portfolio', title: 'Portfolio', desc: 'Create portfolios, edit watchlist, risk control, and policy parameters.' },
+  { to: '/market', title: 'Market Quotes', desc: 'Browse all A-share listings with latest close, change%, and filters.' },
   { to: '/screening', title: 'Universe Screening', desc: 'Trend + ADF screening to discover candidate stocks.' },
   { to: '/simulation', title: 'Simulation', desc: 'Backtest policies: MA, Donchian, Bollinger, ensemble, ATR.' },
   { to: '/simulation/results', title: 'Results', desc: 'CAGR, equity curves, trades, per-stock P&L, multi-policy compare.' },

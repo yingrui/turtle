@@ -56,6 +56,7 @@ class JobService:
                     end,
                     trade_data=payload.get("trade_data", True),
                     adj_data=payload.get("adj_data", True),
+                    daily_basic=payload.get("daily_basic", True),
                     dividend=payload.get("dividend", True),
                     log_fn=log_fn,
                 )

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../utils/api';
 import { LineChart } from '../components/Chart';
@@ -7,16 +8,23 @@ type Stock = { ts_code: string; name: string };
 
 export function Forecast() {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const urlTsCode = searchParams.get('ts_code') ?? '';
+
   const [portfolios, setPortfolios] = useState<string[]>([]);
   const [portfolio, setPortfolio] = useState('');
   const [stocks, setStocks] = useState<Stock[]>([]);
-  const [tsCode, setTsCode] = useState('');
+  const [tsCode, setTsCode] = useState(urlTsCode);
   const [history, setHistory] = useState<{ dates: string[]; series: { name: string; data: (number | null)[] }[] } | null>(
     null,
   );
   const [steps, setSteps] = useState(10);
   const [forecastValues, setForecastValues] = useState<number[]>([]);
   const [summary, setSummary] = useState('');
+
+  useEffect(() => {
+    if (urlTsCode) setTsCode(urlTsCode);
+  }, [urlTsCode]);
 
   useEffect(() => {
     apiFetch<{ portfolios: string[] }>('/api/portfolios').then((d) => {
@@ -27,11 +35,11 @@ export function Forecast() {
 
   useEffect(() => {
     if (!portfolio) return;
-    apiFetch<{ stocks: Stock[] }>(`/api/stocks?portfolio=${portfolio}`).then((d) => {
+    apiFetch<{ stocks: Stock[] }>(`/api/stocks?portfolio=${encodeURIComponent(portfolio)}`).then((d) => {
       setStocks(d.stocks);
-      if (d.stocks.length) setTsCode(d.stocks[0].ts_code);
+      if (!urlTsCode && d.stocks.length) setTsCode(d.stocks[0].ts_code);
     });
-  }, [portfolio]);
+  }, [portfolio, urlTsCode]);
 
   async function onForecast() {
     if (!tsCode) return;
@@ -70,6 +78,9 @@ export function Forecast() {
 
   return (
     <div className="page-card">
+      <p style={{ marginBottom: 'var(--space-4)' }}>
+        <Link to="/market">{t('quote.backToQuotes')}</Link>
+      </p>
       <h1 className="page-title">{t('nav.forecast')}</h1>
       <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div className="form-row" style={{ maxWidth: 200 }}>

@@ -23,6 +23,10 @@ class PortfolioYamlBody(BaseModel):
     yaml: str
 
 
+class WatchlistBody(BaseModel):
+    ts_code: str
+
+
 @router.get("")
 def list_portfolios(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     svc = PortfolioService(db)
@@ -38,6 +42,22 @@ def create_portfolio(
     svc = PortfolioService(db)
     try:
         return svc.create_portfolio(body.name, body.config)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/{name}/watchlist")
+def add_to_watchlist(
+    name: str,
+    body: WatchlistBody,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return svc.add_to_watchlist(name, body.ts_code)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

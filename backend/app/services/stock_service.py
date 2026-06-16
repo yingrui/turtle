@@ -1,5 +1,6 @@
 from app.core.engine.StockRepository import StockRepository
 from app.core.engine.StockTradeDataEngine import StockTradeDataEngine
+from app.core.engine import stock_universe
 from app.core.util import chart_data
 
 
@@ -10,13 +11,51 @@ class StockService:
 
     def list_stocks(self, config: dict) -> list[dict]:
         stocks = [self._repo.find_stock(code) for code in config["follow_stocks"]]
-        return [{"ts_code": s.ts_code, "name": s.name} for s in stocks]
+        return [{"ts_code": s.ts_code, "name": s.name} for s in stocks if s]
 
-    def get_ohlcv(self, ts_code: str) -> dict:
+    def list_universe(self, **kwargs) -> dict:
+        return stock_universe.list_universe(**kwargs)
+
+    def get_universe_meta(self) -> dict:
+        return stock_universe.get_universe_meta()
+
+    def get_industry_summary(self, **kwargs) -> dict:
+        return stock_universe.get_industry_summary(**kwargs)
+
+    def get_stock_snapshot(self, ts_code: str) -> dict | None:
+        return stock_universe.get_stock_snapshot(ts_code)
+
+    def search_stocks(self, q: str, limit: int = 20) -> list[dict]:
+        return stock_universe.search_stocks(q, limit=limit)
+
+    def get_ohlcv(self, ts_code: str, limit: int = 250) -> dict:
         df = self._engine.get_trade_data_by_code(ts_code)
+        if limit > 0:
+            df = df.tail(limit)
+        if df.empty:
+            return {
+                "dates": [],
+                "open": [],
+                "high": [],
+                "low": [],
+                "close": [],
+                "vol": [],
+                "pct_chg": [],
+            }
+
+        last_adj = float(df.adj_factor.values[-1])
+        scale = df.adj_factor / last_adj
+
+        def _qfq(col):
+            return [float(v * s) for v, s in zip(col, scale, strict=True)]
+
         return {
             "dates": [d.strftime("%Y-%m-%d") for d in df.trade_date],
+            "open": _qfq(df.open),
+            "high": _qfq(df.high),
+            "low": _qfq(df.low),
             "close": [float(v) for v in df.qfq],
+            "vol": [float(v) for v in df.vol],
             "pct_chg": [float(v) for v in df.pct_chg],
         }
 

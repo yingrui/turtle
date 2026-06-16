@@ -7,6 +7,7 @@ Index of stock trading features. Each page links to behaviour, API routes, and r
 | Feature | Doc | SPA route |
 |---------|-----|-----------|
 | Market data sync | [Data sync](features/data-sync.md) | `/data` |
+| Market quotes (universe) | [Stock universe](features/stock-universe.md) | `/market`, `/stocks/:tsCode` |
 | Portfolios (DB-backed config) | [Portfolios](features/portfolios.md) | `/portfolio` |
 | Stock screening | [Screening & analysis](features/screening-and-analysis.md) | `/screening` |
 | Backtest simulation | [Simulation](features/simulation.md) | `/simulation`, `/simulation/results` |

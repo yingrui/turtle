@@ -56,6 +56,21 @@ def download_dividends_data(ts_api, sql_conn, day, log_fn: LogFn | None = None) 
     return count
 
 
+def download_daily_basic_data(ts_api, sql_conn, day, log_fn: LogFn | None = None) -> int:
+    df = ts_api.query("daily_basic", trade_date=day.strftime("%Y%m%d"))
+    count = df.to_sql(
+        con=sql_conn,
+        name="daily_basic",
+        schema=TUSHARE_SCHEMA,
+        index=False,
+        if_exists="append",
+        method=insert_or_update,
+    )
+    _log(f"{day.strftime('%Y-%m-%d')}, {count} daily_basic data", log_fn)
+    time.sleep(1)
+    return count
+
+
 def update_stock_list(ts_api, sql_conn, log_fn: LogFn | None = None) -> int:
     fields = (
         "ts_code,symbol,name,area,industry,fullname,enname,cnspell,market,exchange,"
@@ -76,6 +91,7 @@ def sync_stock_data(
     *,
     trade_data: bool = True,
     adj_data: bool = True,
+    daily_basic: bool = True,
     dividend: bool = True,
     log_fn: LogFn | None = None,
 ) -> None:
@@ -89,6 +105,8 @@ def sync_stock_data(
                 download_stock_trade_data(ts_api, sql_conn, day, log_fn)
             if adj_data:
                 download_stock_adj_data(ts_api, sql_conn, day, log_fn)
+            if daily_basic:
+                download_daily_basic_data(ts_api, sql_conn, day, log_fn)
             if dividend:
                 download_dividends_data(ts_api, sql_conn, day, log_fn)
 

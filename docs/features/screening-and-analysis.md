@@ -6,9 +6,15 @@ Route: **`/screening`**
 
 Runs policy-based filters over synced market data. API: `POST /api/screening`. Implementation: `app/services/screening_service.py` + engine policies under `app/core/engine/policy/`.
 
+## Market quotes
+
+Route: **`/market`**
+
+Browse all listed stocks with latest-day quotes. See [Stock universe](stock-universe.md).
+
 ## Stock analysis
 
-Route: **`/stocks`**
+Route: **`/stocks`** (deep link: `?ts_code=600519.SH`)
 
 Search symbols, view OHLCV charts and indicators for a `ts_code`. Data from `tushare` tables via `app/services/stock_service.py`.
 

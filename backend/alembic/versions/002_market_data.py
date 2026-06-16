@@ -18,6 +18,7 @@ MARKET_TABLES = (
     "stock_basic",
     "stock_trade_daily",
     "stock_adj_daily",
+    "daily_basic",
     "dividends",
 )
 
@@ -93,6 +94,36 @@ def upgrade() -> None:
         schema=SCHEMA,
     )
     op.create_table(
+        "daily_basic",
+        sa.Column("ts_code", sa.Text(), nullable=False),
+        sa.Column("trade_date", sa.Date(), nullable=False),
+        sa.Column("close", sa.Numeric(), nullable=True),
+        sa.Column("turnover_rate", sa.Numeric(), nullable=True),
+        sa.Column("turnover_rate_f", sa.Numeric(), nullable=True),
+        sa.Column("volume_ratio", sa.Numeric(), nullable=True),
+        sa.Column("pe", sa.Numeric(), nullable=True),
+        sa.Column("pe_ttm", sa.Numeric(), nullable=True),
+        sa.Column("pb", sa.Numeric(), nullable=True),
+        sa.Column("ps", sa.Numeric(), nullable=True),
+        sa.Column("ps_ttm", sa.Numeric(), nullable=True),
+        sa.Column("dv_ratio", sa.Numeric(), nullable=True),
+        sa.Column("dv_ttm", sa.Numeric(), nullable=True),
+        sa.Column("total_share", sa.Numeric(20, 4), nullable=True),
+        sa.Column("float_share", sa.Numeric(20, 4), nullable=True),
+        sa.Column("free_share", sa.Numeric(20, 4), nullable=True),
+        sa.Column("total_mv", sa.Numeric(20, 4), nullable=True),
+        sa.Column("circ_mv", sa.Numeric(20, 4), nullable=True),
+        sa.Column("limit_status", sa.Integer(), nullable=True),
+        sa.PrimaryKeyConstraint("ts_code", "trade_date", name="pk_daily_basic"),
+        schema=SCHEMA,
+    )
+    op.create_index(
+        "index_trade_date_on_daily_basic",
+        "daily_basic",
+        ["trade_date"],
+        schema=SCHEMA,
+    )
+    op.create_table(
         "dividends",
         sa.Column("ts_code", sa.String(10), nullable=True),
         sa.Column("end_date", sa.Date(), nullable=True),
@@ -109,7 +140,7 @@ def upgrade() -> None:
         sa.Column("div_listdate", sa.Date(), nullable=True),
         sa.Column("imp_ann_date", sa.Date(), nullable=True),
         sa.Column("base_date", sa.Date(), nullable=True),
-        sa.Column("base_share", sa.Numeric(10, 4), nullable=True),
+        sa.Column("base_share", sa.Numeric(20, 4), nullable=True),
         sa.Column("update_flag", sa.String(12), nullable=True),
         sa.PrimaryKeyConstraint("ts_code", "ex_date", name="pk_code_and_date_on_dividends"),
         schema=SCHEMA,
@@ -118,6 +149,13 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table("dividends", schema=SCHEMA)
+    op.drop_index(
+        "index_trade_date_on_daily_basic",
+        table_name="daily_basic",
+        schema=SCHEMA,
+        if_exists=True,
+    )
+    op.drop_table("daily_basic", schema=SCHEMA, if_exists=True)
     op.drop_index("index_trade_date_on_stock_adj_daily", table_name="stock_adj_daily", schema=SCHEMA)
     op.drop_table("stock_adj_daily", schema=SCHEMA)
     op.drop_index("index_trade_date_on_stock_trade_daily", table_name="stock_trade_daily", schema=SCHEMA)

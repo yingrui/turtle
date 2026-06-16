@@ -104,3 +104,14 @@ class PortfolioService:
         row = self._get_row(name)
         self.db.delete(row)
         self.db.commit()
+
+    def add_to_watchlist(self, name: str, ts_code: str) -> dict:
+        ts_code = ts_code.strip().upper()
+        if not ts_code:
+            raise ValueError("ts_code is required")
+        config = self.get_portfolio(name)
+        stocks = list(config.get("follow_stocks") or [])
+        if ts_code not in stocks:
+            stocks.append(ts_code)
+        config["follow_stocks"] = stocks
+        return self.save_portfolio(name, config)

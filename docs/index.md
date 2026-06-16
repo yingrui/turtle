@@ -25,6 +25,7 @@ North star: a simple, inspectable system for personal quantitative trading resea
 
 | If you want to… | Read |
 |---|---|
+| See product gaps & roadmap | [Product roadmap](product-roadmap.md) |
 | Run locally (Docker or host) | [Quickstart](quickstart.md) |
 | Understand the stack | [Architecture](architecture.md) |
 | Find a feature or API route | [Functionalities](functionalities.md) → `features/*.md` |
