@@ -6,7 +6,7 @@ Two paths: **Docker** (full stack) or **host** (backend + frontend on the machin
 
 - **Docker** (Compose v2) for either path
 - **Host path:** Python 3.11+, Node.js 20+, npm; [uv](https://github.com/astral-sh/uv) recommended for the backend venv
-- **Tushare token** — required for market data sync ([tushare.pro](https://tushare.pro))
+- **Market data** — `tushare` schema must be populated by your **external ETL** before quotes and screening work (see [External data contract](features/data-sync.md))
 
 ## Option A — Everything in Docker
 
@@ -30,7 +30,7 @@ docker compose -f docker/docker-compose.yml up -d postgres
 
 # 2. Backend env
 cp backend/.env.example backend/.env
-# Set STOCK_DATABASE_* and TUSHARE_TOKEN
+# Set STOCK_DATABASE_* (TUSHARE_TOKEN optional — legacy sync only)
 
 # 3. Backend (terminal 1)
 cd backend && ./dev.sh
@@ -51,9 +51,10 @@ Use the backend venv for Alembic — not the system `alembic` binary (see [Devel
 | Backend OpenAPI | <http://localhost:8200/docs> |
 | Health | <http://localhost:8200/health> |
 
-1. **Data** — run a market data sync job (needs `TUSHARE_TOKEN`)
+1. Confirm **external ETL** has loaded `tushare` tables (check `/market` or planned `/api/data/status`)
 2. **Portfolio** — create a portfolio config in the UI
-3. **Simulation** — start a backtest job and view results
+3. **Screening** — run a stock-pick / screen job
+4. **Simulation** — backtest and view results
 
 ## Tests
 

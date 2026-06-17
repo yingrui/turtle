@@ -4,8 +4,10 @@ import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.simulation import SimulationDaily, SimulationRun, SimulationTrade
 from app.core.util import chart_data
+from app.core.util.json_utils import dataframe_to_records
 from app.core.util.simulation_analysis import calculate_cagr, get_stock_benefit, load_simulation_logs_from_disk
 
 
@@ -129,14 +131,7 @@ class SimulationService:
             )
             df = df_trade_list[run.policy_id]
         df = df.tail(limit)
-        records = []
-        for _, row in df.iterrows():
-            rec = row.to_dict()
-            for k, v in rec.items():
-                if hasattr(v, "isoformat"):
-                    rec[k] = v.isoformat()
-            records.append(rec)
-        return records
+        return dataframe_to_records(df.reset_index(drop=True))
 
     def get_benefit_by_stock(self, db: Session, run_id: str) -> list[dict]:
         df_trades = self.get_trades_from_db(db, run_id)
@@ -146,6 +141,6 @@ class SimulationService:
             _, df_trade_list, df_benefit = load_simulation_logs_from_disk(
                 run.portfolio_name, run.policy_id + 1, config["follow_stocks"], settings.stock_logs_dir
             )
-            return df_benefit.to_dict(orient="records")
+            return dataframe_to_records(df_benefit)
         benefit = get_stock_benefit(run.policy_id, df_trades)
-        return benefit.reset_index().to_dict(orient="records")
+        return dataframe_to_records(benefit.reset_index())

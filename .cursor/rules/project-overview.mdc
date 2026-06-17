@@ -5,7 +5,7 @@ alwaysApply: true
 
 # 股票交易系统
 
-Personal stock trading web app: market data sync (Tushare), portfolios, screening, backtest simulation.
+Personal stock trading web app: **factor analysis & stock picking**, portfolios, screening, backtest simulation. Market data is **read from PostgreSQL** (loaded by an external ETL).
 
 | Area | Path |
 |------|------|
@@ -15,10 +15,10 @@ Personal stock trading web app: market data sync (Tushare), portfolios, screenin
 | Docker | `docker/docker-compose.yml` |
 | Docs | `docs/` (`mkdocs.yml` at repo root) |
 
-**Ports:** backend **8200**, frontend **3200** (Vite dev and Docker nginx). **Config:** `STOCK_*` / `TUSHARE_TOKEN` in `backend/.env` or `docker/.env`; `frontend/src/config.ts` for API base.
+**Ports:** backend **8200**, frontend **3200**. **Config:** `STOCK_*` in `backend/.env` or `docker/.env`; `frontend/src/config.ts` for API base.
 
-**DB:** app tables in `public`; market data in schema **`tushare`** (`backend/app/core/tushare_schema.py`). 
+**DB:** app tables in `public`; market data in schema **`tushare`** — **written by an external ETL**, read-only in this app. Product focus: **factor analysis (因子)** and **stock picking (选股)**, not in-app data sync.
 
-**Dev:** `cd backend && ./dev.sh` (venv, `python -m alembic upgrade head`, uvicorn). Use backend venv for Alembic — not system `alembic` (wrong `app` package on PYTHONPATH).
+**Dev:** `cd backend && ./dev.sh` (venv, `python -m alembic upgrade head`, uvicorn). Use backend venv for Alembic.
 
 **Wording / UI copy:** see `writing-style.mdc`.

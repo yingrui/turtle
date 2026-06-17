@@ -19,19 +19,32 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/latest-date` | Latest synced trade date (`latest_date: null` if no market data yet) |
+| GET | `/status` | Table freshness (`latest_trade_date`, row counts); `source: external_etl` |
+| GET | `/latest-date` | Latest trade date in `stock_trade_daily` (`null` if empty) |
+
+## Stock pick — `/api/stock-pick`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/` | Fundamental pick on `daily_basic` (sync) |
+| GET | `/presets` | Built-in pick templates |
 
 ## Portfolios — `/api/portfolios`
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/` | List portfolio names |
+| GET | `/watchlist` | Aggregated watchlist across all portfolios (legacy) |
+| GET | `/{name}/watchlist` | Watchlist stocks + quotes for one portfolio |
 | POST | `/` | Create portfolio |
 | GET | `/{name}` | Get config JSON |
 | GET | `/{name}/yaml` | Get YAML representation |
 | PUT | `/{name}` | Update config JSON |
 | PUT | `/{name}/yaml` | Update from YAML body |
 | DELETE | `/{name}` | Delete portfolio |
+| POST | `/{name}/watchlist` | Append `ts_code` to `follow_stocks` |
+| POST | `/{name}/watchlist/bulk` | Bulk append `{ ts_codes: [] }` |
+| DELETE | `/{name}/watchlist/{ts_code}` | Remove symbol from watchlist |
 
 ## Jobs — `/api/jobs`
 
@@ -39,7 +52,17 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 |--------|------|-------------|
 | GET | `/` | List jobs |
 | GET | `/{job_id}` | Job detail |
-| POST | `/` | Create job (data sync or simulation) |
+| POST | `/` | Create job (`portfolio_screen` or `simulation`) |
+
+`data_sync` / `calendar_sync` are **rejected** (400) — use external ETL.
+
+### Simulation job body
+
+`portfolio`, `start_date`, `end_date`, optional `policy_ids`, optional `ts_codes` (overrides `follow_stocks` for the run).
+
+### Screening job body
+
+`as_of_date`, optional `ignore_st`, optional `trend_filter` (`up` / `down`).
 
 ## Screening — `/api/screening`
 
@@ -68,7 +91,7 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 | GET | `/universe/industry-summary` | Circ-mv-weighted change% by industry (`daily_basic.circ_mv` × `stock_trade_daily.pct_chg`) |
 | GET | `/universe` | Paginated universe list with latest-day quote join |
 | GET | `/` | List symbols in a portfolio (`?portfolio=name`) |
-| GET | `/{ts_code}/snapshot` | Basic info + latest daily quote for one symbol |
+| GET | `/{ts_code}/snapshot` | Basic info + latest quote + `fundamentals` from `daily_basic` |
 | GET | `/{ts_code}/ohlcv` | QFQ-adjusted OHLCV series (`?limit=250`, max 2000) |
 | GET | `/{ts_code}/indicators` | Technical indicators |
 | POST | `/{ts_code}/forecast` | Forecast job |
@@ -81,11 +104,7 @@ Sort fields: `ts_code`, `name`, `industry`, `list_date`, `open`, `high`, `low`, 
 
 Quote object on each universe item: `open`, `high`, `low`, `close`, `pre_close`, `pct_chg`, `vol`, `amount`, `trade_date`.
 
-## Portfolios — watchlist
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/portfolios/{name}/watchlist` | Append `ts_code` to portfolio `follow_stocks` (deduped) |
+Snapshot `fundamentals` (when `daily_basic` exists): `pe_ttm`, `pb`, `ps_ttm`, `circ_mv`, `total_mv`, `turnover_rate`, `limit_status`, etc.
 
 ## Health
 

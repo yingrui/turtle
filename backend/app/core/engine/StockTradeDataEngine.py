@@ -33,6 +33,8 @@ class StockTradeDataEngine:
             )
 
         df = self._read_sql(sql)
+        if not df.empty:
+            df = df.sort_values('trade_date').reset_index(drop=True)
         df['trade_date'] = df['trade_date'].apply(lambda x: pd.Timestamp(x))
         return self._add_qfq(df)
 
@@ -44,6 +46,8 @@ class StockTradeDataEngine:
             f"where s.ts_code='{ts_code}'"
         )
         df = self._read_sql(sql)
+        if not df.empty:
+            df = df.sort_values('trade_date').reset_index(drop=True)
         df['trade_date'] = df['trade_date'].apply(lambda x: pd.Timestamp(x))
         return df
 

@@ -20,21 +20,21 @@ flowchart TB
   end
 
   subgraph External["External"]
-    TS[Tushare API]
+    ETL[Market data ETL]
   end
 
   Frontend -->|"HTTP /api"| Backend
   Backend --> Public
   Backend --> Tushare
-  Backend --> TS
+  ETL --> Tushare
 ```
 
 | Layer | Role |
 |-------|------|
 | **PostgreSQL `public`** | App tables — users, background jobs, portfolio configs, simulation run metadata and results. See [Data models](features/data-models.md). |
-| **PostgreSQL `tushare`** | Market data synced from Tushare (Alembic `002_market_data`). Queried by the trading engine and screening. |
-| **Trading engine** | `backend/app/core/` — policies, portfolio simulation, data engines (migrated from the old `src/` tree). |
-| **Jobs** | Long-running data sync and simulation tasks run in FastAPI background tasks; status in `jobs` table. |
+| **PostgreSQL `tushare`** | Market data **written by external ETL**, read by engine, screening, and quotes. Alembic `002_market_data`. |
+| **Trading engine** | `backend/app/core/` — policies, simulation, screening; **factor layer planned**. |
+| **Jobs** | Screening, factor compute, and simulation in background threads; status in `jobs` table. **Not** in-app data sync. |
 
 ## Frontend structure
 

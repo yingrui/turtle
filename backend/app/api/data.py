@@ -7,12 +7,12 @@ from app.core.dataset.Dataset import Dataset
 router = APIRouter(prefix="/api/data", tags=["data"], dependencies=[Depends(get_current_user)])
 
 
+@router.get("/status")
+def data_status(_: User = Depends(get_current_user)):
+    return Dataset().get_data_status()
+
+
 @router.get("/latest-date")
 def latest_date(_: User = Depends(get_current_user)):
-    ds = Dataset()
-    latest = ds.get_latest_date()
-    if latest is None:
-        return {"latest_date": None}
-    if hasattr(latest, "isoformat"):
-        return {"latest_date": latest.isoformat()}
-    return {"latest_date": str(latest)}
+    latest = Dataset().get_latest_date()
+    return {"latest_date": latest}

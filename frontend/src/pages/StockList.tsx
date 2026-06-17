@@ -296,7 +296,7 @@ export function StockList() {
         ) : (
           t('quote.noQuoteData')
         )}{' '}
-        <Link to="/data">{t('quote.syncData')}</Link>
+        <Link to="/data">{t('quote.dataStatus')}</Link>
       </p>
 
       {industrySummary.length > 0 && (

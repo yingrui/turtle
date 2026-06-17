@@ -31,9 +31,7 @@ Compose sets host to `postgres` inside the stack via `docker-compose.yml`.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `TUSHARE_TOKEN` | empty | API token for market data sync |
-
-Required for data collection jobs. Set in `backend/.env` or `docker/.env`.
+| `TUSHARE_TOKEN` | empty | **Optional / legacy.** Market data is loaded by external ETL; this app does not sync from Tushare. |
 
 ## Paths
 

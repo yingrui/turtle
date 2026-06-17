@@ -3,34 +3,32 @@ import { useTranslation } from 'react-i18next';
 import {
   Home,
   Database,
-  FolderOpen,
   Filter,
   Play,
-  BarChart3,
   CandlestickChart,
   LineChart,
   TrendingUp,
   ListTodo,
+  Star,
   Sun,
   Moon,
-  LogOut,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AppBrand } from '../AppBrand';
+import { UserMenu } from './UserMenu';
 import '../../App.scss';
 
 const navItems = [
-  { to: '/', icon: Home, key: 'home' },
-  { to: '/data', icon: Database, key: 'data' },
-  { to: '/portfolio', icon: FolderOpen, key: 'portfolio' },
-  { to: '/screening', icon: Filter, key: 'screening' },
-  { to: '/simulation', icon: Play, key: 'simulation' },
-  { to: '/simulation/results', icon: BarChart3, key: 'results' },
-  { to: '/market', icon: CandlestickChart, key: 'quote' },
-  { to: '/stocks', icon: LineChart, key: 'stocks' },
-  { to: '/forecast', icon: TrendingUp, key: 'forecast' },
-  { to: '/jobs', icon: ListTodo, key: 'jobs' },
+  { to: '/', icon: Home, key: 'home', end: true },
+  { to: '/data', icon: Database, key: 'data', end: true },
+  { to: '/watchlist', icon: Star, key: 'watchlist', end: true },
+  { to: '/screening', icon: Filter, key: 'screening', end: true },
+  { to: '/simulation', icon: Play, key: 'simulation', end: false },
+  { to: '/market', icon: CandlestickChart, key: 'quote', end: true },
+  { to: '/stocks', icon: LineChart, key: 'stocks', end: true },
+  { to: '/forecast', icon: TrendingUp, key: 'forecast', end: true },
+  { to: '/jobs', icon: ListTodo, key: 'jobs', end: true },
 ] as const;
 
 export function MainLayout() {
@@ -47,11 +45,11 @@ export function MainLayout() {
       <aside className="app-sidebar">
         <AppBrand />
         <nav className="app-sidebar-nav">
-          {navItems.map(({ to, icon: Icon, key }) => (
+          {navItems.map(({ to, icon: Icon, key, end }) => (
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
+              end={end}
               className={({ isActive }) => `app-sidebar-link${isActive ? ' active' : ''}`}
             >
               <Icon size={18} />
@@ -62,23 +60,17 @@ export function MainLayout() {
       </aside>
       <main className="app-main">
         <header className="app-header">
-          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
-            {user?.login}
-            {user?.is_admin ? ' · admin' : ''}
-          </span>
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <div className="app-header-toolbar">
             <button
               type="button"
-              className="btn btn-secondary btn-sm"
+              className="app-header-icon-btn"
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
               aria-label="Toggle theme"
             >
-              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={logout}>
-              <LogOut size={16} />
-              <span>{t('auth.logout')}</span>
-            </button>
+            <span className="app-header-divider" aria-hidden />
+            <UserMenu user={user} onLogout={logout} />
           </div>
         </header>
         <div className="app-content">

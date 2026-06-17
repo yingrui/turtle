@@ -27,10 +27,20 @@ class WatchlistBody(BaseModel):
     ts_code: str
 
 
+class WatchlistBulkBody(BaseModel):
+    ts_codes: list[str]
+
+
 @router.get("")
 def list_portfolios(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     svc = PortfolioService(db)
     return {"portfolios": svc.list_portfolios()}
+
+
+@router.get("/watchlist")
+def list_watchlist(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    svc = PortfolioService(db)
+    return svc.list_watchlist_with_quotes()
 
 
 @router.post("")
@@ -60,6 +70,51 @@ def add_to_watchlist(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/{name}/watchlist/bulk")
+def bulk_add_to_watchlist(
+    name: str,
+    body: WatchlistBulkBody,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return svc.add_many_to_watchlist(name, body.ts_codes)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.delete("/{name}/watchlist/{ts_code}")
+def remove_from_watchlist(
+    name: str,
+    ts_code: str,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return svc.remove_from_watchlist(name, ts_code)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/{name}/watchlist")
+def get_portfolio_watchlist(
+    name: str,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return svc.list_portfolio_watchlist_with_quotes(name)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/{name}")

@@ -115,3 +115,62 @@ class PortfolioService:
             stocks.append(ts_code)
         config["follow_stocks"] = stocks
         return self.save_portfolio(name, config)
+
+    def add_many_to_watchlist(self, name: str, ts_codes: list[str]) -> dict:
+        config = self.get_portfolio(name)
+        stocks = list(config.get("follow_stocks") or [])
+        for code in ts_codes:
+            c = (code or "").strip().upper()
+            if c and c not in stocks:
+                stocks.append(c)
+        config["follow_stocks"] = stocks
+        return self.save_portfolio(name, config)
+
+    def remove_from_watchlist(self, name: str, ts_code: str) -> dict:
+        ts_code = ts_code.strip().upper()
+        config = self.get_portfolio(name)
+        stocks = [c for c in (config.get("follow_stocks") or []) if c != ts_code]
+        config["follow_stocks"] = stocks
+        return self.save_portfolio(name, config)
+
+    def list_watchlist_with_quotes(self) -> dict:
+        from app.core.engine import stock_universe
+
+        code_to_portfolios: dict[str, list[str]] = {}
+        rows = self.db.scalars(select(Portfolio).order_by(Portfolio.name)).all()
+        for row in rows:
+            for code in row.config.get("follow_stocks") or []:
+                c = str(code).strip().upper()
+                if not c:
+                    continue
+                code_to_portfolios.setdefault(c, [])
+                if row.name not in code_to_portfolios[c]:
+                    code_to_portfolios[c].append(row.name)
+
+        if not code_to_portfolios:
+            return {"as_of_date": None, "items": []}
+
+        ts_codes = list(code_to_portfolios.keys())
+        items = stock_universe.get_quotes_for_codes(ts_codes)
+        for item in items:
+            item["portfolios"] = code_to_portfolios.get(item["ts_code"], [])
+        items.sort(key=lambda x: x.get("ts_code", ""))
+        as_of = items[0].get("quote", {}).get("trade_date") if items else None
+        return {"as_of_date": as_of, "items": items}
+
+    def list_portfolio_watchlist_with_quotes(self, name: str) -> dict:
+        from app.core.engine import stock_universe
+
+        config = self.get_portfolio(name)
+        ts_codes = [
+            str(c).strip().upper()
+            for c in (config.get("follow_stocks") or [])
+            if str(c).strip()
+        ]
+        if not ts_codes:
+            return {"portfolio": name, "as_of_date": None, "items": []}
+
+        items = stock_universe.get_quotes_for_codes(ts_codes)
+        items.sort(key=lambda x: x.get("ts_code", ""))
+        as_of = items[0].get("quote", {}).get("trade_date") if items else None
+        return {"portfolio": name, "as_of_date": as_of, "items": items}

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from functools import lru_cache
 from typing import Any
 
@@ -95,6 +96,17 @@ def get_latest_trade_date(conn) -> str | None:
     return None
 
 
+def _float_or_none(v) -> float | None:
+    """Convert DB/pandas numeric to JSON-safe float; map NaN/Inf to None."""
+    if v is None:
+        return None
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if math.isfinite(f) else None
+
+
 def _row_to_item(row: dict, latest_date: str | None) -> dict:
     exchange = row.get("exchange")
     if not exchange and row.get("ts_code"):
@@ -107,24 +119,41 @@ def _row_to_item(row: dict, latest_date: str | None) -> dict:
             exchange = "BJ"
 
     quote = None
-    if row.get("quote_close") is not None and latest_date:
+    close = _float_or_none(row.get("quote_close"))
+    if close is not None and latest_date:
         quote = {
             "trade_date": latest_date,
-            "open": float(row["quote_open"]) if row.get("quote_open") is not None else None,
-            "high": float(row["quote_high"]) if row.get("quote_high") is not None else None,
-            "low": float(row["quote_low"]) if row.get("quote_low") is not None else None,
-            "close": float(row["quote_close"]) if row["quote_close"] is not None else None,
-            "pre_close": float(row["quote_pre_close"]) if row.get("quote_pre_close") is not None else None,
-            "pct_chg": float(row["quote_pct_chg"]) if row.get("quote_pct_chg") is not None else None,
-            "vol": float(row["quote_vol"]) if row.get("quote_vol") is not None else None,
-            "amount": float(row["quote_amount"]) if row.get("quote_amount") is not None else None,
+            "open": _float_or_none(row.get("quote_open")),
+            "high": _float_or_none(row.get("quote_high")),
+            "low": _float_or_none(row.get("quote_low")),
+            "close": close,
+            "pre_close": _float_or_none(row.get("quote_pre_close")),
+            "pct_chg": _float_or_none(row.get("quote_pct_chg")),
+            "vol": _float_or_none(row.get("quote_vol")),
+            "amount": _float_or_none(row.get("quote_amount")),
         }
 
     list_date = row.get("list_date")
     if list_date is not None and not isinstance(list_date, str):
         list_date = str(list_date).replace("-", "")[:8]
 
-    return {
+    fundamentals = None
+    fund_fields = (
+        "pe_ttm", "pb", "ps_ttm", "circ_mv", "total_mv", "turnover_rate", "turnover_rate_f"
+    )
+    if any(_float_or_none(row.get(k)) is not None for k in fund_fields) or row.get("limit_status") is not None:
+        fundamentals = {
+            "pe_ttm": _float_or_none(row.get("pe_ttm")),
+            "pb": _float_or_none(row.get("pb")),
+            "ps_ttm": _float_or_none(row.get("ps_ttm")),
+            "circ_mv": _float_or_none(row.get("circ_mv")),
+            "total_mv": _float_or_none(row.get("total_mv")),
+            "turnover_rate": _float_or_none(row.get("turnover_rate")),
+            "turnover_rate_f": _float_or_none(row.get("turnover_rate_f")),
+            "limit_status": int(row["limit_status"]) if row.get("limit_status") is not None and not pd.isna(row.get("limit_status")) else None,
+        }
+
+    item = {
         "ts_code": row["ts_code"],
         "symbol": row.get("symbol"),
         "name": row.get("name"),
@@ -136,6 +165,9 @@ def _row_to_item(row: dict, latest_date: str | None) -> dict:
         "list_date": list_date,
         "quote": quote,
     }
+    if fundamentals is not None:
+        item["fundamentals"] = fundamentals
+    return item
 
 
 def list_universe(
@@ -366,12 +398,58 @@ def get_industry_summary(*, list_status: str = "L", exclude_st: bool = True, lim
             items.append({
                 "industry": row["industry"],
                 "stock_count": int(row["stock_count"]),
-                "avg_pct_chg": float(row["avg_pct_chg"]) if row["avg_pct_chg"] is not None else None,
+                "avg_pct_chg": _float_or_none(row.get("avg_pct_chg")),
                 "up_count": int(row["up_count"] or 0),
                 "down_count": int(row["down_count"] or 0),
-                "total_circ_mv": float(row["total_circ_mv"]) if row.get("total_circ_mv") is not None else None,
+                "total_circ_mv": _float_or_none(row.get("total_circ_mv")),
             })
         return {"as_of_date": latest_date, "weight_by": "circ_mv", "items": items}
+    finally:
+        conn.close()
+
+
+def get_quotes_for_codes(ts_codes: list[str]) -> list[dict]:
+    """Basic info + latest quote for a list of symbols."""
+    if not ts_codes:
+        return []
+
+    conn = get_sql_connection()
+    try:
+        latest_date = get_latest_trade_date(conn)
+        params: dict[str, Any] = {"latest_date": latest_date}
+        placeholders = []
+        for i, code in enumerate(ts_codes):
+            key = f"c{i}"
+            params[key] = code
+            placeholders.append(f":{key}")
+
+        join_daily = ""
+        select_quote = (
+            "NULL AS quote_open, NULL AS quote_high, NULL AS quote_low, NULL AS quote_close, "
+            "NULL AS quote_pre_close, NULL AS quote_pct_chg, NULL AS quote_vol, NULL AS quote_amount"
+        )
+        if latest_date:
+            join_daily = f"""
+            LEFT JOIN {_DAILY} d
+              ON b.ts_code = d.ts_code AND d.trade_date = :latest_date
+            """
+            select_quote = (
+                "d.open AS quote_open, d.high AS quote_high, d.low AS quote_low, d.close AS quote_close, "
+                "d.pre_close AS quote_pre_close, d.pct_chg AS quote_pct_chg, d.vol AS quote_vol, "
+                "d.amount AS quote_amount"
+            )
+
+        sql = f"""
+            SELECT b.ts_code, b.symbol, b.name, b.industry, b.market, b.area, b.list_status, b.list_date,
+                   {_EXCHANGE_CASE} AS exchange,
+                   {select_quote}
+            FROM {_BASIC} b
+            {join_daily}
+            WHERE b.ts_code IN ({", ".join(placeholders)})
+            ORDER BY b.ts_code ASC
+        """
+        df = pd.read_sql(text(sql), con=conn, params=params)
+        return [_row_to_item(row, latest_date) for row in df.to_dict(orient="records")]
     finally:
         conn.close()
 
@@ -392,11 +470,22 @@ def get_stock_snapshot(ts_code: str) -> dict | None:
             join_daily = f"""
             LEFT JOIN {_DAILY} d
               ON b.ts_code = d.ts_code AND d.trade_date = :latest_date
+            LEFT JOIN {_DAILY_BASIC} db
+              ON b.ts_code = db.ts_code AND db.trade_date = :latest_date
             """
             select_quote = (
                 "d.open AS quote_open, d.high AS quote_high, d.low AS quote_low, d.close AS quote_close, "
                 "d.pre_close AS quote_pre_close, d.pct_chg AS quote_pct_chg, d.vol AS quote_vol, "
-                "d.amount AS quote_amount"
+                "d.amount AS quote_amount, "
+                "db.pe_ttm, db.pb, db.ps_ttm, db.circ_mv, db.total_mv, db.turnover_rate, "
+                "db.turnover_rate_f, db.limit_status"
+            )
+        else:
+            select_quote = (
+                "NULL AS quote_open, NULL AS quote_high, NULL AS quote_low, NULL AS quote_close, "
+                "NULL AS quote_pre_close, NULL AS quote_pct_chg, NULL AS quote_vol, NULL AS quote_amount, "
+                "NULL AS pe_ttm, NULL AS pb, NULL AS ps_ttm, NULL AS circ_mv, NULL AS total_mv, "
+                "NULL AS turnover_rate, NULL AS turnover_rate_f, NULL AS limit_status"
             )
 
         sql = f"""

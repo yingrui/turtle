@@ -1,8 +1,8 @@
 # Market quotes (stock universe)
 
-Browse the full A-share universe synced into `tushare.stock_basic`, with latest-day quotes from `tushare.stock_trade_daily`.
+Browse the full A-share universe in `tushare.stock_basic`, with latest-day quotes from `tushare.stock_trade_daily`. Tables are **populated by an external ETL**; this app reads them only.
 
-> Data is **daily close** from Tushare sync — not real-time. The UI labels the as-of trade date on `/market` and stock detail pages.
+> Data is **daily close** — not real-time. The UI labels the as-of trade date on `/market` and stock detail pages.
 
 ## SPA
 

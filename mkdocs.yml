@@ -39,15 +39,25 @@ exclude_docs: |
 nav:
   - Home: index.md
   - Product roadmap: product-roadmap.md
+  - Research:
+      - 索引: research/README.md
+      - 产品定位: research/01-product-positioning.md
+      - 竞品能力: research/02-competitor-capabilities.md
+      - 用户动线: research/03-user-workflows.md
+      - 功能待办: research/04-feature-backlog.md
+      - 数据与 API: research/05-data-and-api-strategy.md
+      - 技术底座: research/06-technical-enablers.md
+      - 因子分析与选股: research/07-factor-and-stock-selection.md
   - Quickstart: quickstart.md
   - Architecture: architecture.md
   - Features:
       - Index: functionalities.md
-      - Data sync: features/data-sync.md
+      - 外部数据契约: features/data-sync.md
       - Market quotes: features/stock-universe.md
       - Portfolios: features/portfolios.md
       - Simulation: features/simulation.md
       - Screening & analysis: features/screening-and-analysis.md
+      - Stock picking: features/stock-pick.md
       - Auth: features/auth.md
       - Configuration: features/configuration.md
       - Data models: features/data-models.md

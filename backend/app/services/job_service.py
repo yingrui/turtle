@@ -11,7 +11,6 @@ from app.database import SessionLocal
 from app.models.job import Job
 from app.models.simulation import SimulationDaily, SimulationRun, SimulationTrade
 from app.services.portfolio_service import PortfolioService
-from app.core.dataset.sync import sync_stock_data, sync_trade_calendar
 from app.services.screening_service import ScreeningService
 from app.core.engine.InvestmentLogger import InvestmentLogger
 from app.core.simulation.runner import run_simulation
@@ -48,25 +47,7 @@ class JobService:
                 job.log = "\n".join(logs)
                 db.commit()
 
-            if job.type == "data_sync":
-                start = date.fromisoformat(payload["from_date"])
-                end = date.fromisoformat(payload.get("to_date", payload["from_date"]))
-                sync_stock_data(
-                    start,
-                    end,
-                    trade_data=payload.get("trade_data", True),
-                    adj_data=payload.get("adj_data", True),
-                    daily_basic=payload.get("daily_basic", True),
-                    dividend=payload.get("dividend", True),
-                    log_fn=log_fn,
-                )
-                job.result = json.dumps({"from_date": payload["from_date"], "to_date": end.isoformat()})
-            elif job.type == "calendar_sync":
-                start_year = int(payload["start_year"])
-                end_year = int(payload.get("end_year", start_year))
-                sync_trade_calendar(start_year, end_year, log_fn=log_fn)
-                job.result = json.dumps({"start_year": start_year, "end_year": end_year})
-            elif job.type == "portfolio_screen":
+            if job.type == "portfolio_screen":
                 as_of = date.fromisoformat(payload["as_of_date"])
                 rows = ScreeningService().run_screen(
                     as_of,
@@ -78,7 +59,10 @@ class JobService:
             elif job.type == "simulation":
                 portfolio_svc = PortfolioService(db)
                 config_name = payload["portfolio"]
-                config = portfolio_svc.get_portfolio(config_name)
+                config = dict(portfolio_svc.get_portfolio(config_name))
+                ts_codes = payload.get("ts_codes")
+                if ts_codes:
+                    config["follow_stocks"] = list(ts_codes)
                 start_date = date.fromisoformat(payload["start_date"])
                 end_date = date.fromisoformat(payload.get("end_date", date.today().isoformat()))
                 policy_ids = payload.get("policy_ids")
@@ -119,7 +103,11 @@ class JobService:
                     )
                     run_ids.append(run_id)
                     log_fn(f"Completed policy {policy_id}")
-                job.result = json.dumps({"run_ids": run_ids})
+                job.result = json.dumps({
+                    "run_ids": run_ids,
+                    "ts_codes_count": len(config.get("follow_stocks") or []),
+                    "portfolio": config_name,
+                })
             else:
                 raise ValueError(f"Unknown job type: {job.type}")
 

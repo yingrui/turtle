@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
 import { useJobPoll } from '../hooks/useJobPoll';
@@ -12,14 +12,20 @@ type PortfolioConfig = {
 
 export function Simulation() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [portfolios, setPortfolios] = useState<string[]>([]);
   const [portfolio, setPortfolio] = useState('');
   const [config, setConfig] = useState<PortfolioConfig | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10));
   const [selectedPolicies, setSelectedPolicies] = useState<number[]>([]);
-  const [jobId, setJobId] = useState<string | null>(null);
+  const [jobId, setJobId] = useState<string | null>(searchParams.get('job_id'));
   const job = useJobPoll(jobId);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('job_id');
+    if (fromUrl) setJobId(fromUrl);
+  }, [searchParams]);
 
   useEffect(() => {
     apiFetch<{ portfolios: string[] }>('/api/portfolios')
@@ -65,7 +71,8 @@ export function Simulation() {
         }),
       });
       setJobId(res.id);
-      toast.success('Simulation started');
+      setSearchParams({ job_id: res.id }, { replace: true });
+      toast.success(t('simulation.started'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to start simulation');
     }
@@ -74,8 +81,7 @@ export function Simulation() {
   const policyCount = config?.policies?.length ?? 0;
 
   return (
-    <div className="page-card">
-      <h1 className="page-title">{t('nav.simulation')}</h1>
+    <>
       <div className="form-row" style={{ maxWidth: 300 }}>
         <label htmlFor="portfolio">Portfolio</label>
         <select id="portfolio" value={portfolio} onChange={(e) => setPortfolio(e.target.value)}>
@@ -119,13 +125,15 @@ export function Simulation() {
           </p>
           {job.status === 'completed' && job.id && (
             <p>
-              <Link to={`/simulation/results?job_id=${job.id}`}>View results →</Link>
+              <Link to={`/simulation/results?job_id=${encodeURIComponent(job.id)}`}>
+                {t('simulation.viewResults')} →
+              </Link>
             </p>
           )}
           {job.error && <p className="error-banner">{job.error}</p>}
           {job.log && <pre className="log-panel">{job.log}</pre>}
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -1,0 +1,110 @@
+.watchlist-page {
+  .watchlist-intro {
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-4);
+    line-height: 1.6;
+  }
+
+  .watchlist-muted {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  .watchlist-asof {
+    margin-bottom: var(--space-3);
+  }
+
+  .watchlist-empty-panel {
+    padding: var(--space-5);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    text-align: center;
+    max-width: 420px;
+
+    h2 {
+      font-size: var(--text-lg);
+      margin: 0 0 var(--space-2);
+    }
+
+    .watchlist-muted {
+      margin-bottom: var(--space-4);
+    }
+  }
+
+  .watchlist-create-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: stretch;
+    text-align: left;
+
+    .form-row {
+      margin: 0;
+    }
+  }
+
+  .watchlist-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .watchlist-select {
+    min-width: 200px;
+    max-width: 280px;
+    margin: 0;
+  }
+
+  .watchlist-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .watchlist-empty-stocks {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4) 0;
+  }
+
+  .watchlist-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .watchlist-modal {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+    width: min(400px, 90vw);
+
+    h2 {
+      font-size: var(--text-lg);
+      margin: 0 0 var(--space-2);
+    }
+
+    .watchlist-muted {
+      margin-bottom: var(--space-4);
+    }
+  }
+
+  .watchlist-modal-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
+}

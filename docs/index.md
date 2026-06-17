@@ -12,20 +12,22 @@ The web app replaces the old Streamlit UI: React SPA + FastAPI backend + Postgre
 
 | Surface | Role |
 |---------|------|
-| **Data collection** | Sync trade calendar, stock basics, daily OHLCV, adj factors, dividends from Tushare into PostgreSQL |
-| **Portfolios** | Create and edit portfolio YAML-style config in the UI (stored as JSON in `portfolios`) |
-| **Screening** | Run policy-based stock screens against synced market data |
+| **Market data** | Read from PostgreSQL `tushare` (written by **external ETL**) |
+| **Portfolios** | Create and edit portfolio config in the UI (stored as JSON in `portfolios`) |
+| **Stock picking (选股)** | Factor / rule-based screens on synced market data |
+| **Factor analysis (因子)** | Planned: factor library, cross-section ranks, IC (see [research](research/07-factor-and-stock-selection.md)) |
 | **Simulation** | Backtest a portfolio + policy over a date range; persist daily equity and trades |
 | **Stock analysis** | OHLCV charts, indicators, and forecast for a single symbol |
-| **Jobs** | Background task status for data sync and simulation runs |
+| **Jobs** | Background tasks for **screening, factor compute, simulation** (not data sync) |
 
-North star: a simple, inspectable system for personal quantitative trading research — not a production brokerage.
+North star: a personal quant research loop — **pick stocks with factors → backtest → review** — not a data pipeline or brokerage.
 
 ## Where to start
 
 | If you want to… | Read |
 |---|---|
 | See product gaps & roadmap | [Product roadmap](product-roadmap.md) |
+| Deep-dive what to build next | [Research](research/README.md)（中文） |
 | Run locally (Docker or host) | [Quickstart](quickstart.md) |
 | Understand the stack | [Architecture](architecture.md) |
 | Find a feature or API route | [Functionalities](functionalities.md) → `features/*.md` |

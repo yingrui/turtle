@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, data, jobs, portfolios, screening, simulations, stocks
+from app.api import auth, data, jobs, portfolios, screening, simulations, stock_pick, stocks
 from app.config import settings
 from app.database import Base, engine
 
@@ -31,6 +31,7 @@ app.include_router(screening.router)
 app.include_router(jobs.router)
 app.include_router(simulations.router)
 app.include_router(stocks.router)
+app.include_router(stock_pick.router)
 
 
 @app.get("/health")

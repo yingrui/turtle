@@ -18,6 +18,15 @@ type Quote = {
   amount: number;
 };
 
+type Fundamentals = {
+  pe_ttm?: number | null;
+  pb?: number | null;
+  ps_ttm?: number | null;
+  circ_mv?: number | null;
+  total_mv?: number | null;
+  turnover_rate?: number | null;
+};
+
 type Snapshot = {
   ts_code: string;
   name: string;
@@ -25,6 +34,7 @@ type Snapshot = {
   market: string;
   exchange: string;
   quote: Quote | null;
+  fundamentals?: Fundamentals | null;
 };
 
 const INDICATOR_TYPES = [
@@ -97,6 +107,7 @@ export function StockDetail() {
   }
 
   const q = snapshot?.quote;
+  const f = snapshot?.fundamentals;
   const pctClass = q?.pct_chg != null ? (q.pct_chg > 0 ? 'up' : q.pct_chg < 0 ? 'down' : '') : '';
 
   return (
@@ -159,6 +170,29 @@ export function StockDetail() {
             <div><dt>{t('quote.col.amount')}</dt><dd>{formatAmount(q.amount)}</dd></div>
           </dl>
         </div>
+      )}
+
+      {f && (f.pe_ttm != null || f.pb != null || f.circ_mv != null || f.turnover_rate != null) && (
+        <dl className="stock-detail-stats" style={{ marginTop: 'var(--space-3)' }}>
+          <div style={{ gridColumn: '1 / -1', fontWeight: 600, marginBottom: 'var(--space-1)' }}>
+            {t('stockDetail.fundamentals')}
+          </div>
+          {f.pe_ttm != null && (
+            <div><dt>{t('stockDetail.pe')}</dt><dd>{f.pe_ttm.toFixed(2)}</dd></div>
+          )}
+          {f.pb != null && (
+            <div><dt>{t('stockDetail.pb')}</dt><dd>{f.pb.toFixed(2)}</dd></div>
+          )}
+          {f.ps_ttm != null && (
+            <div><dt>{t('stockDetail.ps')}</dt><dd>{f.ps_ttm.toFixed(2)}</dd></div>
+          )}
+          {f.circ_mv != null && (
+            <div><dt>{t('stockDetail.circMv')}</dt><dd>{Math.round(f.circ_mv).toLocaleString()}</dd></div>
+          )}
+          {f.turnover_rate != null && (
+            <div><dt>{t('stockDetail.turnover')}</dt><dd>{f.turnover_rate.toFixed(2)}%</dd></div>
+          )}
+        </dl>
       )}
 
       <div className="stock-detail-tabs">

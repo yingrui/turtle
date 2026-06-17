@@ -7,7 +7,9 @@ import { Register } from './pages/Register';
 import { DataCollection } from './pages/DataCollection';
 import { Portfolio } from './pages/Portfolio';
 import { Screening } from './pages/Screening';
+import { Watchlist } from './pages/Watchlist';
 import { Simulation } from './pages/Simulation';
+import { SimulationLayout } from './pages/SimulationLayout';
 import { SimulationResults } from './pages/SimulationResults';
 import { StockList } from './pages/StockList';
 import { StockDetail } from './pages/StockDetail';
@@ -31,8 +33,11 @@ export function App() {
         <Route path="/data" element={<DataCollection />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/screening" element={<Screening />} />
-        <Route path="/simulation" element={<Simulation />} />
-        <Route path="/simulation/results" element={<SimulationResults />} />
+        <Route path="/watchlist" element={<Watchlist />} />
+        <Route path="/simulation" element={<SimulationLayout />}>
+          <Route index element={<Simulation />} />
+          <Route path="results" element={<SimulationResults />} />
+        </Route>
         <Route path="/market" element={<StockList />} />
         <Route path="/stocks/list" element={<StockList />} />
         <Route path="/stocks/:tsCode" element={<StockDetail />} />

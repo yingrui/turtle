@@ -1,27 +1,42 @@
-# Screening & stock analysis
+# Screening, factors & stock analysis
 
-## Screening
+## Stock picking (选股中心)
 
 Route: **`/screening`**
 
-Runs policy-based filters over synced market data. API: `POST /api/screening`. Implementation: `app/services/screening_service.py` + engine policies under `app/core/engine/policy/`.
+| Tab | Engine | API |
+|-----|--------|-----|
+| **基本面** | `daily_basic` filters (PE, PB, cap, turnover) | `POST /api/stock-pick` (sync) |
+| **技术筛选** | Trend + ADF (`PortfolioFilter`) | `POST /api/jobs` → `portfolio_screen` (async) |
+
+Results: link to `/stocks/:tsCode`, add to portfolio watchlist (`POST …/watchlist/bulk`), or send to backtest (`simulation` job with `ts_codes`).
+
+See [Stock picking](stock-pick.md) and [Factor research](../research/07-factor-and-stock-selection.md).
+
+## Watchlist
+
+Route: **`/watchlist`**
+
+Aggregated `follow_stocks` across portfolios with latest quotes: `GET /api/portfolios/watchlist`.
+
+## Factor analysis (因子)
+
+**Planned** — dedicated `/factor` page and `factor_values` table (Phase 3).
 
 ## Market quotes
 
-Route: **`/market`**
+Routes: **`/market`**, **`/stocks/:tsCode`**
 
-Browse all listed stocks with latest-day quotes. See [Stock universe](stock-universe.md).
+Universe list, industry summary, K-line charts. Snapshot includes `fundamentals` from `daily_basic`.
 
-## Stock analysis
+## Stock analysis & forecast
 
-Route: **`/stocks`** (deep link: `?ts_code=600519.SH`)
+Routes: **`/stocks`**, **`/forecast`**
 
-Search symbols, view OHLCV charts and indicators for a `ts_code`. Data from `tushare` tables via `app/services/stock_service.py`.
+Indicators and ARIMA forecast for a single symbol. Data is **read from `tushare`** (populated externally).
 
-## Forecast
+Charts: **Apache ECharts** — `frontend/src/components/Chart.tsx`.
 
-Route: **`/forecast`**
+## Data
 
-`POST /api/stocks/{ts_code}/forecast` triggers a forecast job; results displayed in the UI.
-
-Charts use **Apache ECharts** via `frontend/src/components/Chart.tsx`.
+This app **does not sync** market data. See [External data contract](data-sync.md) and **`/data`** (read-only status).

@@ -85,7 +85,19 @@ MOCK_INDUSTRY = {
     ],
 }
 
-MOCK_SNAPSHOT = MOCK_UNIVERSE["items"][0]
+MOCK_SNAPSHOT = {
+    **MOCK_UNIVERSE["items"][0],
+    "fundamentals": {
+        "pe_ttm": 5.2,
+        "pb": 0.6,
+        "ps_ttm": 1.1,
+        "circ_mv": 200000.0,
+        "total_mv": 250000.0,
+        "turnover_rate": 0.85,
+        "turnover_rate_f": 1.2,
+        "limit_status": 0,
+    },
+}
 
 
 @patch("app.services.stock_service.stock_universe.list_universe", return_value=MOCK_UNIVERSE)
@@ -125,7 +137,9 @@ def test_stock_snapshot(mock_snap, auth_token):
     headers = _auth_headers(auth_token)
     res = client.get("/api/stocks/000001.SZ/snapshot", headers=headers)
     assert res.status_code == 200
-    assert res.json()["ts_code"] == "000001.SZ"
+    data = res.json()
+    assert data["ts_code"] == "000001.SZ"
+    assert data["fundamentals"]["pe_ttm"] == 5.2
     mock_snap.assert_called_once_with("000001.SZ")
 
 
@@ -162,3 +176,36 @@ def test_add_watchlist(auth_token):
         headers=headers,
     )
     assert res2.json()["follow_stocks"].count("000001.SZ") == 1
+
+
+def test_row_to_item_sanitizes_nan():
+    import json
+    import math
+
+    from app.core.engine.stock_universe import _row_to_item
+
+    item = _row_to_item(
+        {
+            "ts_code": "000001.SZ",
+            "name": "Test",
+            "quote_open": float("nan"),
+            "quote_high": 10.0,
+            "quote_low": 9.0,
+            "quote_close": 9.5,
+            "quote_pre_close": float("nan"),
+            "quote_pct_chg": float("nan"),
+            "quote_vol": 1000,
+            "quote_amount": float("inf"),
+        },
+        "2026-06-11",
+    )
+    json.dumps(item)
+    assert item["quote"]["open"] is None
+    assert item["quote"]["close"] == 9.5
+    assert item["quote"]["pct_chg"] is None
+    assert item["quote"]["amount"] is None
+    assert not any(
+        isinstance(v, float) and not math.isfinite(v)
+        for v in item["quote"].values()
+        if isinstance(v, float)
+    )

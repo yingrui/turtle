@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
 import pandas as pd
 
@@ -10,9 +10,18 @@ from app.core.engine.StockRepository import StockRepository
 from app.core.util.math_methods import round_down
 
 
+def _row_date(value) -> date:
+    """Normalize DB date, pandas Timestamp, or numpy datetime64 to datetime.date."""
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    return pd.Timestamp(value).date()
+
+
 def calculate_cagr(policy_id: int, df: pd.DataFrame) -> dict:
-    start_date = date.fromtimestamp(df.date.values[0].astype(int) / 1e9)
-    end_date = date.fromtimestamp(df.date.values[-1].astype(int) / 1e9)
+    start_date = _row_date(df.date.values[0])
+    end_date = _row_date(df.date.values[-1])
     years = end_date.year - start_date.year if end_date.year > start_date.year else 1
     initial_total = float(df.total.values[0])
     total = float(df.total.values[-1])
