@@ -6,7 +6,7 @@ Full stack: `docker/docker-compose.yml` — Postgres, backend, frontend (nginx).
 
 | Service | Image / build | Notes |
 |---|---|---|
-| `postgres` | `pgvector/pgvector:pg16` | No host port by default |
+| `postgres` | `pgvector/pgvector:pg16` | Host **5433** → container 5432 (`STOCK_DATABASE_HOST_PORT`) |
 | `backend` | `docker/Dockerfile` (`backend` target) | FastAPI on **8200**, internal only |
 | `frontend` | `docker/Dockerfile.frontend` | nginx on host **3200** → proxies `/api` to backend |
 

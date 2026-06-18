@@ -53,7 +53,7 @@ flowchart LR
 | Frontend (Docker, nginx) | **3200** |
 | Frontend (Vite dev) | **3200** (proxies `/api` → backend) |
 | Backend (FastAPI) | **8200** |
-| PostgreSQL | **5432** (host or Compose internal) |
+| PostgreSQL | **5433** on host (Compose); **5432** inside the stack |
 
 ## Project layout
 

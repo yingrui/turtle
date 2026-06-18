@@ -33,6 +33,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    ports:
+      - "${STOCK_DATABASE_HOST_PORT:-5433}:5432"
 
   backend:
     build:
