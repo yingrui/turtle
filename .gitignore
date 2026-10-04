@@ -38,3 +38,7 @@ _site/
 *.swp
 .DS_Store
 .ipynb_checkpoints
+
+.openkms/skills/
+conversation_history/
+large_tool_results/
