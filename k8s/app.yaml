@@ -1,5 +1,8 @@
 # Combined manifests for openKMS: kubernetes apply --file k8s/app.yaml --namespace stock
-# Create namespace first: kubectl apply -f k8s/namespace.yaml
+# Prerequisites:
+#   kubectl apply -f k8s/namespace.yaml
+#   Secret stock-secrets in namespace stock (create in cluster; not in this repo)
+#     keys: STOCK_DATABASE_PASSWORD, STOCK_SECRET_KEY, TUSHARE_TOKEN
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -12,14 +15,11 @@ data:
   STOCK_DATABASE_HOST: host.docker.internal
   STOCK_DATABASE_PORT: "5432"
   STOCK_DATABASE_USER: stock_user
-  STOCK_DATABASE_PASSWORD: stock_user_password
   STOCK_DATABASE_NAME: stock
-  STOCK_SECRET_KEY: stock-dev-secret-change-in-production
   STOCK_AUTH_MODE: none
   STOCK_ALLOW_SIGNUP: "false"
   STOCK_FRONTEND_URL: ""
   STOCK_LOGS_DIR: /app/logs
-  TUSHARE_TOKEN: ""
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -49,6 +49,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: stock-config
+            - secretRef:
+                name: stock-secrets
           readinessProbe:
             httpGet:
               path: /health
