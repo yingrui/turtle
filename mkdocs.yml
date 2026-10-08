@@ -64,6 +64,7 @@ nav:
       - API reference: features/api-reference.md
   - Operations:
       - Docker: operations/docker.md
+      - Kubernetes: operations/kubernetes.md
   - Developer:
       - Setup: developer/setup.md
       - Design system: design-system.md

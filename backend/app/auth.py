@@ -1,17 +1,37 @@
 import time
+from typing import Any
+from urllib.parse import unquote
 
 import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, Request
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
 from app.models.user import User
 
+
+def _header_text(value: str | None) -> str:
+    """openKMS may percent-encode header values (e.g. spaces as %20)."""
+    return unquote((value or "").strip())
+
 LOCAL_JWT_ALG = "HS256"
 LOCAL_JWT_ISS = "stock-local"
+
+# Fallback when STOCK_AUTH_MODE=none and openKMS identity headers are absent (local/dev).
+ANONYMOUS_USER = User(
+    id="anonymous",
+    login="anonymous",
+    password_hash="",
+    is_admin=True,
+)
+
+OPENKMS_HEADER_USER_ID = "x-openkms-user-id"
+OPENKMS_HEADER_USERNAME = "x-openkms-username"
+OPENKMS_HEADER_USER_NAME = "x-openkms-user-name"
+OPENKMS_HEADER_USER_EMAIL = "x-openkms-user-email"
+OPENKMS_HEADER_USER_ADMIN = "x-openkms-user-admin"
 
 
 def hash_password(password: str) -> str:
@@ -56,7 +76,40 @@ def get_token_from_request(request: Request) -> str | None:
     return request.cookies.get("stock_token")
 
 
+def get_openkms_claims(request: Request) -> dict[str, Any] | None:
+    """Identity injected by openKMS Service proxy on every request."""
+    user_id = _header_text(request.headers.get(OPENKMS_HEADER_USER_ID))
+    if not user_id:
+        return None
+    username = _header_text(request.headers.get(OPENKMS_HEADER_USERNAME)) or user_id
+    name = _header_text(request.headers.get(OPENKMS_HEADER_USER_NAME)) or username
+    email_raw = _header_text(request.headers.get(OPENKMS_HEADER_USER_EMAIL))
+    admin_raw = _header_text(request.headers.get(OPENKMS_HEADER_USER_ADMIN)).lower() or "false"
+    return {
+        "id": user_id[:36],
+        "login": username[:64],
+        "name": name,
+        "email": email_raw or None,
+        "is_admin": admin_raw in ("true", "1", "yes"),
+    }
+
+
+def user_from_openkms_claims(claims: dict[str, Any]) -> User:
+    return User(
+        id=claims["id"],
+        login=claims["login"],
+        password_hash="",
+        is_admin=bool(claims["is_admin"]),
+    )
+
+
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    if settings.stock_auth_mode == "none":
+        claims = get_openkms_claims(request)
+        request.state.openkms = claims
+        if claims:
+            return user_from_openkms_claims(claims)
+        return ANONYMOUS_USER
     token = get_token_from_request(request)
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -64,6 +117,5 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     user = db.get(User, payload["sub"])
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
+    request.state.openkms = None
     return user
-
-

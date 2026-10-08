@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { AppBrand } from '../components/AppBrand';
@@ -7,11 +7,15 @@ import { toast } from 'sonner';
 
 export function Login() {
   const { t } = useTranslation();
-  const { login, allowSignup } = useAuth();
+  const { login, allowSignup, authMode, isLoading } = useAuth();
   const navigate = useNavigate();
   const [loginName, setLoginName] = useState('');
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
+
+  if (!isLoading && authMode !== 'local') {
+    return <Navigate to="/" replace />;
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

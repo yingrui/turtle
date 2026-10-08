@@ -28,7 +28,8 @@ class Settings(BaseSettings):
     stock_secret_key: str = Field(
         default="stock-dev-secret-change-in-production", validation_alias="STOCK_SECRET_KEY"
     )
-    stock_auth_mode: str = Field(default="local", validation_alias="STOCK_AUTH_MODE")
+    # none = no login (openKMS iframe / external auth later); local = built-in JWT
+    stock_auth_mode: str = Field(default="none", validation_alias="STOCK_AUTH_MODE")
     stock_allow_signup: bool = Field(default=True, validation_alias="STOCK_ALLOW_SIGNUP")
     stock_local_jwt_exp_hours: int = Field(default=168, validation_alias="STOCK_LOCAL_JWT_EXP_HOURS")
     stock_logs_dir: str = Field(default="/app/logs", validation_alias="STOCK_LOGS_DIR")

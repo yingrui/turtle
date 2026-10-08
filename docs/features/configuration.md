@@ -17,15 +17,17 @@ Canonical source: `backend/app/config.py`. Ready-to-edit example: `backend/.env.
 
 Compose sets host to `postgres` inside the stack via `docker-compose.yml`.
 
-## Authentication (local mode)
+## Authentication
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `STOCK_AUTH_MODE` | `local` | Only `local` is implemented |
-| `STOCK_ALLOW_SIGNUP` | `true` | Self-registration; **first** user is admin |
-| `STOCK_LOCAL_JWT_EXP_HOURS` | `168` | JWT lifetime |
-| `STOCK_SECRET_KEY` | dev placeholder | HS256 signing — **rotate in production** |
+| `STOCK_AUTH_MODE` | `none` | `none` = openKMS proxy identity headers (no in-app login); `local` = username/password JWT |
+| `STOCK_ALLOW_SIGNUP` | `true` | Self-registration when mode is `local`; **first** user is admin |
+| `STOCK_LOCAL_JWT_EXP_HOURS` | `168` | JWT lifetime (`local` only) |
+| `STOCK_SECRET_KEY` | dev placeholder | HS256 signing for `local` — **rotate if using local** |
 | `STOCK_FRONTEND_URL` | `http://localhost:3200` | CORS allowed origin |
+
+See [Auth](auth.md).
 
 ## Tushare
 

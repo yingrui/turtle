@@ -1,27 +1,16 @@
-FROM python:3.12-slim-bookworm AS base
+ARG BACKEND_BASE=turtle-backend-base:latest
+FROM ${BACKEND_BASE}
 
-WORKDIR /app
+WORKDIR /app/backend
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY backend/pyproject.toml /app/backend/pyproject.toml
 COPY backend/app /app/backend/app
 COPY backend/alembic /app/backend/alembic
 COPY backend/alembic.ini /app/backend/alembic.ini
 COPY backend/scripts /app/backend/scripts
-WORKDIR /app/backend
-RUN pip install --no-cache-dir -e .
+COPY backend/pyproject.toml /app/backend/pyproject.toml
 
-ENV PYTHONPATH=/app/backend
-ENV STOCK_LOGS_DIR=/app/logs
-
-RUN mkdir -p /app/logs
-
-FROM base AS backend
-
-WORKDIR /app/backend
+# Deps already in the base image; this only registers the local package.
+RUN pip install --no-cache-dir --no-deps -e .
 
 EXPOSE 8200
 

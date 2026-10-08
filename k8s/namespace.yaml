@@ -1,0 +1,7 @@
+# Cluster-scoped — apply with kubectl (openKMS apply rejects Namespace).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stock
+  labels:
+    app.kubernetes.io/part-of: turtle

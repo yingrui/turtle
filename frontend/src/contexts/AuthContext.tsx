@@ -2,7 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useNavigate } from 'react-router-dom';
 import { apiFetch, clearToken, getToken, setToken } from '../utils/api';
 
-type User = { id: string; login: string; is_admin: boolean };
+type User = {
+  id: string;
+  login: string;
+  is_admin: boolean;
+  name?: string | null;
+  email?: string | null;
+};
 
 type AuthContextValue = {
   isAuthenticated: boolean;
@@ -21,11 +27,22 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [authMode, setAuthMode] = useState('local');
-  const [allowSignup, setAllowSignup] = useState(true);
+  const [authMode, setAuthMode] = useState('none');
+  const [allowSignup, setAllowSignup] = useState(false);
   const navigate = useNavigate();
 
-  const loadUser = useCallback(async () => {
+  const loadUser = useCallback(async (mode: string) => {
+    if (mode === 'none') {
+      try {
+        const me = await apiFetch<User>('/api/auth/me');
+        setUser(me);
+      } catch {
+        setUser({ id: 'anonymous', login: 'anonymous', is_admin: true });
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
     const token = getToken();
     if (!token) {
       setUser(null);
@@ -48,14 +65,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((m) => {
         setAuthMode(m.mode);
         setAllowSignup(m.allow_signup);
+        return loadUser(m.mode);
       })
-      .catch(() => {});
-    loadUser();
+      .catch(() => {
+        setAuthMode('none');
+        return loadUser('none');
+      });
   }, [loadUser]);
 
   const completeLocalSession = useCallback(async (token: string) => {
     setToken(token);
-    await loadUser();
+    await loadUser('local');
   }, [loadUser]);
 
   const login = useCallback(async (loginName: string, password: string) => {
@@ -77,12 +97,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     clearToken();
     setUser(null);
-    navigate('/login');
-  }, [navigate]);
+    if (authMode === 'local') {
+      navigate('/login');
+    }
+  }, [navigate, authMode]);
 
   const value = useMemo(
     () => ({
-      isAuthenticated: !!user,
+      isAuthenticated: authMode === 'none' || !!user,
       isLoading,
       authMode,
       allowSignup,

@@ -4,6 +4,8 @@ import pytest
 
 os.environ.setdefault("DB_URL", "sqlite:///./test_stock.db")
 os.environ.setdefault("STOCK_SECRET_KEY", "test-secret")
+# Keep local JWT for tests that register/login; runtime default is none (openKMS iframe).
+os.environ.setdefault("STOCK_AUTH_MODE", "local")
 os.environ.setdefault("STOCK_LOGS_DIR", os.path.join(os.path.dirname(__file__), "../../logs"))
 
 

@@ -33,7 +33,7 @@ const navItems = [
 
 export function MainLayout() {
   const { t } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logout, authMode } = useAuth();
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export function MainLayout() {
               {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
             <span className="app-header-divider" aria-hidden />
-            <UserMenu user={user} onLogout={logout} />
+            <UserMenu user={user} onLogout={logout} showLogout={authMode === 'local'} />
           </div>
         </header>
         <div className="app-content">

@@ -2,6 +2,8 @@
 
 **`docker/docker-compose.yml`** runs PostgreSQL (pgvector/pg16), the FastAPI backend, and an nginx-served frontend at **http://localhost:3200**. The browser talks only to nginx; nginx proxies `/api` to the backend on **8200** inside the Compose network.
 
+For openKMS-hosted deploy, **`k8s/`** runs backend + frontend in namespace `stock` against an **external** Postgres; see [Operations · Kubernetes](operations/kubernetes.md).
+
 ## High-level diagram
 
 ```mermaid

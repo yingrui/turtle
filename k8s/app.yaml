@@ -1,0 +1,154 @@
+# Combined manifests for openKMS: kubernetes apply --file k8s/app.yaml --namespace stock
+# Create namespace first: kubectl apply -f k8s/namespace.yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stock-config
+  namespace: stock
+  labels:
+    app.kubernetes.io/part-of: turtle
+data:
+  STOCK_DATABASE_HOST: host.docker.internal
+  STOCK_DATABASE_PORT: "5432"
+  STOCK_DATABASE_USER: stock_user
+  STOCK_DATABASE_PASSWORD: stock_user_password
+  STOCK_DATABASE_NAME: stock
+  STOCK_SECRET_KEY: stock-dev-secret-change-in-production
+  STOCK_AUTH_MODE: none
+  STOCK_ALLOW_SIGNUP: "false"
+  STOCK_FRONTEND_URL: ""
+  STOCK_LOGS_DIR: /app/logs
+  TUSHARE_TOKEN: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: stock
+  labels:
+    app: backend
+    app.kubernetes.io/part-of: turtle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: turtle-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8200
+              name: http
+          envFrom:
+            - configMapRef:
+                name: stock-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: logs
+              mountPath: /app/logs
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: logs
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: stock
+  labels:
+    app: backend
+    app.kubernetes.io/part-of: turtle
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 8200
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: stock
+  labels:
+    app: frontend
+    app.kubernetes.io/part-of: turtle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: turtle-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3200
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: stock
+  labels:
+    app: frontend
+    app.kubernetes.io/part-of: turtle
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 3200
+      targetPort: http

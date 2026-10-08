@@ -40,7 +40,6 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-      target: backend
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://127.0.0.1:8200/health"]
       interval: 15s
@@ -51,8 +50,8 @@ services:
       <<: *stock_db_env
       TUSHARE_TOKEN: ${TUSHARE_TOKEN:-}
       STOCK_SECRET_KEY: ${STOCK_SECRET_KEY:-stock-dev-secret-change-in-production}
-      STOCK_AUTH_MODE: local
-      STOCK_ALLOW_SIGNUP: ${STOCK_ALLOW_SIGNUP:-true}
+      STOCK_AUTH_MODE: ${STOCK_AUTH_MODE:-none}
+      STOCK_ALLOW_SIGNUP: ${STOCK_ALLOW_SIGNUP:-false}
       STOCK_LOGS_DIR: /app/logs
       STOCK_FRONTEND_URL: http://localhost:3200
     volumes:
@@ -68,7 +67,7 @@ services:
       args:
         VITE_API_URL: ""
     ports:
-      - "3200:80"
+      - "3200:3200"
     depends_on:
       backend:
         condition: service_healthy

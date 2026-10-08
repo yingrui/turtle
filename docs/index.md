@@ -36,6 +36,7 @@ North star: a personal quant research loop — **pick stocks with factors → ba
 | HTTP reference | [API reference](features/api-reference.md) |
 | Host dev setup (venv, Alembic, pgvector) | [Developer setup](developer/setup.md) |
 | Docker deployment | [Operations · Docker](operations/docker.md) |
+| Kubernetes (openKMS App) | [Operations · Kubernetes](operations/kubernetes.md) |
 | Frontend tokens and SCSS | [Design system](design-system.md) |
 
 ## At a glance

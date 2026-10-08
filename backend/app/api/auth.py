@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -33,15 +33,27 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class MeResponse(BaseModel):
+    id: str
+    login: str
+    is_admin: bool
+    name: str | None = None
+    email: str | None = None
+
+
 @router.get("/mode", response_model=AuthModeResponse)
 def auth_mode():
-    return AuthModeResponse(mode=settings.stock_auth_mode, allow_signup=settings.stock_allow_signup)
+    local = settings.stock_auth_mode == "local"
+    return AuthModeResponse(
+        mode=settings.stock_auth_mode,
+        allow_signup=local and settings.stock_allow_signup,
+    )
 
 
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)):
     if settings.stock_auth_mode != "local":
-        raise HTTPException(status_code=400, detail="Only local auth is supported")
+        raise HTTPException(status_code=400, detail="Local login is disabled")
     user = db.scalar(select(User).where(User.login == body.login))
     if user is None or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid login or password")
@@ -50,6 +62,8 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/register", response_model=TokenResponse)
 def register(body: RegisterRequest, db: Session = Depends(get_db)):
+    if settings.stock_auth_mode != "local":
+        raise HTTPException(status_code=400, detail="Local signup is disabled")
     if not settings.stock_allow_signup:
         raise HTTPException(status_code=403, detail="Signup is disabled")
     existing = db.scalar(select(User).where(User.login == body.login))
@@ -67,6 +81,15 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     return TokenResponse(access_token=mint_local_user_jwt(user))
 
 
-@router.get("/me")
-def me(user: User = Depends(get_current_user)):
-    return {"id": user.id, "login": user.login, "is_admin": user.is_admin}
+@router.get("/me", response_model=MeResponse)
+def me(request: Request, user: User = Depends(get_current_user)):
+    claims = getattr(request.state, "openkms", None)
+    if claims:
+        return MeResponse(
+            id=user.id,
+            login=user.login,
+            is_admin=user.is_admin,
+            name=claims.get("name"),
+            email=claims.get("email"),
+        )
+    return MeResponse(id=user.id, login=user.login, is_admin=user.is_admin, name=user.login)

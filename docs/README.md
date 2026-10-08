@@ -10,6 +10,7 @@ If you are reading this on GitHub, start at:
 - [Functionalities](functionalities.md) — feature index
 - [Developer setup](developer/setup.md) — venv, Alembic, PostgreSQL grants
 - [Operations · Docker](operations/docker.md) — Compose stack
+- [Operations · Kubernetes](operations/kubernetes.md) — openKMS hosted App
 - [Design system](design-system.md) — SCSS tokens and conventions
 
 Build locally (optional):

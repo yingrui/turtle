@@ -20,6 +20,7 @@ import { Jobs } from './pages/Jobs';
 export function App() {
   return (
     <Routes>
+      {/* Kept for STOCK_AUTH_MODE=local; unused when mode is none (openKMS iframe). */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route

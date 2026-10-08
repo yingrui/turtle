@@ -45,5 +45,6 @@ Legacy: `/data` page and `data_sync` jobs exist in code but are **out of product
 | Topic | Doc |
 |-------|-----|
 | Docker Compose | [Operations · Docker](operations/docker.md) |
+| Kubernetes / openKMS App | [Operations · Kubernetes](operations/kubernetes.md) |
 | Host development | [Developer setup](developer/setup.md) |
 | Frontend styling | [Design system](design-system.md) |
