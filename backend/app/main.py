@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -8,8 +9,10 @@ from app.api import auth, data, jobs, portfolios, screening, simulations, stock_
 from app.config import settings
 from app.database import Base, engine
 
-# Touched by POST /-/reload so uvicorn --reload (backend-dev) restarts workers after openKMS dev-sync.
-_RELOAD_SENTINEL = Path(__file__).resolve().parent / ".reload"
+# Written by POST /-/reload so uvicorn --reload restarts the worker after openKMS dev-sync.
+# Use a non-dotfile name: watchfiles ignores hidden paths by default.
+_RELOAD_SENTINEL = Path(__file__).resolve().parent / "_reload_trigger.py"
+_STARTED_AT = datetime.now(timezone.utc).isoformat()
 
 
 @asynccontextmanager
@@ -40,12 +43,13 @@ app.include_router(stock_pick.router)
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "started_at": _STARTED_AT}
 
 
 @app.post("/-/reload")
 def hot_reload():
-    """openKMS kubernetes --reload webhook; no-op useful without uvicorn --reload."""
-    _RELOAD_SENTINEL.touch()
-    return {"ok": True}
+    """openKMS kubernetes --reload webhook: bump sentinel so uvicorn --reload restarts."""
+    stamp = datetime.now(timezone.utc).isoformat()
+    _RELOAD_SENTINEL.write_text(f"{stamp}\n", encoding="utf-8")
+    return {"ok": True, "sentinel": stamp}
 

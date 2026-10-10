@@ -19,4 +19,14 @@ client = TestClient(app)
 def test_health():
     r = client.get("/health")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok"}
+    body = r.json()
+    assert body["status"] == "ok"
+    assert "started_at" in body
+
+
+def test_hot_reload_endpoint():
+    r = client.post("/-/reload")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["ok"] is True
+    assert body.get("sentinel")

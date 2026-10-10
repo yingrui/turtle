@@ -22,6 +22,7 @@ build/
 # Backend runtime / test artifacts
 backend/test_stock.db
 backend/app/.reload
+backend/app/_reload_trigger.py
 logs/
 *.log
 portfolio.csv
