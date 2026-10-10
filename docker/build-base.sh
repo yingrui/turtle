@@ -10,6 +10,4 @@ docker build -f docker/Dockerfile.backend-base -t turtle-backend-base:latest .
 echo "==> turtle-frontend-base:latest"
 docker build -f docker/Dockerfile.frontend-base -t turtle-frontend-base:latest .
 
-echo "Done. App images:"
-echo "  docker build -f docker/Dockerfile -t turtle-backend:latest ."
-echo "  docker build -f docker/Dockerfile.frontend --build-arg VITE_BASE=./ -t turtle-frontend:latest ."
+echo "Done. Next: ./docker/build-images.sh  # stable + *-dev (hot reload)"

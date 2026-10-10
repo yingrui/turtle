@@ -9,8 +9,9 @@ type UserMenuProps = {
   showLogout?: boolean;
 };
 
-function displayName(user: { login: string; name?: string | null }): string {
-  return (user.name || user.login).trim() || user.login;
+function displayName(user: { login?: string | null; name?: string | null }): string {
+  const raw = (user.name || user.login || '').trim();
+  return raw || user.login || user.name || 'user';
 }
 
 function userInitials(label: string): string {

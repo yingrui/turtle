@@ -7,25 +7,23 @@ Full stack: `docker/docker-compose.yml` — Postgres, backend, frontend (nginx).
 | Service | Image / build | Notes |
 |---|---|---|
 | `postgres` | `pgvector/pgvector:pg16` | Host **5433** → container 5432 (`STOCK_DATABASE_HOST_PORT`) |
-| `backend` | `docker/Dockerfile` ← `turtle-backend-base` | FastAPI on **8200**, internal only |
-| `frontend` | `docker/Dockerfile.frontend` ← `turtle-frontend-base` | nginx listens **3200** (host maps `3200:3200`) → proxies `/api` to backend |
+| `backend` | `docker/Dockerfile` target `backend-prod` | FastAPI on **8200** |
+| `frontend` | `docker/Dockerfile.frontend` target `frontend-prod` | nginx **3200** → `/api` → backend |
 
-## Base images (deps)
-
-Python wheels / `npm ci` live in base images so day-to-day app rebuilds stay fast. Build once (and again when `backend/pyproject.toml` or `frontend/package-lock.json` change):
+## Base + app images
 
 ```bash
-./docker/build-base.sh
-# → turtle-backend-base:latest
-# → turtle-frontend-base:latest
+./docker/build-base.sh     # deps (pyproject / package-lock)
+./docker/build-images.sh   # turtle-* (dev/test) + turtle-*-prod
 ```
 
-| Dockerfile | Tag | Invalidates when |
-|---|---|---|
-| `docker/Dockerfile.backend-base` | `turtle-backend-base:latest` | `backend/pyproject.toml` deps |
-| `docker/Dockerfile.frontend-base` | `turtle-frontend-base:latest` | `frontend/package-lock.json` |
+| Tag | Role |
+|---|---|
+| `turtle-backend-base` / `turtle-frontend-base` | Dependencies only |
+| `turtle-backend` / `turtle-frontend` | **Dev / test** — reload (`uvicorn --reload` / Vite) + `POST /-/reload` |
+| `turtle-backend-prod` / `turtle-frontend-prod` | **Production** — no watcher; nginx SPA |
 
-App images `FROM` these bases and only copy source + build.
+Compose uses `*-prod` targets. K8s (stock) uses `turtle-backend` / `turtle-frontend`. See [Kubernetes](kubernetes.md).
 
 ## Bring it up
 

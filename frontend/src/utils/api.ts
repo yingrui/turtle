@@ -14,13 +14,14 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-/** Resolve API path. With Vite `base: './'` (HashRouter), use relative URLs so openKMS service proxy works. */
+/**
+ * Same-origin API URL. Prefer relative paths (no leading `/`) so the request
+ * stays under the current document path — required when hosted behind the
+ * openKMS Apps proxy (`…/proxy/`). Absolute `/api/…` would hit openKMS itself.
+ */
 function resolveUrl(path: string): string {
   if (config.apiUrl) return `${config.apiUrl}${path}`;
-  if (import.meta.env.BASE_URL === './') {
-    return path.replace(/^\//, '');
-  }
-  return path;
+  return path.replace(/^\//, '');
 }
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {

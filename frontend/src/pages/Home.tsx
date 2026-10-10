@@ -26,15 +26,6 @@ type WatchlistItem = {
   quote: { close: number; pct_chg: number } | null;
 };
 
-type Job = {
-  id: string;
-  type: string;
-  status: string;
-  created_at: string | null;
-};
-
-const JOB_TYPES = new Set(['portfolio_screen', 'simulation']);
-
 function pctClass(v: number | null | undefined) {
   if (v == null) return '';
   if (v > 0) return 'up';
@@ -56,19 +47,17 @@ export function Home() {
   const [portfolio, setPortfolio] = useState<string | null>(null);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [watchlistTotal, setWatchlistTotal] = useState(0);
-  const [jobs, setJobs] = useState<Job[]>([]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        const [statusRes, metaRes, industryRes, portfoliosRes, jobsRes] = await Promise.all([
+        const [statusRes, metaRes, industryRes, portfoliosRes] = await Promise.all([
           apiFetch<DataStatus>('/api/data/status'),
           apiFetch<UniverseMeta>('/api/stocks/universe/meta'),
           apiFetch<{ items: IndustryItem[] }>('/api/stocks/universe/industry-summary?limit=12'),
           apiFetch<{ portfolios: string[] }>('/api/portfolios'),
-          apiFetch<{ jobs: Job[] }>('/api/jobs'),
         ]);
 
         if (cancelled) return;
@@ -76,11 +65,6 @@ export function Home() {
         setDataStatus(statusRes);
         setMeta(metaRes);
         setIndustries(industryRes.items ?? []);
-        setJobs(
-          (jobsRes.jobs ?? [])
-            .filter((j) => JOB_TYPES.has(j.type))
-            .slice(0, 6),
-        );
 
         const firstPortfolio = portfoliosRes.portfolios[0] ?? null;
         setPortfolio(firstPortfolio);
@@ -237,43 +221,6 @@ export function Home() {
               )}
             </section>
           </div>
-
-          <section className="home-panel home-jobs">
-            <div className="home-panel-head">
-              <h2>{t('home.jobsSection')}</h2>
-              <Link to="/jobs">{t('home.viewAll')}</Link>
-            </div>
-            {jobs.length === 0 ? (
-              <p className="home-muted">{t('home.noJobs')}</p>
-            ) : (
-              <table className="data-table home-table">
-                <thead>
-                  <tr>
-                    <th>{t('home.jobType')}</th>
-                    <th>{t('home.jobStatus')}</th>
-                    <th>{t('home.jobTime')}</th>
-                    <th>{t('quote.col.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {jobs.map((job) => (
-                    <tr key={job.id}>
-                      <td>{job.type}</td>
-                      <td>{job.status}</td>
-                      <td>{job.created_at?.slice(0, 16).replace('T', ' ') ?? '—'}</td>
-                      <td>
-                        {job.type === 'simulation' && job.status === 'completed' && (
-                          <Link to={`/simulation/results?job_id=${encodeURIComponent(job.id)}`}>
-                            {t('simulation.viewResults')}
-                          </Link>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </section>
 
           <div className="home-actions">
             <Link to="/watchlist" className="btn btn-primary">{t('nav.watchlist')}</Link>

@@ -1,43 +1,33 @@
-# Combined manifests for openKMS: kubernetes apply --file k8s/app.yaml --namespace stock
-# Prerequisites:
-#   kubectl apply -f k8s/namespace.yaml
-#   Secret stock-secrets in namespace stock (create in cluster; not in this repo)
-#     keys: STOCK_DATABASE_PASSWORD, STOCK_SECRET_KEY, TUSHARE_TOKEN
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: stock-config
-  namespace: stock
-  labels:
-    app.kubernetes.io/part-of: turtle
-data:
-  STOCK_DATABASE_HOST: host.docker.internal
-  STOCK_DATABASE_PORT: "5432"
-  STOCK_DATABASE_USER: stock_user
-  STOCK_DATABASE_NAME: stock
-  STOCK_AUTH_MODE: none
-  STOCK_ALLOW_SIGNUP: "false"
-  STOCK_FRONTEND_URL: ""
-  STOCK_LOGS_DIR: /app/logs
+# Dev Deployments for openKMS kubernetes dev-sync (hot reload).
+# Separate from published App Services (backend / frontend in app.yaml).
+# Apply after stock-config + stock-secrets exist (see app.yaml).
+#
+# Sync examples:
+#   kubernetes dev-sync --deployment backend-dev \
+#     --local-path backend/app --container-path /app/backend/app --reload --yes
+#   kubernetes dev-sync --deployment frontend-dev \
+#     --local-path frontend/src --container-path /src/src --reload --yes
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend
+  name: backend-dev
   namespace: stock
   labels:
-    app: backend
+    app: backend-dev
     app.kubernetes.io/part-of: turtle
+    app.kubernetes.io/component: hot-reload
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
-      app: backend
+      app: backend-dev
   template:
     metadata:
       labels:
-        app: backend
+        app: backend-dev
     spec:
       containers:
         - name: backend
@@ -55,17 +45,9 @@ spec:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 20
+            initialDelaySeconds: 15
             periodSeconds: 10
-            timeoutSeconds: 5
             failureThreshold: 6
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 60
-            periodSeconds: 20
-            timeoutSeconds: 5
           volumeMounts:
             - name: logs
               mountPath: /app/logs
@@ -82,14 +64,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend
+  name: backend-dev
   namespace: stock
   labels:
-    app: backend
+    app: backend-dev
     app.kubernetes.io/part-of: turtle
 spec:
   selector:
-    app: backend
+    app: backend-dev
   ports:
     - name: http
       port: 8200
@@ -98,25 +80,25 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: frontend-dev
   namespace: stock
   labels:
-    app: frontend
+    app: frontend-dev
     app.kubernetes.io/part-of: turtle
+    app.kubernetes.io/component: hot-reload
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
-      app: frontend
+      app: frontend-dev
   template:
     metadata:
       labels:
-        app: frontend
+        app: frontend-dev
     spec:
       containers:
-        # Vite DevServer — VITE_BASE must match the Apps module proxy URL
-        # (`/api/app-builder/apps/<appId>/proxy/`), NOT the internal k8s path.
-        # Hot deploy: kubernetes dev-sync → POST /-/reload (WebSocket HMR not proxied).
         - name: frontend
           image: turtle-frontend:latest
           imagePullPolicy: IfNotPresent
@@ -125,11 +107,9 @@ spec:
               name: http
           env:
             - name: VITE_BASE
-              value: /api/app-builder/apps/oa-b15fa78073c0/proxy/
+              value: "./"
             - name: VITE_PROXY_TARGET
-              value: http://backend:8200
-            - name: VITE_HMR
-              value: "false"
+              value: http://backend-dev:8200
           readinessProbe:
             httpGet:
               path: /
@@ -137,12 +117,6 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             failureThreshold: 12
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 20
-            periodSeconds: 20
           resources:
             requests:
               cpu: 100m
@@ -153,14 +127,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend
+  name: frontend-dev
   namespace: stock
   labels:
-    app: frontend
+    app: frontend-dev
     app.kubernetes.io/part-of: turtle
 spec:
   selector:
-    app: frontend
+    app: frontend-dev
   ports:
     - name: http
       port: 3200

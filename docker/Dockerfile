@@ -1,5 +1,5 @@
 ARG BACKEND_BASE=turtle-backend-base:latest
-FROM ${BACKEND_BASE}
+FROM ${BACKEND_BASE} AS app
 
 WORKDIR /app/backend
 
@@ -17,4 +17,11 @@ EXPOSE 8200
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
     CMD curl -sf http://127.0.0.1:8200/health > /dev/null || exit 1
 
+# Dev / test — uvicorn --reload + POST /-/reload (openKMS kubernetes dev-sync).
+FROM app AS backend
+ENV STOCK_RELOAD=1
+CMD ["sh", "-c", "python scripts/ensure_pgvector.py && alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8200 --reload --reload-dir /app/backend/app"]
+
+# Production — no file watcher.
+FROM app AS backend-prod
 CMD ["sh", "-c", "python scripts/ensure_pgvector.py && alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8200"]

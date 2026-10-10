@@ -16,9 +16,25 @@ Postgres stays **external** (not in-cluster). openKMS `kubernetes apply` only al
 | File | Role |
 |---|---|
 | `k8s/namespace.yaml` | Namespace `stock` — **kubectl** (if not created yet) |
-| `k8s/app.yaml` | ConfigMap + backend/frontend Deployment & Service — openKMS apply |
+| `k8s/app.yaml` | ConfigMap + `backend` / `frontend` — **register-app** + hot reload |
+| `k8s/app-dev.yaml` | Optional second pair if you want an isolated sync target |
 
-Images: `turtle-backend:latest`, `turtle-frontend:latest` (`imagePullPolicy: IfNotPresent`). Frontend image is built with `VITE_BASE=./` so assets and API calls work under the openKMS service proxy (HashRouter).
+| Image | Role |
+|---|---|
+| `turtle-backend` | API with `uvicorn --reload` + `POST /-/reload` |
+| `turtle-frontend` | Vite DevServer for the hosted App (`VITE_BASE` = Service-proxy prefix) |
+| `turtle-*-prod` | Compose / non-proxy production (nginx SPA, no watcher) |
+
+**Why `VITE_BASE` + relative HTML:** the browser iframe is  
+`/api/app-builder/apps/<appId>/proxy/` (openKMS `moduleAppProxyUrl`). openKMS then reaches
+the Pod via the **Kubernetes API Service proxy**, which **rewrites absolute URLs in HTML**
+and prefixes `/api/v1/namespaces/<ns>/services/<svc>:<port>/proxy/`. Absolute
+`/api/app-builder/...` script tags become double-prefixed and 404 in the browser.
+
+So: JS module graph still uses `VITE_BASE=/api/app-builder/apps/<appId>/proxy/`;
+`vite.config.ts` rewrites **index.html** to relative `./@vite/client` / `./src/main.tsx`
+(so the apiserver rewriter leaves them alone). After strip, the Pod re-attaches `VITE_BASE`
+for Vite. WebSocket HMR is **not** proxied — after `dev-sync`, use `--reload`.
 
 ## Configure
 
@@ -43,61 +59,57 @@ Backend pods mount both via `envFrom` (ConfigMap + Secret).
 
 ## Build → apply → register-app
 
-From repo root:
-
 ```bash
-# 1. Images (OrbStack / local Docker)
-./docker/build-base.sh   # once / when pyproject or package-lock changes
-docker build -f docker/Dockerfile -t turtle-backend:latest .
-docker build -f docker/Dockerfile.frontend \
-  --build-arg VITE_BASE=./ \
-  -t turtle-frontend:latest .
+./docker/build-base.sh
+./docker/build-images.sh
 
-# 2. Namespace if needed (Secret already exists in the cluster)
 kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/app.yaml
+kubectl apply -f k8s/app-dev.yaml   # optional hot-sync pair
 
-# 3. Workloads via openKMS
 CLUSTER_ID=$(python ~/.claude/skills/openkms/scripts/cli.py kubernetes clusters list \
   | python -c "import sys,json; print(json.load(sys.stdin)['items'][0]['id'])")
 
-python ~/.claude/skills/openkms/scripts/cli.py kubernetes apply \
-  --cluster-id "$CLUSTER_ID" \
-  --file k8s/app.yaml \
-  --namespace stock \
-  --yes
-
-# 4. Wait for pods, then register hosted App
-python ~/.claude/skills/openkms/scripts/cli.py kubernetes pods \
-  --cluster-id "$CLUSTER_ID" --namespace stock
+# Prefer openKMS apply when the API is healthy; otherwise kubectl as above.
 
 python ~/.claude/skills/openkms/scripts/cli.py kubernetes register-app \
   --cluster-id "$CLUSTER_ID" \
-  --namespace stock \
-  --service frontend \
-  --port 3200 \
-  --name "股票交易系统" \
-  --api-name stockTrading \
-  --yes
+  --namespace stock --service frontend --port 3200 \
+  --name "股票交易系统" --api-name stockTrading --yes
 ```
 
-Open the app from openKMS **Apps**. Traffic goes through the API-server Service proxy (no kubeconfig in the browser). WebSocket is not proxied.
+Prefer registering **`frontend`** (not `frontend-dev`) as the hosted App.
+
+## Hot reload (dev-sync)
+
+```bash
+python ~/.claude/skills/openkms/scripts/cli.py kubernetes dev-sync \
+  --project-id "$PROJECT_ID" \
+  --cluster-id "$CLUSTER_ID" \
+  --namespace stock \
+  --deployment backend-dev \
+  --local-path backend/app \
+  --container-path /app/backend/app \
+  --reload --yes
+
+python ~/.claude/skills/openkms/scripts/cli.py kubernetes dev-sync \
+  --project-id "$PROJECT_ID" \
+  --cluster-id "$CLUSTER_ID" \
+  --namespace stock \
+  --deployment frontend-dev \
+  --local-path frontend/src \
+  --container-path /src/src \
+  --reload --yes
+```
+
+`--reload` posts to `/-/reload` in the Pod. Caps: ≤ 32 MiB packed; excludes `.git`, `node_modules`, `.venv`, `dist`, …
 
 ## Update / tear down
 
 ```bash
-python … kubernetes apply --cluster-id "$CLUSTER_ID" --file k8s/app.yaml --namespace stock --yes
-kubectl -n stock rollout restart deploy/backend deploy/frontend
-```
-
-Delete workloads (leave cluster Secret as you manage it):
-
-```bash
-python … kubernetes delete --cluster-id "$CLUSTER_ID" --kind Service --name frontend --namespace stock --yes
-python … kubernetes delete --cluster-id "$CLUSTER_ID" --kind Service --name backend --namespace stock --yes
-python … kubernetes delete --cluster-id "$CLUSTER_ID" --kind Deployment --name frontend --namespace stock --yes
-python … kubernetes delete --cluster-id "$CLUSTER_ID" --kind Deployment --name backend --namespace stock --yes
-python … kubernetes delete --cluster-id "$CLUSTER_ID" --kind ConfigMap --name stock-config --namespace stock --yes
-kubectl delete -f k8s/namespace.yaml   # optional; removes namespace and in-ns objects
+./docker/build-images.sh
+kubectl apply -f k8s/app.yaml -f k8s/app-dev.yaml
+kubectl -n stock rollout restart deploy/backend deploy/frontend deploy/backend-dev deploy/frontend-dev
 ```
 
 ## See also

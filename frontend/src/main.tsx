@@ -7,8 +7,9 @@ import { App } from './App';
 import './i18n/config';
 import './index.scss';
 
-// Relative Vite base (openKMS K8s proxy) needs HashRouter so /api and assets stay under the proxy path.
-const Router = import.meta.env.BASE_URL === './' ? HashRouter : BrowserRouter;
+// Non-root Vite base (openKMS `…/proxy/` or `./`) → HashRouter so document
+// path stays under the proxy prefix; relative `api/…` fetches resolve correctly.
+const Router = import.meta.env.BASE_URL === '/' ? BrowserRouter : HashRouter;
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

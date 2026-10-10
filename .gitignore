@@ -21,6 +21,7 @@ build/
 
 # Backend runtime / test artifacts
 backend/test_stock.db
+backend/app/.reload
 logs/
 *.log
 portfolio.csv

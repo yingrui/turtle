@@ -20,7 +20,7 @@ const resources = {
       },
       home: {
         dashboardTitle: 'Dashboard',
-        dashboardSubtitle: 'Market snapshot, your watchlist, and recent screening / backtest jobs.',
+        dashboardSubtitle: 'Market snapshot, your watchlist, and industry movers.',
         loading: 'Loading…',
         statMarket: 'Market date',
         statDailyBasic: 'daily_basic',
@@ -274,7 +274,7 @@ const resources = {
   },
   'zh-CN': {
     translation: {
-      appName: '股票交易系统',
+      appName: '股票交易',
       nav: {
         home: '工作台',
         data: '数据状态',
@@ -290,7 +290,7 @@ const resources = {
       },
       home: {
         dashboardTitle: '工作台',
-        dashboardSubtitle: '市场概况、自选动态，以及最近的选股与回测任务。',
+        dashboardSubtitle: '市场概况、自选动态与行业涨跌。',
         loading: '加载中…',
         statMarket: '行情日期',
         statDailyBasic: '基本面日期',

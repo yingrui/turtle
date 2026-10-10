@@ -40,6 +40,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      target: backend-prod
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://127.0.0.1:8200/health"]
       interval: 15s
@@ -64,8 +65,10 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.frontend
+      target: frontend-prod
       args:
         VITE_API_URL: ""
+        VITE_BASE: /
     ports:
       - "3200:3200"
     depends_on:
