@@ -110,4 +110,5 @@ Snapshot `fundamentals` (when `daily_basic` exists): `pe_ttm`, `pb`, `ps_ttm`, `
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/health` | `{"status":"ok"}` |
+| GET | `/health` | `{"status":"ok","started_at":"<iso8601>"}` (worker boot time; useful after hot reload) |
+| POST | `/-/reload` | Dev/test only — bumps a sentinel so `uvicorn --reload` restarts; `{"ok":true,"sentinel":"…"}` |
