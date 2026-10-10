@@ -142,6 +142,43 @@
   background: var(--color-border);
 }
 
+/* Quiet API health readout — status dot + last check time. */
+.health-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.health-chip__dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-border-strong);
+}
+
+.health-chip__time {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.health-chip--ok .health-chip__dot {
+  background: var(--color-success);
+}
+
+.health-chip--down {
+  color: var(--color-error);
+
+  .health-chip__dot {
+    background: var(--color-error);
+  }
+}
+
 .user-menu {
   position: relative;
 }

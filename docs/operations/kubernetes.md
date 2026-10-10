@@ -104,6 +104,11 @@ python ~/.claude/skills/openkms/scripts/cli.py kubernetes dev-sync \
 
 `--reload` posts to `/-/reload` in the Pod. Caps: ≤ 32 MiB packed; excludes `.git`, `node_modules`, `.venv`, `dist`, …
 
+Verify the sync without opening the browser: the header of the hosted SPA shows a quiet
+**API health chip** (status dot + time of the last check). It reads `GET /health` every 15s,
+so a green dot after a sync confirms both that `frontend/src` landed in the Pod and that it
+can still reach the backend Service.
+
 ## Update / tear down
 
 ```bash

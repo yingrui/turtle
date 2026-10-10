@@ -199,6 +199,12 @@ const resources = {
       },
       header: {
         admin: 'Admin',
+        health: {
+          checking: 'Checking API',
+          ok: 'API OK',
+          down: 'API unreachable',
+          checkedAt: 'Last checked {{time}}',
+        },
       },
       quote: {
         asOf: 'As of {{date}} · {{count}} listed',
@@ -469,6 +475,12 @@ const resources = {
       },
       header: {
         admin: '管理员',
+        health: {
+          checking: '检查中',
+          ok: 'API 正常',
+          down: 'API 不可用',
+          checkedAt: '上次检查 {{time}}',
+        },
       },
       quote: {
         asOf: '数据截至 {{date}} · 上市 {{count}} 只',

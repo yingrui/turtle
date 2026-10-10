@@ -16,6 +16,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AppBrand } from '../AppBrand';
+import { HealthIndicator } from './HealthIndicator';
 import { UserMenu } from './UserMenu';
 import '../../App.scss';
 
@@ -61,6 +62,8 @@ export function MainLayout() {
       <main className="app-main">
         <header className="app-header">
           <div className="app-header-toolbar">
+            <HealthIndicator />
+            <span className="app-header-divider" aria-hidden />
             <button
               type="button"
               className="app-header-icon-btn"

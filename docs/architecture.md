@@ -44,7 +44,7 @@ flowchart TB
 frontend/src/
 ├── App.tsx, main.tsx, index.scss
 ├── pages/           # Home, DataCollection, Portfolio, Screening, Simulation, …
-├── components/      # Layout shell, Chart, Tabs, ProtectedRoute
+├── components/      # Layout shell (incl. API health chip), Chart, Tabs, ProtectedRoute
 ├── contexts/        # AuthContext
 ├── hooks/           # useJobPoll
 ├── utils/api.ts     # fetch helpers + JWT
