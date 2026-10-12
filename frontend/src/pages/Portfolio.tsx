@@ -386,23 +386,82 @@ export function Portfolio() {
                     </div>
                   </div>
                   {stocks.length > 0 && totalMarketValue > 0 && (
-                    <ul className="portfolio-weights">
-                      {holdings.map((s) => (
-                        <li key={s.ts_code}>
-                          <span className="portfolio-weight-code">{s.ts_code}</span>
-                          <span className="portfolio-weight-bar">
-                            <span
-                              className="portfolio-weight-fill"
-                              style={{ width: `${(((s.market_value ?? 0) / totalMarketValue) * 100).toFixed(1)}%` }}
-                            />
-                          </span>
-                          <span className="portfolio-weight-pct">
-                            {(((s.market_value ?? 0) / totalMarketValue) * 100).toFixed(1)}%
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                    <>
+                      <h2 className="portfolio-panel-title">{t('portfolio.weightsTitle')}</h2>
+                      <ul className="portfolio-weights">
+                        {holdings.map((s) => (
+                          <li key={s.ts_code}>
+                            <span className="portfolio-weight-code">{s.ts_code}</span>
+                            <span className="portfolio-weight-bar">
+                              <span
+                                className="portfolio-weight-fill"
+                                style={{ width: `${(((s.market_value ?? 0) / totalMarketValue) * 100).toFixed(1)}%` }}
+                              />
+                            </span>
+                            <span className="portfolio-weight-pct">
+                              {(((s.market_value ?? 0) / totalMarketValue) * 100).toFixed(1)}%
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <h2 className="portfolio-panel-title">{t('portfolio.pnlTitle')}</h2>
+                      <p className="portfolio-panel-desc">{t('portfolio.pnlDesc')}</p>
+                      <ul className="portfolio-bullets">
+                        {holdings.map((s) => {
+                          const price = s.current_price ?? s.avg_cost;
+                          const cost = s.avg_cost;
+                          const stop = s.stop_loss_point;
+                          const values = [cost, price, ...(stop != null ? [stop] : [])];
+                          const lo = Math.min(...values);
+                          const hi = Math.max(...values);
+                          const span = hi - lo || 1;
+                          const pos = (v: number) => ((v - lo) / span) * 100;
+                          const fillLeft = Math.min(pos(cost), pos(price));
+                          const fillWidth = Math.abs(pos(price) - pos(cost));
+                          const gain = (s.unrealized_pnl ?? 0) >= 0;
+                          return (
+                            <li key={s.ts_code}>
+                              <span className="portfolio-weight-code">{s.ts_code}</span>
+                              <span className="portfolio-bullet">
+                                <span
+                                  className={`portfolio-bullet-fill ${gain ? 'price-up-bg' : 'price-down-bg'}`}
+                                  style={{ left: `${fillLeft}%`, width: `${fillWidth}%` }}
+                                />
+                                <span
+                                  className="portfolio-bullet-mark portfolio-bullet-mark--cost"
+                                  style={{ left: `${pos(cost)}%` }}
+                                />
+                                {stop != null && (
+                                  <span
+                                    className="portfolio-bullet-mark portfolio-bullet-mark--stop"
+                                    style={{ left: `${pos(stop)}%` }}
+                                  />
+                                )}
+                                <span
+                                  className="portfolio-bullet-mark portfolio-bullet-mark--price"
+                                  style={{ left: `${pos(price)}%` }}
+                                />
+                              </span>
+                              <span className={`portfolio-weight-pct ${gain ? 'price-up' : 'price-down'}`}>
+                                {money(s.unrealized_pnl)}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <p className="portfolio-legend">{t('portfolio.bulletLegend')}</p>
+                    </>
                   )}
+
+                  <div className="portfolio-save-row">
+                    <Link className="btn btn-secondary" to={`/simulation?portfolio=${encodeURIComponent(name)}`}>
+                      {t('portfolio.runBacktest')}
+                    </Link>
+                    <Link className="btn btn-secondary" to={`/watchlist?portfolio=${encodeURIComponent(name)}`}>
+                      {t('portfolio.viewWatchlist')}
+                    </Link>
+                  </div>
                 </>
               )}
 
@@ -528,7 +587,15 @@ export function Portfolio() {
                           {money(row.realized_pnl)}
                         </td>
                         <td>{sourceLabel[row.source] ?? row.source}</td>
-                        <td>{row.simulation_run_id ? row.simulation_run_id.slice(0, 8) : '—'}</td>
+                        <td>
+                          {row.simulation_run_id ? (
+                            <Link to={`/simulation/results?run_id=${encodeURIComponent(row.simulation_run_id)}`}>
+                              {row.simulation_run_id.slice(0, 8)}
+                            </Link>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

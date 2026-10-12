@@ -31,9 +31,13 @@ export function Simulation() {
     apiFetch<{ portfolios: string[] }>('/api/portfolios')
       .then((d) => {
         setPortfolios(d.portfolios);
-        if (d.portfolios.length) setPortfolio(d.portfolios[0]);
+        // `?portfolio=` lets the portfolio page hand a run over with its portfolio preselected.
+        const fromUrl = searchParams.get('portfolio');
+        if (fromUrl && d.portfolios.includes(fromUrl)) setPortfolio(fromUrl);
+        else if (d.portfolios.length) setPortfolio(d.portfolios[0]);
       })
       .catch(() => toast.error('Failed to load portfolios'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

@@ -15,8 +15,13 @@ portfolio (`portfolio_stocks`), the buy/sell ledger (`portfolio_transactions`) a
 risk-control / policy parameters.
 
 The page is split into tabs: **Overview** (holdings/watching counts, market value, cost basis,
-unrealized and realized P&L, position weights), **Holdings**, **Trades**, **Risk & policies** and
-**Advanced (YAML)**.
+unrealized and realized P&L, position weights, cost-vs-price bullets and a *Backtest this
+portfolio* hand-off to `/simulation?portfolio=<name>`), **Holdings**, **Trades**, **Risk &
+policies** and **Advanced (YAML)**.
+
+The cost-vs-price bullets plot, per holding, the cost basis (grey), the latest price (red/green
+by direction) and the stop loss (dark) on one scale — so a position sitting on its stop is
+visually obvious. **Trades** links a backtest trade's run id to `/simulation/results?run_id=…`.
 
 **Holdings** carries a risk column built from the stored risk settings: stop-loss distance ("stop
 hit" when the latest close is at or below `stop_loss_point`, "near stop" within 3%), holding-period
