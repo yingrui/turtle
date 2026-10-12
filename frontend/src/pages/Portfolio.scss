@@ -146,3 +146,111 @@
   display: flex;
   gap: var(--space-2);
 }
+
+.portfolio-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.portfolio-tab {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-md);
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.portfolio-tab:hover {
+  color: var(--color-text);
+}
+
+.portfolio-tab--active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-weights {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-4) 0 0;
+
+  li {
+    display: grid;
+    grid-template-columns: 7rem 1fr 3.5rem;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
+  }
+}
+
+.portfolio-weight-bar {
+  height: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-muted);
+  overflow: hidden;
+}
+
+.portfolio-weight-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.portfolio-weight-pct {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.portfolio-risk-flags {
+  white-space: nowrap;
+}
+
+.portfolio-flag {
+  display: inline-block;
+  margin-right: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.portfolio-flag--warn {
+  color: var(--color-warning-fg);
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+}
+
+.portfolio-flag--danger {
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+}
+
+.portfolio-risk-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.portfolio-risk-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.portfolio-risk-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}

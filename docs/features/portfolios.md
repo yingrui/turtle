@@ -14,6 +14,17 @@ Create, select, edit, and delete named portfolios. The portfolio page shows the 
 portfolio (`portfolio_stocks`), the buy/sell ledger (`portfolio_transactions`) and the
 risk-control / policy parameters.
 
+The page is split into tabs: **Overview** (holdings/watching counts, market value, cost basis,
+unrealized and realized P&L, position weights), **Holdings**, **Trades**, **Risk & policies** and
+**Advanced (YAML)**.
+
+**Holdings** carries a risk column built from the stored risk settings: stop-loss distance ("stop
+hit" when the latest close is at or below `stop_loss_point`, "near stop" within 3%), holding-period
+budget (`max_holding_days` vs `holding_days`) and position weight vs `max_position_ratio`.
+
+**Risk & policies** edits the ten risk parameters through a form (they are also visible in the YAML
+tab as flattened `snake.case` keys) and lists the backtest policies read-only.
+
 The holdings table has per-row actions: **Buy** / **Sell** open a drawer that records a trade
 (方向、日期、股数、价格、费用、备注) and then refreshes the row; **Remove** drops a stock that is not
 held. Stock codes link to the stock detail page. The drawer is bookkeeping only — it never sends

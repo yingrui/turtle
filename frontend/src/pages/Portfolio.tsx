@@ -21,6 +21,7 @@ type PortfolioStock = {
   total_cost: number;
   realized_pnl: number;
   holding_days: number | null;
+  max_holding_days: number | null;
   stop_loss_point: number | null;
   target_amount: number | null;
   current_price?: number;
@@ -70,6 +71,10 @@ export function Portfolio() {
   const [trades, setTrades] = useState<PortfolioTransaction[]>([]);
   const [draft, setDraft] = useState<TradeDraft | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [tab, setTab] = useState<'overview' | 'holdings' | 'trades' | 'risk' | 'advanced'>('overview');
+  const [risk, setRisk] = useState<Record<string, number | boolean> | null>(null);
+  const [riskDraft, setRiskDraft] = useState<Record<string, string | boolean>>({});
+  const [savingRisk, setSavingRisk] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
 
@@ -94,14 +99,19 @@ export function Portfolio() {
 
   const loadPositions = useCallback(async () => {
     if (!name) return;
-    const [stockRows, tradeRows] = await Promise.all([
+    const [stockRows, tradeRows, riskRow] = await Promise.all([
       apiFetch<{ stocks: PortfolioStock[] }>(`/api/portfolios/${encodeURIComponent(name)}/stocks`),
       apiFetch<{ transactions: PortfolioTransaction[] }>(
         `/api/portfolios/${encodeURIComponent(name)}/transactions?limit=50`,
       ),
+      apiFetch<Record<string, number | boolean>>(`/api/portfolios/${encodeURIComponent(name)}/risk-control`),
     ]);
     setStocks(stockRows.stocks);
     setTrades(tradeRows.transactions);
+    setRisk(riskRow);
+    setRiskDraft(
+      Object.fromEntries(Object.entries(riskRow).map(([key, value]) => [key, String(value)])),
+    );
   }, [name]);
 
   useEffect(() => {
@@ -176,6 +186,68 @@ export function Portfolio() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function setRiskValue(key: string, value: string | boolean) {
+    setRiskDraft((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function saveRiskControl() {
+    if (!name) return;
+    const payload: Record<string, number | boolean> = {};
+    for (const [key, value] of Object.entries(riskDraft)) {
+      const current = risk?.[key];
+      if (typeof current === 'boolean') {
+        payload[key] = Boolean(value);
+      } else if (String(value).trim() !== '') {
+        payload[key] = Number(value);
+      }
+    }
+    setSavingRisk(true);
+    try {
+      const updated = await apiFetch<Record<string, number | boolean>>(
+        `/api/portfolios/${encodeURIComponent(name)}/risk-control`,
+        { method: 'PUT', body: JSON.stringify({ risk_control: payload }) },
+      );
+      setRisk(updated);
+      setRiskDraft(Object.fromEntries(Object.entries(updated).map(([k, v]) => [k, String(v)])));
+      toast.success(t('portfolio.riskSaved'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('portfolio.riskSaveFailed'));
+    } finally {
+      setSavingRisk(false);
+    }
+  }
+
+  const holdings = stocks.filter((s) => s.status === 'holding' && s.hold_shares > 0);
+  const totalMarketValue = holdings.reduce((sum, s) => sum + (s.market_value ?? 0), 0);
+  const totalCost = holdings.reduce((sum, s) => sum + s.total_cost, 0);
+  const unrealized = holdings.reduce((sum, s) => sum + (s.unrealized_pnl ?? 0), 0);
+  const realized = stocks.reduce((sum, s) => sum + s.realized_pnl, 0);
+  const unrealizedPct = totalCost > 0 ? (unrealized / totalCost) * 100 : null;
+
+  /** Risk hints per holding: stop-loss distance, holding-period budget, position weight. */
+  function riskFlags(stock: PortfolioStock): { level: 'warn' | 'danger'; label: string }[] {
+    const flags: { level: 'warn' | 'danger'; label: string }[] = [];
+    const price = stock.current_price;
+    if (price != null && stock.stop_loss_point != null && price <= stock.stop_loss_point) {
+      flags.push({ level: 'danger', label: t('portfolio.riskBrokenStop') });
+    } else if (price != null && stock.stop_loss_point != null) {
+      const distance = (price - stock.stop_loss_point) / price;
+      if (distance <= 0.03) flags.push({ level: 'warn', label: t('portfolio.riskNearStop') });
+    }
+    const maxDays = stock.max_holding_days ?? (risk?.['max_holding_period.days'] as number | undefined);
+    const checkPeriod = risk?.['max_holding_period.should_check'] !== false;
+    if (checkPeriod && maxDays && stock.holding_days != null) {
+      const remaining = maxDays - stock.holding_days;
+      if (remaining <= 0) flags.push({ level: 'danger', label: t('portfolio.riskOverHolding') });
+      else if (remaining <= 5) flags.push({ level: 'warn', label: t('portfolio.riskHoldingDue') });
+    }
+    const ratio = risk?.['max_position_ratio'] as number | undefined;
+    if (ratio && totalMarketValue > 0 && (stock.market_value ?? 0) / totalMarketValue > ratio) {
+      flags.push({ level: 'warn', label: t('portfolio.riskOverWeight') });
+    }
+    return flags;
   }
 
   async function removeStock(stock: PortfolioStock) {
@@ -255,21 +327,87 @@ export function Portfolio() {
 
           {name && summary && (
             <section className="portfolio-editor">
-              <div className="stat-grid">
-                <div className="stat-card">
-                  <span>{t('portfolio.statStocks')}</span>
-                  <strong>{summary.follow_stocks?.length ?? 0}</strong>
-                </div>
-                <div className="stat-card">
-                  <span>{t('portfolio.statPolicies')}</span>
-                  <strong>{summary.policies?.length ?? 0}</strong>
-                </div>
-                <div className="stat-card">
-                  <span>{t('portfolio.statCapital')}</span>
-                  <strong>{summary.initial_investment?.toLocaleString() ?? '—'}</strong>
-                </div>
-              </div>
+              <nav className="portfolio-tabs" role="tablist">
+                {(
+                  [
+                    ['overview', t('portfolio.tabOverview')],
+                    ['holdings', t('portfolio.tabHoldings')],
+                    ['trades', t('portfolio.tabTrades')],
+                    ['risk', t('portfolio.tabRisk')],
+                    ['advanced', t('portfolio.tabAdvanced')],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === key}
+                    className={tab === key ? 'portfolio-tab portfolio-tab--active' : 'portfolio-tab'}
+                    onClick={() => setTab(key)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
 
+              {tab === 'overview' && (
+                <>
+                  <div className="stat-grid">
+                    <div className="stat-card">
+                      <span>{t('portfolio.kpiHoldings')}</span>
+                      <strong>{holdings.length}</strong>
+                    </div>
+                    <div className="stat-card">
+                      <span>{t('portfolio.kpiWatching')}</span>
+                      <strong>{stocks.filter((s) => s.status === 'watching').length}</strong>
+                    </div>
+                    <div className="stat-card">
+                      <span>{t('portfolio.kpiMarketValue')}</span>
+                      <strong>{money(totalMarketValue)}</strong>
+                    </div>
+                    <div className="stat-card">
+                      <span>{t('portfolio.kpiCost')}</span>
+                      <strong>{money(totalCost)}</strong>
+                    </div>
+                    <div className="stat-card">
+                      <span>{t('portfolio.kpiUnrealized')}</span>
+                      <strong className={unrealized < 0 ? 'price-down' : 'price-up'}>
+                        {money(unrealized)}
+                        {unrealizedPct != null ? ` (${unrealizedPct.toFixed(2)}%)` : ''}
+                      </strong>
+                    </div>
+                    <div className="stat-card">
+                      <span>{t('portfolio.kpiRealized')}</span>
+                      <strong className={realized < 0 ? 'price-down' : 'price-up'}>{money(realized)}</strong>
+                    </div>
+                    <div className="stat-card">
+                      <span>{t('portfolio.statCapital')}</span>
+                      <strong>{summary.initial_investment?.toLocaleString() ?? '—'}</strong>
+                    </div>
+                  </div>
+                  {stocks.length > 0 && totalMarketValue > 0 && (
+                    <ul className="portfolio-weights">
+                      {holdings.map((s) => (
+                        <li key={s.ts_code}>
+                          <span className="portfolio-weight-code">{s.ts_code}</span>
+                          <span className="portfolio-weight-bar">
+                            <span
+                              className="portfolio-weight-fill"
+                              style={{ width: `${(((s.market_value ?? 0) / totalMarketValue) * 100).toFixed(1)}%` }}
+                            />
+                          </span>
+                          <span className="portfolio-weight-pct">
+                            {(((s.market_value ?? 0) / totalMarketValue) * 100).toFixed(1)}%
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+
+              {tab === 'holdings' && (
+                <>
               <h2 className="portfolio-panel-title">{t('portfolio.holdingsTitle')}</h2>
               <p className="portfolio-panel-desc">{t('portfolio.holdingsDesc')}</p>
               {stocks.length === 0 ? (
@@ -292,6 +430,7 @@ export function Portfolio() {
                       <th className="num">{t('portfolio.colHolding')}</th>
                       <th className="num">{t('portfolio.colStopLoss')}</th>
                       <th className="num">{t('portfolio.colTarget')}</th>
+                      <th>{t('portfolio.colRisk')}</th>
                       <th>{t('portfolio.colActions')}</th>
                     </tr>
                   </thead>
@@ -317,6 +456,13 @@ export function Portfolio() {
                         <td className="num">{s.holding_days ?? '—'}</td>
                         <td className="num">{money(s.stop_loss_point)}</td>
                         <td className="num">{money(s.target_amount)}</td>
+                        <td className="portfolio-risk-flags">
+                          {riskFlags(s).map((f) => (
+                            <span key={f.label} className={`portfolio-flag portfolio-flag--${f.level}`}>
+                              {f.label}
+                            </span>
+                          ))}
+                        </td>
                         <td className="portfolio-row-actions">
                           <button type="button" className="btn btn-sm" onClick={() => openTrade('buy', s)}>
                             {t('portfolio.actionBuy')}
@@ -345,7 +491,11 @@ export function Portfolio() {
                   </tbody>
                 </table>
               )}
+                </>
+              )}
 
+              {tab === 'trades' && (
+                <>
               <h2 className="portfolio-panel-title">{t('portfolio.tradesTitle')}</h2>
               <p className="portfolio-panel-desc">{t('portfolio.tradesDesc')}</p>
               {trades.length === 0 ? (
@@ -384,7 +534,93 @@ export function Portfolio() {
                   </tbody>
                 </table>
               )}
+                </>
+              )}
 
+              {tab === 'risk' && (
+                <>
+                  <h2 className="portfolio-panel-title">{t('portfolio.riskTitle')}</h2>
+                  <p className="portfolio-panel-desc">{t('portfolio.riskDesc')}</p>
+                  <div className="portfolio-risk-form">
+                    {[
+                      ['bearable_trading_loss', 'riskBearableLoss'],
+                      ['position_control', 'riskPositionControl'],
+                      ['position_control.reserve_profit', 'riskReserveProfit'],
+                      ['max_position_size', 'riskMaxPositionSize'],
+                      ['max_position_ratio', 'riskMaxPositionRatio'],
+                      ['stop_loss_point.n_times_atr', 'riskStopLossAtr'],
+                      ['max_holding_period.days', 'riskMaxHoldingDays'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="portfolio-risk-field" htmlFor={`risk-${key}`}>
+                        <span>{t(`portfolio.${label}`)}</span>
+                        <input
+                          id={`risk-${key}`}
+                          type="number"
+                          step="any"
+                          value={String(riskDraft[key] ?? '')}
+                          onChange={(e) => setRiskValue(key, e.target.value)}
+                        />
+                      </label>
+                    ))}
+                    {[
+                      ['stop_loss_point.should_check', 'riskStopLossCheck'],
+                      ['stop_loss_point.should_update', 'riskStopLossUpdate'],
+                      ['max_holding_period.should_check', 'riskMaxHoldingCheck'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="portfolio-risk-toggle" htmlFor={`risk-${key}`}>
+                        <input
+                          id={`risk-${key}`}
+                          type="checkbox"
+                          checked={Boolean(riskDraft[key])}
+                          onChange={(e) => setRiskValue(key, e.target.checked)}
+                        />
+                        <span>{t(`portfolio.${label}`)}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="portfolio-save-row">
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={saveRiskControl}
+                      disabled={savingRisk || !risk}
+                    >
+                      {savingRisk ? t('portfolio.saving') : t('portfolio.save')}
+                    </button>
+                  </div>
+
+                  <h2 className="portfolio-panel-title">{t('portfolio.policiesTitle')}</h2>
+                  <p className="portfolio-panel-desc">{t('portfolio.policiesDesc')}</p>
+                  {(summary.policies ?? []).length === 0 ? (
+                    <p className="portfolio-muted">{t('portfolio.policiesEmpty')}</p>
+                  ) : (
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>{t('portfolio.policyName')}</th>
+                          <th>{t('portfolio.policyParams')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(summary.policies as Record<string, unknown>[]).map((policy, i) => (
+                          <tr key={i}>
+                            <td>{String(policy['trade_policy.name'] ?? '—')}</td>
+                            <td>
+                              {Object.entries(policy)
+                                .filter(([key]) => key !== 'trade_policy.name')
+                                .map(([key, value]) => `${key.replace(/^trade_policy\.[^.]+\./, '')}=${String(value)}`)
+                                .join('  ')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
+
+              {tab === 'advanced' && (
+                <>
               <h2 className="portfolio-panel-title">{t('portfolio.configTitle')}</h2>
               <p className="portfolio-panel-desc">{t('portfolio.configDesc')}</p>
               <textarea
@@ -404,6 +640,8 @@ export function Portfolio() {
                   {saving ? t('portfolio.saving') : t('portfolio.save')}
                 </button>
               </div>
+                </>
+              )}
             </section>
           )}
         </>
