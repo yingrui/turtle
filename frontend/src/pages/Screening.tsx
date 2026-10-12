@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
+import { TradeDrawer } from '../components/portfolio/TradeDrawer';
 import { useJobPoll } from '../hooks/useJobPoll';
 import { compareSortValues, sortIndicator, toggleSortColumn, type SortOrder } from '../utils/tableSort';
 
@@ -115,6 +116,7 @@ export function Screening() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkPortfolio, setBulkPortfolio] = useState('');
+  const [tradeCode, setTradeCode] = useState<string | null>(null);
   const [backtestOpen, setBacktestOpen] = useState(false);
   const [btPortfolio, setBtPortfolio] = useState('');
   const [btStart, setBtStart] = useState('2024-01-01');
@@ -126,6 +128,12 @@ export function Screening() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   const activeRows: ResultRow[] = tab === 'fundamental' ? pickRows : techRows;
+
+  /** Latest close of a result row, used to prefill the trade drawer. */
+  function closeFor(tsCode: string): number | undefined {
+    const row = activeRows.find((r) => r.ts_code === tsCode) as { close?: number } | undefined;
+    return row?.close;
+  }
   const allCodes = useMemo(() => activeRows.map((r) => r.ts_code), [activeRows]);
 
   const sortedRows = useMemo(() => {
@@ -518,15 +526,24 @@ export function Screening() {
                       <td>{row.gradient != null ? Number(row.gradient).toFixed(4) : ''}</td>
                     </>
                   ) : null}
-                  <td>
+                  <td className="screening-row-actions">
                     {portfolios[0] && (
-                      <button
-                        type="button"
-                        className="btn btn-sm"
-                        onClick={() => addToWatchlist([row.ts_code], bulkPortfolio || portfolios[0])}
-                      >
-                        {t('quote.watchlist')}
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn-sm"
+                          onClick={() => addToWatchlist([row.ts_code], bulkPortfolio || portfolios[0])}
+                        >
+                          {t('quote.watchlist')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => setTradeCode(row.ts_code)}
+                        >
+                          {t('screening.buyNow')}
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>
@@ -586,6 +603,13 @@ export function Screening() {
             </div>
           </div>
         </div>
+      )}
+      {tradeCode && (bulkPortfolio || portfolios[0]) && (
+        <TradeDrawer
+          portfolio={bulkPortfolio || portfolios[0]}
+          target={{ ts_code: tradeCode, current_price: closeFor(tradeCode) }}
+          onClose={() => setTradeCode(null)}
+        />
       )}
     </div>
   );

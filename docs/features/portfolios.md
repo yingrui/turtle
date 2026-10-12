@@ -30,6 +30,9 @@ budget (`max_holding_days` vs `holding_days`) and position weight vs `max_positi
 **Risk & policies** edits the ten risk parameters through a form (they are also visible in the YAML
 tab as flattened `snake.case` keys) and lists the backtest policies read-only.
 
+Holdings expose **inline editing** of `target_amount` (planned budget) and `stop_loss_point`
+(committed on blur via `PATCH /stocks/{ts_code}`).
+
 The holdings table has per-row actions: **Buy** / **Sell** open a drawer that records a trade
 (方向、日期、股数、价格、费用、备注) and then refreshes the row; **Remove** drops a stock that is not
 held. Stock codes link to the stock detail page. The drawer is bookkeeping only — it never sends

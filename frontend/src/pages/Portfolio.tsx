@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
+import { TradeDrawer } from '../components/portfolio/TradeDrawer';
 import './Portfolio.scss';
 
 type PortfolioConfig = {
@@ -45,20 +46,8 @@ type PortfolioTransaction = {
 
 type TradeDraft = {
   side: 'buy' | 'sell';
-  ts_code: string;
-  trade_date: string;
-  shares: string;
-  price: string;
-  fee: string;
-  note: string;
-  available: number;
+  stock: PortfolioStock;
 };
-
-function todayIso(): string {
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 10);
-}
 
 export function Portfolio() {
   const { t } = useTranslation();
@@ -70,7 +59,6 @@ export function Portfolio() {
   const [stocks, setStocks] = useState<PortfolioStock[]>([]);
   const [trades, setTrades] = useState<PortfolioTransaction[]>([]);
   const [draft, setDraft] = useState<TradeDraft | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [tab, setTab] = useState<'overview' | 'holdings' | 'trades' | 'risk' | 'advanced'>('overview');
   const [risk, setRisk] = useState<Record<string, number | boolean> | null>(null);
   const [riskDraft, setRiskDraft] = useState<Record<string, string | boolean>>({});
@@ -136,55 +124,21 @@ export function Portfolio() {
   }, [name, t, loadPositions]);
 
   function openTrade(side: 'buy' | 'sell', stock: PortfolioStock) {
-    setDraft({
-      side,
-      ts_code: stock.ts_code,
-      trade_date: todayIso(),
-      shares: side === 'sell' ? String(stock.hold_shares) : '',
-      price: String(stock.current_price ?? stock.avg_cost ?? ''),
-      fee: '',
-      note: '',
-      available: stock.hold_shares,
-    });
+    setDraft({ side, stock });
   }
 
-  async function submitTrade() {
-    if (!draft || !name) return;
-    const shares = Number(draft.shares);
-    const price = Number(draft.price);
-    if (!Number.isFinite(shares) || shares <= 0 || Math.floor(shares) !== shares) {
-      toast.error(t('portfolio.tradeInvalidShares'));
-      return;
-    }
-    if (!Number.isFinite(price) || price <= 0) {
-      toast.error(t('portfolio.tradeInvalidPrice'));
-      return;
-    }
-    if (draft.side === 'sell' && shares > draft.available) {
-      toast.error(t('portfolio.tradeInsufficient', { available: draft.available }));
-      return;
-    }
-    setSubmitting(true);
+  /** Inline edit of a single numeric column on a holding (PATCH /stocks/{code}). */
+  async function patchStock(stock: PortfolioStock, patch: Record<string, number | null>) {
+    if (!name) return;
     try {
-      await apiFetch(`/api/portfolios/${encodeURIComponent(name)}/transactions`, {
-        method: 'POST',
-        body: JSON.stringify({
-          ts_code: draft.ts_code,
-          side: draft.side,
-          shares,
-          price,
-          trade_date: draft.trade_date,
-          fee: draft.fee === '' ? 0 : Number(draft.fee),
-          reason: draft.note,
-        }),
-      });
-      toast.success(t('portfolio.tradeSaved'));
-      setDraft(null);
-      await loadPositions();
+      const updated = await apiFetch<PortfolioStock>(
+        `/api/portfolios/${encodeURIComponent(name)}/stocks/${encodeURIComponent(stock.ts_code)}`,
+        { method: 'PATCH', body: JSON.stringify(patch) },
+      );
+      setStocks((prev) => prev.map((s) => (s.ts_code === updated.ts_code ? { ...s, ...updated } : s)));
+      toast.success(t('portfolio.stockUpdated'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('portfolio.tradeFailed'));
-    } finally {
-      setSubmitting(false);
+      toast.error(err instanceof Error ? err.message : t('portfolio.stockUpdateFailed'));
     }
   }
 
@@ -513,8 +467,34 @@ export function Portfolio() {
                           {money(s.realized_pnl)}
                         </td>
                         <td className="num">{s.holding_days ?? '—'}</td>
-                        <td className="num">{money(s.stop_loss_point)}</td>
-                        <td className="num">{money(s.target_amount)}</td>
+                        <td className="num">
+                          <input
+                            className="portfolio-cell-input"
+                            type="number"
+                            step="0.01"
+                            defaultValue={s.stop_loss_point ?? ''}
+                            aria-label={t('portfolio.colStopLoss')}
+                            onBlur={(e) => {
+                              const raw = e.target.value.trim();
+                              const next = raw === '' ? null : Number(raw);
+                              if (next !== (s.stop_loss_point ?? null)) patchStock(s, { stop_loss_point: next });
+                            }}
+                          />
+                        </td>
+                        <td className="num">
+                          <input
+                            className="portfolio-cell-input"
+                            type="number"
+                            step="1"
+                            defaultValue={s.target_amount ?? ''}
+                            aria-label={t('portfolio.colTarget')}
+                            onBlur={(e) => {
+                              const raw = e.target.value.trim();
+                              const next = raw === '' ? null : Number(raw);
+                              if (next !== (s.target_amount ?? null)) patchStock(s, { target_amount: next });
+                            }}
+                          />
+                        </td>
                         <td className="portfolio-risk-flags">
                           {riskFlags(s).map((f) => (
                             <span key={f.label} className={`portfolio-flag portfolio-flag--${f.level}`}>
@@ -714,86 +694,21 @@ export function Portfolio() {
         </>
       )}
 
-      {draft && (
-        <div className="portfolio-drawer-backdrop" role="presentation" onClick={() => setDraft(null)}>
-          <aside
-            className="portfolio-drawer"
-            role="dialog"
-            aria-modal="true"
-            aria-label={draft.side === 'buy' ? t('portfolio.tradeBuyTitle') : t('portfolio.tradeSellTitle')}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="portfolio-drawer-title">
-              {draft.side === 'buy' ? t('portfolio.tradeBuyTitle') : t('portfolio.tradeSellTitle')}
-            </h2>
-            <p className="portfolio-drawer-code">{draft.ts_code}</p>
-            {draft.side === 'sell' && (
-              <p className="portfolio-muted">{t('portfolio.tradeAvailable', { shares: draft.available })}</p>
-            )}
-
-            <div className="form-row">
-              <label htmlFor="trade-date">{t('portfolio.tradeDate')}</label>
-              <input
-                id="trade-date"
-                type="date"
-                value={draft.trade_date}
-                onChange={(e) => setDraft({ ...draft, trade_date: e.target.value })}
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="trade-shares">{t('portfolio.colShares')}</label>
-              <input
-                id="trade-shares"
-                type="number"
-                min={1}
-                step={100}
-                value={draft.shares}
-                onChange={(e) => setDraft({ ...draft, shares: e.target.value })}
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="trade-price">{t('portfolio.colPrice')}</label>
-              <input
-                id="trade-price"
-                type="number"
-                min={0}
-                step="0.01"
-                value={draft.price}
-                onChange={(e) => setDraft({ ...draft, price: e.target.value })}
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="trade-fee">{t('portfolio.tradeFee')}</label>
-              <input
-                id="trade-fee"
-                type="number"
-                min={0}
-                step="0.01"
-                value={draft.fee}
-                placeholder="0"
-                onChange={(e) => setDraft({ ...draft, fee: e.target.value })}
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="trade-note">{t('portfolio.tradeNote')}</label>
-              <input
-                id="trade-note"
-                type="text"
-                value={draft.note}
-                onChange={(e) => setDraft({ ...draft, note: e.target.value })}
-              />
-            </div>
-
-            <div className="portfolio-save-row">
-              <button type="button" className="btn btn-primary" onClick={submitTrade} disabled={submitting}>
-                {submitting ? t('portfolio.tradeSubmitting') : t('portfolio.tradeSubmit')}
-              </button>
-              <button type="button" className="btn btn-secondary" onClick={() => setDraft(null)} disabled={submitting}>
-                {t('portfolio.tradeCancel')}
-              </button>
-            </div>
-          </aside>
-        </div>
+      {draft && name && (
+        <TradeDrawer
+          portfolio={name}
+          target={{
+            ts_code: draft.stock.ts_code,
+            avg_cost: draft.stock.avg_cost,
+            current_price: draft.stock.current_price,
+            hold_shares: draft.stock.hold_shares,
+          }}
+          initialSide={draft.side}
+          onClose={() => setDraft(null)}
+          onSaved={() => {
+            loadPositions().catch(() => {});
+          }}
+        />
       )}
     </div>
   );

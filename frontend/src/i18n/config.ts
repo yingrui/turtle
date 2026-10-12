@@ -60,6 +60,7 @@ const resources = {
         },
       },
       screening: {
+        buyNow: 'Buy',
         subtitle: 'Fundamental stock picking (daily_basic) and technical universe screening (trend + ADF).',
         tabFundamental: 'Fundamental',
         tabTechnical: 'Technical',
@@ -261,6 +262,8 @@ const resources = {
         policiesEmpty: 'No policies configured.',
         policyName: 'Policy',
         policyParams: 'Parameters',
+        stockUpdated: 'Holding updated',
+        stockUpdateFailed: 'Failed to update holding',
         colActions: 'Actions',
         actionBuy: 'Buy',
         actionSell: 'Sell',
@@ -432,6 +435,7 @@ const resources = {
         },
       },
       screening: {
+        buyNow: '买入',
         subtitle: '基本面选股（daily_basic）与技术全市场筛选（趋势 + ADF）。',
         tabFundamental: '基本面',
         tabTechnical: '技术筛选',
@@ -633,6 +637,8 @@ const resources = {
         policiesEmpty: '尚未配置策略。',
         policyName: '策略',
         policyParams: '参数',
+        stockUpdated: '已更新',
+        stockUpdateFailed: '更新失败',
         colActions: '操作',
         actionBuy: '买入',
         actionSell: '卖出',
