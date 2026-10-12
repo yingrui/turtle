@@ -38,10 +38,10 @@ DDL 以 Alembic `002_market_data.py` 为准，外部管道需保持兼容：
 - `JobService` 中 `data_sync`、`calendar_sync`  
 - 前端 `DataCollection.tsx`（`/data`）
 
-移除时间表见 [技术底座 — 遗留 sync](research/06-technical-enablers.md)。
+移除时间表见 [技术底座 — 遗留 sync](../research/06-technical-enablers.md)。
 
 ## 相关文档
 
-- [因子分析与选股 — 数据契约](research/07-factor-and-stock-selection.md)
-- [数据与 API 策略](research/05-data-and-api-strategy.md)
+- [因子分析与选股 — 数据契约](../research/07-factor-and-stock-selection.md)
+- [数据与 API 策略](../research/05-data-and-api-strategy.md)
 - [配置](configuration.md) — `TUSHARE_TOKEN` 说明可视为遗留

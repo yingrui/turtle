@@ -36,7 +36,7 @@ Cost basis is weighted average: buys re-weight `avg_cost`, sells realize
 
 ## API
 
-See [API reference — Portfolios](api-reference.md#portfolios-apportfolios).
+See [API reference — Portfolios](api-reference.md#portfolios-apiportfolios).
 
 - Stocks: `GET|POST /api/portfolios/{name}/stocks`, `PATCH|DELETE .../stocks/{ts_code}`
 - Ledger: `GET|POST /api/portfolios/{name}/transactions`
