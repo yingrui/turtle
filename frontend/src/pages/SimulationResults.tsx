@@ -234,8 +234,9 @@ export function SimulationResults() {
                   <th>{t('results.colDate')}</th>
                   <th>{t('quote.col.ts_code')}</th>
                   <th>{t('results.colStatus')}</th>
-                  <th>{t('results.colBuy')}</th>
-                  <th>{t('results.colSell')}</th>
+                  <th>{t('portfolio.colSide')}</th>
+                  <th>{t('portfolio.colShares')}</th>
+                  <th>{t('portfolio.colPrice')}</th>
                   <th>{t('results.colBenefit')}</th>
                   <th>{t('results.colReason')}</th>
                 </tr>
@@ -246,8 +247,9 @@ export function SimulationResults() {
                     <td>{String(row.date)}</td>
                     <td>{String(row.ts_code)}</td>
                     <td>{String(row.status)}</td>
-                    <td>{String(row.buy_price ?? '')}</td>
-                    <td>{String(row.sell_price ?? '')}</td>
+                    <td>{row.side === 'buy' ? t('portfolio.sideBuy') : t('portfolio.sideSell')}</td>
+                    <td>{String(row.shares ?? '')}</td>
+                    <td>{String(row.price ?? '')}</td>
                     <td>{String(row.benefit ?? '')}</td>
                     <td>{String(row.reason ?? '')}</td>
                   </tr>
