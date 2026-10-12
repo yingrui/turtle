@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../utils/api';
 import { LineChart } from '../components/Chart';
 import { Tabs } from '../components/Tabs';
+import { DataTable, type Column } from '../components/DataTable';
 
 type Run = {
   id: string;
@@ -136,6 +137,31 @@ export function SimulationResults() {
 
   const run = runs.find((r) => r.id === selectedRunId);
 
+  const tradeColumns: Column<Record<string, unknown>>[] = [
+    { key: 'date', label: t('results.colDate'), render: (row) => String(row.date ?? '') },
+    { key: 'ts_code', label: t('quote.col.ts_code'), render: (row) => String(row.ts_code ?? '') },
+    { key: 'status', label: t('results.colStatus'), render: (row) => String(row.status ?? '') },
+    {
+      key: 'side',
+      label: t('portfolio.colSide'),
+      render: (row) => (row.side === 'buy' ? t('portfolio.sideBuy') : t('portfolio.sideSell')),
+    },
+    {
+      key: 'shares',
+      label: t('portfolio.colShares'),
+      align: 'right',
+      render: (row) => String(row.shares ?? ''),
+    },
+    { key: 'price', label: t('portfolio.colPrice'), align: 'right', render: (row) => String(row.price ?? '') },
+    {
+      key: 'benefit',
+      label: t('results.colBenefit'),
+      align: 'right',
+      render: (row) => String(row.benefit ?? ''),
+    },
+    { key: 'reason', label: t('results.colReason'), render: (row) => String(row.reason ?? '') },
+  ];
+
   return (
     <>
       <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' }}>
@@ -227,35 +253,13 @@ export function SimulationResults() {
               <LineChart data={chart} title={run ? `Policy ${run.policy_id}` : undefined} />
             </div>
           )}
-          {tab === 'trades' && trades.length > 0 && (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>{t('results.colDate')}</th>
-                  <th>{t('quote.col.ts_code')}</th>
-                  <th>{t('results.colStatus')}</th>
-                  <th>{t('portfolio.colSide')}</th>
-                  <th>{t('portfolio.colShares')}</th>
-                  <th>{t('portfolio.colPrice')}</th>
-                  <th>{t('results.colBenefit')}</th>
-                  <th>{t('results.colReason')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trades.slice(-80).map((row, i) => (
-                  <tr key={i}>
-                    <td>{String(row.date)}</td>
-                    <td>{String(row.ts_code)}</td>
-                    <td>{String(row.status)}</td>
-                    <td>{row.side === 'buy' ? t('portfolio.sideBuy') : t('portfolio.sideSell')}</td>
-                    <td>{String(row.shares ?? '')}</td>
-                    <td>{String(row.price ?? '')}</td>
-                    <td>{String(row.benefit ?? '')}</td>
-                    <td>{String(row.reason ?? '')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {tab === 'trades' && (
+            <DataTable
+              columns={tradeColumns}
+              rows={trades.slice(-80)}
+              rowKey={(row, i) => `${String(row.ts_code)}-${String(row.date)}-${i}`}
+              empty={t('results.noTrades')}
+            />
           )}
           {tab === 'benefit' && benefit.length > 0 && (
             <table className="data-table">

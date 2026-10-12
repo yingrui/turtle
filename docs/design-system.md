@@ -52,6 +52,29 @@ down/loss is green**. Use the shared utilities instead of page-local `.up` / `.d
 Both tokens have dark-mode values in `_css-variables.scss`. Used by Home, Market, Stock detail,
 Watchlist and Portfolio.
 
+## Shared components
+
+| Component | Where | Use |
+|-----------|-------|-----|
+| `DataTable` | `frontend/src/components/DataTable.tsx` | Every data table. Column definitions (`align`, `sortable`, `sortValue`, `render`, `cellClassName`), client-side sorting by default, optional controlled sorting for server-sorted data, selection checkboxes, loading/empty slots, row click, horizontal scroll. |
+| `Pagination` | `styles/design-system/Pagination.tsx` | Page controls next to a table. |
+| `TradeDrawer` | `components/portfolio/TradeDrawer.tsx` | Record a buy/sell for one symbol (portfolio page and screening results). |
+
+```tsx
+const columns: Column<Row>[] = [
+  { key: 'code', label: 'Code', sortable: true, sortValue: (r) => r.code, render: (r) => r.code },
+  { key: 'chg', label: 'Chg', align: 'right', sortValue: (r) => r.pct, render: (r) => r.pct },
+];
+
+<DataTable columns={columns} rows={rows} rowKey={(row) => row.code} empty={t('…')} />;
+```
+
+Sorting is uncontrolled unless you pass `sortCol` + `onSortChange` (do that when the server returns
+sorted rows, e.g. the market list). Numeric columns use `align: 'right'` (adds `.num` with
+tabular-nums). Market colours come from `cellClassName` returning `price-up` / `price-down`.
+Tests: `DataTable.test.tsx` covers sort order, nulls-last, controlled mode, empty/loading and
+selection.
+
 ## New page stylesheet
 
 Colocate `Page.scss` next to the component:

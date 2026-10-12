@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
-import { compareSortValues, sortIndicator, toggleSortColumn, type SortOrder } from '../utils/tableSort';
+import { DataTable, type Column } from '../components/DataTable';
 import './Watchlist.scss';
 
 type Quote = {
@@ -34,49 +34,6 @@ export function Watchlist() {
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const [sortCol, setSortCol] = useState('pct_chg');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-
-  const sortedItems = useMemo(() => {
-    const rows = [...items];
-    rows.sort((a, b) => {
-      let av: string | number | null | undefined;
-      let bv: string | number | null | undefined;
-      if (sortCol === 'ts_code') {
-        av = a.ts_code;
-        bv = b.ts_code;
-      } else if (sortCol === 'name') {
-        av = a.name;
-        bv = b.name;
-      } else if (sortCol === 'industry') {
-        av = a.industry;
-        bv = b.industry;
-      } else if (sortCol === 'close') {
-        av = a.quote?.close;
-        bv = b.quote?.close;
-      } else {
-        av = a.quote?.pct_chg;
-        bv = b.quote?.pct_chg;
-      }
-      return compareSortValues(av, bv, sortOrder);
-    });
-    return rows;
-  }, [items, sortCol, sortOrder]);
-
-  function onSortColumn(col: string, defaultDesc = false) {
-    const next = toggleSortColumn(sortCol, sortOrder, col, defaultDesc);
-    setSortCol(next.col);
-    setSortOrder(next.order);
-  }
-
-  function thSort(col: string, label: string, defaultDesc = false) {
-    return (
-      <th className="sortable" onClick={() => onSortColumn(col, defaultDesc)}>
-        {label}
-        {sortIndicator(sortCol, col, sortOrder)}
-      </th>
-    );
-  }
 
   const selectPortfolio = useCallback(
     (name: string) => {
@@ -196,6 +153,66 @@ export function Watchlist() {
     }
   }
 
+
+  const columns: Column<WatchlistItem>[] = [
+    {
+      key: 'ts_code',
+      label: t('quote.col.ts_code'),
+      sortable: true,
+      sortValue: (row) => row.ts_code,
+      render: (row) => <Link to={`/stocks/${encodeURIComponent(row.ts_code)}`}>{row.ts_code}</Link>,
+    },
+    {
+      key: 'name',
+      label: t('quote.col.name'),
+      sortable: true,
+      sortValue: (row) => row.name,
+      render: (row) => row.name ?? '—',
+    },
+    {
+      key: 'close',
+      label: t('quote.col.close'),
+      align: 'right',
+      sortable: true,
+      defaultOrder: 'desc',
+      sortValue: (row) => row.quote?.close,
+      render: (row) => (row.quote?.close != null ? row.quote.close.toFixed(2) : '—'),
+    },
+    {
+      key: 'pct_chg',
+      label: t('quote.col.pct_chg'),
+      align: 'right',
+      sortable: true,
+      defaultOrder: 'desc',
+      sortValue: (row) => row.quote?.pct_chg,
+      cellClassName: (row) => {
+        const pct = row.quote?.pct_chg;
+        if (pct == null) return undefined;
+        return pct > 0 ? 'price-up' : pct < 0 ? 'price-down' : 'price-flat';
+      },
+      render: (row) => {
+        const pct = row.quote?.pct_chg;
+        return pct != null ? `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%` : '—';
+      },
+    },
+    {
+      key: 'industry',
+      label: t('quote.col.industry'),
+      sortable: true,
+      sortValue: (row) => row.industry,
+      render: (row) => row.industry ?? '—',
+    },
+    {
+      key: 'actions',
+      label: t('quote.col.actions'),
+      render: (row) => (
+        <button type="button" className="btn btn-sm btn-secondary" onClick={() => remove(row.ts_code)}>
+          {t('watchlist.remove')}
+        </button>
+      ),
+    },
+  ];
+
   const hasPortfolios = portfolios.length > 0;
 
   return (
@@ -263,57 +280,23 @@ export function Watchlist() {
             </p>
           )}
 
-          {loadingStocks ? (
-            <p className="watchlist-muted">{t('watchlist.loading')}</p>
-          ) : items.length === 0 ? (
-            <div className="watchlist-empty-stocks">
-              <p className="watchlist-muted">{t('watchlist.emptyStocks')}</p>
-              <Link to="/screening" className="btn btn-primary btn-sm">
-                {t('watchlist.goPick')}
-              </Link>
-            </div>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  {thSort('ts_code', t('quote.col.ts_code'))}
-                  {thSort('name', t('quote.col.name'))}
-                  {thSort('close', t('quote.col.close'), true)}
-                  {thSort('pct_chg', t('quote.col.pct_chg'), true)}
-                  {thSort('industry', t('quote.col.industry'))}
-                  <th>{t('quote.col.actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedItems.map((item) => {
-                  const pct = item.quote?.pct_chg;
-                  const pctClass = pct != null ? (pct > 0 ? 'price-up' : pct < 0 ? 'price-down' : 'price-flat') : '';
-                  return (
-                    <tr key={item.ts_code}>
-                      <td>
-                        <Link to={`/stocks/${encodeURIComponent(item.ts_code)}`}>{item.ts_code}</Link>
-                      </td>
-                      <td>{item.name ?? '—'}</td>
-                      <td>{item.quote?.close != null ? item.quote.close.toFixed(2) : '—'}</td>
-                      <td className={pctClass}>
-                        {pct != null ? `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%` : '—'}
-                      </td>
-                      <td>{item.industry ?? '—'}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => remove(item.ts_code)}
-                        >
-                          {t('watchlist.remove')}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+          <DataTable
+            columns={columns}
+            rows={items}
+            rowKey={(row) => row.ts_code}
+            loading={loadingStocks}
+            loadingLabel={t('watchlist.loading')}
+            defaultSortCol="pct_chg"
+            defaultSortOrder="desc"
+            empty={
+              <div className="watchlist-empty-stocks">
+                <p className="watchlist-muted">{t('watchlist.emptyStocks')}</p>
+                <Link to="/screening" className="btn btn-primary btn-sm">
+                  {t('watchlist.goPick')}
+                </Link>
+              </div>
+            }
+          />
         </>
       )}
 

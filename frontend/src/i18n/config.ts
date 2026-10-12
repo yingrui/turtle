@@ -115,6 +115,7 @@ const resources = {
         tabResults: 'Results',
       },
       results: {
+        noTrades: 'No trades for this run.',
         subtitle: 'Select a backtest job or run. Bookmark the URL to keep results after refresh.',
         selectJob: 'Backtest job',
         allRecent: 'All recent runs',
@@ -490,6 +491,7 @@ const resources = {
         tabResults: '历史结果',
       },
       results: {
+        noTrades: '该回测没有成交记录。',
         subtitle: '选择回测任务或单次运行。带 job_id 的链接刷新后仍可查看。',
         selectJob: '回测任务',
         allRecent: '全部最近运行',

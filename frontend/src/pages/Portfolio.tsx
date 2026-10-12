@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
 import { TradeDrawer } from '../components/portfolio/TradeDrawer';
+import { DataTable, type Column } from '../components/DataTable';
 import './Portfolio.scss';
 
 type PortfolioConfig = {
@@ -172,6 +173,189 @@ export function Portfolio() {
       setSavingRisk(false);
     }
   }
+
+  const policyColumns: Column<Record<string, unknown>>[] = [
+    {
+      key: 'name',
+      label: t('portfolio.policyName'),
+      render: (row) => String(row['trade_policy.name'] ?? '—'),
+    },
+    {
+      key: 'params',
+      label: t('portfolio.policyParams'),
+      render: (row) =>
+        Object.entries(row)
+          .filter(([key]) => key !== 'trade_policy.name')
+          .map(([key, value]) => `${key.replace(/^trade_policy\.[^.]+\./, '')}=${String(value)}`)
+          .join('  '),
+    },
+  ];
+
+  const holdingColumns: Column<PortfolioStock>[] = [
+    {
+      key: 'ts_code',
+      label: t('quote.col.ts_code'),
+      render: (row) => <Link to={`/stocks/${encodeURIComponent(row.ts_code)}`}>{row.ts_code}</Link>,
+    },
+    {
+      key: 'status',
+      label: t('portfolio.colStatus'),
+      render: (row) => statusLabel[row.status] ?? row.status,
+    },
+    { key: 'shares', label: t('portfolio.colShares'), align: 'right', render: (row) => row.hold_shares },
+    { key: 'avg_cost', label: t('portfolio.colAvgCost'), align: 'right', render: (row) => money(row.avg_cost) },
+    { key: 'price', label: t('portfolio.colLastPrice'), align: 'right', render: (row) => money(row.current_price) },
+    {
+      key: 'market_value',
+      label: t('portfolio.colMarketValue'),
+      align: 'right',
+      render: (row) => money(row.market_value),
+    },
+    {
+      key: 'unrealized',
+      label: t('portfolio.colUnrealized'),
+      align: 'right',
+      cellClassName: (row) => ((row.unrealized_pnl ?? 0) < 0 ? 'price-down' : 'price-up'),
+      render: (row) => (
+        <>
+          {money(row.unrealized_pnl)}
+          {row.unrealized_pct != null ? ` (${row.unrealized_pct}%)` : ''}
+        </>
+      ),
+    },
+    { key: 'total_cost', label: t('portfolio.colTotalCost'), align: 'right', render: (row) => money(row.total_cost) },
+    {
+      key: 'realized',
+      label: t('portfolio.colRealized'),
+      align: 'right',
+      cellClassName: (row) => (row.realized_pnl < 0 ? 'price-down' : 'price-up'),
+      render: (row) => money(row.realized_pnl),
+    },
+    {
+      key: 'holding_days',
+      label: t('portfolio.colHolding'),
+      align: 'right',
+      render: (row) => row.holding_days ?? '—',
+    },
+    {
+      key: 'stop_loss',
+      label: t('portfolio.colStopLoss'),
+      align: 'right',
+      render: (row) => (
+        <input
+          className="portfolio-cell-input"
+          type="number"
+          step="0.01"
+          defaultValue={row.stop_loss_point ?? ''}
+          aria-label={t('portfolio.colStopLoss')}
+          onBlur={(e) => {
+            const raw = e.target.value.trim();
+            const next = raw === '' ? null : Number(raw);
+            if (next !== (row.stop_loss_point ?? null)) patchStock(row, { stop_loss_point: next });
+          }}
+        />
+      ),
+    },
+    {
+      key: 'target',
+      label: t('portfolio.colTarget'),
+      align: 'right',
+      render: (row) => (
+        <input
+          className="portfolio-cell-input"
+          type="number"
+          step="1"
+          defaultValue={row.target_amount ?? ''}
+          aria-label={t('portfolio.colTarget')}
+          onBlur={(e) => {
+            const raw = e.target.value.trim();
+            const next = raw === '' ? null : Number(raw);
+            if (next !== (row.target_amount ?? null)) patchStock(row, { target_amount: next });
+          }}
+        />
+      ),
+    },
+    {
+      key: 'risk',
+      label: t('portfolio.colRisk'),
+      render: (row) => (
+        <span className="portfolio-risk-flags">
+          {riskFlags(row).map((flag) => (
+            <span key={flag.label} className={`portfolio-flag portfolio-flag--${flag.level}`}>
+              {flag.label}
+            </span>
+          ))}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: t('portfolio.colActions'),
+      className: 'portfolio-row-actions',
+      render: (row) => (
+        <>
+          <button type="button" className="btn btn-sm" onClick={() => openTrade('buy', row)}>
+            {t('portfolio.actionBuy')}
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => openTrade('sell', row)}
+            disabled={row.hold_shares <= 0}
+            title={row.hold_shares <= 0 ? t('portfolio.actionSellDisabled') : undefined}
+          >
+            {t('portfolio.actionSell')}
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-secondary"
+            onClick={() => removeStock(row)}
+            disabled={row.hold_shares > 0}
+            title={row.hold_shares > 0 ? t('portfolio.removeStockBlocked') : undefined}
+          >
+            {t('portfolio.actionRemove')}
+          </button>
+        </>
+      ),
+    },
+  ];
+
+  const tradeColumns: Column<PortfolioTransaction>[] = [
+    { key: 'date', label: t('portfolio.colTradeDate'), render: (row) => row.trade_date },
+    { key: 'ts_code', label: t('quote.col.ts_code'), render: (row) => row.ts_code },
+    {
+      key: 'side',
+      label: t('portfolio.colSide'),
+      render: (row) => (row.side === 'buy' ? t('portfolio.sideBuy') : t('portfolio.sideSell')),
+    },
+    { key: 'shares', label: t('portfolio.colShares'), align: 'right', render: (row) => row.shares },
+    { key: 'price', label: t('portfolio.colPrice'), align: 'right', render: (row) => money(row.price) },
+    { key: 'amount', label: t('portfolio.colAmount'), align: 'right', render: (row) => money(row.amount) },
+    {
+      key: 'realized',
+      label: t('portfolio.colRealized'),
+      align: 'right',
+      cellClassName: (row) => ((row.realized_pnl ?? 0) < 0 ? 'price-down' : 'price-up'),
+      render: (row) => money(row.realized_pnl),
+    },
+    {
+      key: 'source',
+      label: t('portfolio.colSource'),
+      render: (row) => sourceLabel[row.source] ?? row.source,
+    },
+    {
+      key: 'run',
+      label: t('portfolio.colRun'),
+      render: (row) =>
+        row.simulation_run_id ? (
+          <Link to={`/simulation/results?run_id=${encodeURIComponent(row.simulation_run_id)}`}>
+            {row.simulation_run_id.slice(0, 8)}
+          </Link>
+        ) : (
+          '—'
+        ),
+    },
+  ];
 
   const holdings = stocks.filter((s) => s.status === 'holding' && s.hold_shares > 0);
   const totalMarketValue = holdings.reduce((sum, s) => sum + (s.market_value ?? 0), 0);
@@ -423,113 +607,16 @@ export function Portfolio() {
                 <>
               <h2 className="portfolio-panel-title">{t('portfolio.holdingsTitle')}</h2>
               <p className="portfolio-panel-desc">{t('portfolio.holdingsDesc')}</p>
-              {stocks.length === 0 ? (
-                <p className="portfolio-muted">
-                  {t('portfolio.emptyHoldings')} <Link to="/screening">{t('portfolio.emptyHoldingsCta')}</Link>
-                </p>
-              ) : (
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>{t('quote.col.ts_code')}</th>
-                      <th>{t('portfolio.colStatus')}</th>
-                      <th className="num">{t('portfolio.colShares')}</th>
-                      <th className="num">{t('portfolio.colAvgCost')}</th>
-                      <th className="num">{t('portfolio.colLastPrice')}</th>
-                      <th className="num">{t('portfolio.colMarketValue')}</th>
-                      <th className="num">{t('portfolio.colUnrealized')}</th>
-                      <th className="num">{t('portfolio.colTotalCost')}</th>
-                      <th className="num">{t('portfolio.colRealized')}</th>
-                      <th className="num">{t('portfolio.colHolding')}</th>
-                      <th className="num">{t('portfolio.colStopLoss')}</th>
-                      <th className="num">{t('portfolio.colTarget')}</th>
-                      <th>{t('portfolio.colRisk')}</th>
-                      <th>{t('portfolio.colActions')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stocks.map((s) => (
-                      <tr key={s.ts_code}>
-                        <td>
-                          <Link to={`/stocks/${encodeURIComponent(s.ts_code)}`}>{s.ts_code}</Link>
-                        </td>
-                        <td>{statusLabel[s.status] ?? s.status}</td>
-                        <td className="num">{s.hold_shares}</td>
-                        <td className="num">{money(s.avg_cost)}</td>
-                        <td className="num">{money(s.current_price)}</td>
-                        <td className="num">{money(s.market_value)}</td>
-                        <td className={(s.unrealized_pnl ?? 0) < 0 ? 'num price-down' : 'num price-up'}>
-                          {money(s.unrealized_pnl)}
-                          {s.unrealized_pct != null ? ` (${s.unrealized_pct}%)` : ''}
-                        </td>
-                        <td className="num">{money(s.total_cost)}</td>
-                        <td className={s.realized_pnl < 0 ? 'num price-down' : 'num price-up'}>
-                          {money(s.realized_pnl)}
-                        </td>
-                        <td className="num">{s.holding_days ?? '—'}</td>
-                        <td className="num">
-                          <input
-                            className="portfolio-cell-input"
-                            type="number"
-                            step="0.01"
-                            defaultValue={s.stop_loss_point ?? ''}
-                            aria-label={t('portfolio.colStopLoss')}
-                            onBlur={(e) => {
-                              const raw = e.target.value.trim();
-                              const next = raw === '' ? null : Number(raw);
-                              if (next !== (s.stop_loss_point ?? null)) patchStock(s, { stop_loss_point: next });
-                            }}
-                          />
-                        </td>
-                        <td className="num">
-                          <input
-                            className="portfolio-cell-input"
-                            type="number"
-                            step="1"
-                            defaultValue={s.target_amount ?? ''}
-                            aria-label={t('portfolio.colTarget')}
-                            onBlur={(e) => {
-                              const raw = e.target.value.trim();
-                              const next = raw === '' ? null : Number(raw);
-                              if (next !== (s.target_amount ?? null)) patchStock(s, { target_amount: next });
-                            }}
-                          />
-                        </td>
-                        <td className="portfolio-risk-flags">
-                          {riskFlags(s).map((f) => (
-                            <span key={f.label} className={`portfolio-flag portfolio-flag--${f.level}`}>
-                              {f.label}
-                            </span>
-                          ))}
-                        </td>
-                        <td className="portfolio-row-actions">
-                          <button type="button" className="btn btn-sm" onClick={() => openTrade('buy', s)}>
-                            {t('portfolio.actionBuy')}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-sm"
-                            onClick={() => openTrade('sell', s)}
-                            disabled={s.hold_shares <= 0}
-                            title={s.hold_shares <= 0 ? t('portfolio.actionSellDisabled') : undefined}
-                          >
-                            {t('portfolio.actionSell')}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-secondary"
-                            onClick={() => removeStock(s)}
-                            disabled={s.hold_shares > 0}
-                            title={s.hold_shares > 0 ? t('portfolio.removeStockBlocked') : undefined}
-                          >
-                            {t('portfolio.actionRemove')}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+              <DataTable
+                columns={holdingColumns}
+                rows={stocks}
+                rowKey={(row) => row.ts_code}
+                empty={
+                  <>
+                    {t('portfolio.emptyHoldings')} <Link to="/screening">{t('portfolio.emptyHoldingsCta')}</Link>
+                  </>
+                }
+              />
                 </>
               )}
 
@@ -537,50 +624,12 @@ export function Portfolio() {
                 <>
               <h2 className="portfolio-panel-title">{t('portfolio.tradesTitle')}</h2>
               <p className="portfolio-panel-desc">{t('portfolio.tradesDesc')}</p>
-              {trades.length === 0 ? (
-                <p className="portfolio-muted">{t('portfolio.emptyTrades')}</p>
-              ) : (
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>{t('portfolio.colTradeDate')}</th>
-                      <th>{t('quote.col.ts_code')}</th>
-                      <th>{t('portfolio.colSide')}</th>
-                      <th className="num">{t('portfolio.colShares')}</th>
-                      <th className="num">{t('portfolio.colPrice')}</th>
-                      <th className="num">{t('portfolio.colAmount')}</th>
-                      <th className="num">{t('portfolio.colRealized')}</th>
-                      <th>{t('portfolio.colSource')}</th>
-                      <th>{t('portfolio.colRun')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {trades.map((row) => (
-                      <tr key={row.id}>
-                        <td>{row.trade_date}</td>
-                        <td>{row.ts_code}</td>
-                        <td>{row.side === 'buy' ? t('portfolio.sideBuy') : t('portfolio.sideSell')}</td>
-                        <td className="num">{row.shares}</td>
-                        <td className="num">{money(row.price)}</td>
-                        <td className="num">{money(row.amount)}</td>
-                        <td className={(row.realized_pnl ?? 0) < 0 ? 'num price-down' : 'num price-up'}>
-                          {money(row.realized_pnl)}
-                        </td>
-                        <td>{sourceLabel[row.source] ?? row.source}</td>
-                        <td>
-                          {row.simulation_run_id ? (
-                            <Link to={`/simulation/results?run_id=${encodeURIComponent(row.simulation_run_id)}`}>
-                              {row.simulation_run_id.slice(0, 8)}
-                            </Link>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+              <DataTable
+                columns={tradeColumns}
+                rows={trades}
+                rowKey={(row) => row.id}
+                empty={t('portfolio.emptyTrades')}
+              />
                 </>
               )}
 
@@ -638,31 +687,12 @@ export function Portfolio() {
 
                   <h2 className="portfolio-panel-title">{t('portfolio.policiesTitle')}</h2>
                   <p className="portfolio-panel-desc">{t('portfolio.policiesDesc')}</p>
-                  {(summary.policies ?? []).length === 0 ? (
-                    <p className="portfolio-muted">{t('portfolio.policiesEmpty')}</p>
-                  ) : (
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>{t('portfolio.policyName')}</th>
-                          <th>{t('portfolio.policyParams')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(summary.policies as Record<string, unknown>[]).map((policy, i) => (
-                          <tr key={i}>
-                            <td>{String(policy['trade_policy.name'] ?? '—')}</td>
-                            <td>
-                              {Object.entries(policy)
-                                .filter(([key]) => key !== 'trade_policy.name')
-                                .map(([key, value]) => `${key.replace(/^trade_policy\.[^.]+\./, '')}=${String(value)}`)
-                                .join('  ')}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
+                  <DataTable
+                    columns={policyColumns}
+                    rows={summary.policies as Record<string, unknown>[]}
+                    rowKey={(row) => String(row['trade_policy.name'] ?? '')}
+                    empty={t('portfolio.policiesEmpty')}
+                  />
                 </>
               )}
 

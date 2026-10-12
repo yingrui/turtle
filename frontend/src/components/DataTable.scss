@@ -1,0 +1,33 @@
+.data-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.data-table-wrap .data-table {
+  margin-top: var(--space-4);
+}
+
+.data-table th.num,
+.data-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.data-table th.sortable:hover {
+  color: var(--color-text);
+}
+
+.data-table-select {
+  width: 2.5rem;
+  text-align: center;
+}
+
+.data-table tbody tr[role='button'],
+.data-table tbody tr.clickable {
+  cursor: pointer;
+}

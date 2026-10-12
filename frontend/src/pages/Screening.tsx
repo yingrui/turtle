@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
 import { TradeDrawer } from '../components/portfolio/TradeDrawer';
+import { DataTable, type Column } from '../components/DataTable';
 import { useJobPoll } from '../hooks/useJobPoll';
-import { compareSortValues, sortIndicator, toggleSortColumn, type SortOrder } from '../utils/tableSort';
 
 type DataStatus = {
   as_of_date: string | null;
@@ -68,28 +68,6 @@ function getSortValue(row: ResultRow, col: string): string | number | null | und
   return null;
 }
 
-function SortableTh({
-  col,
-  label,
-  sortCol,
-  sortOrder,
-  onSort,
-  defaultDesc = false,
-}: {
-  col: string;
-  label: string;
-  sortCol: string;
-  sortOrder: SortOrder;
-  onSort: (col: string, defaultDesc?: boolean) => void;
-  defaultDesc?: boolean;
-}) {
-  return (
-    <th className="sortable" onClick={() => onSort(col, defaultDesc)}>
-      {label}
-      {sortIndicator(sortCol, col, sortOrder)}
-    </th>
-  );
-}
 
 export function Screening() {
   const { t, i18n } = useTranslation();
@@ -124,9 +102,6 @@ export function Screening() {
   const [simJobId, setSimJobId] = useState<string | null>(null);
   const simJob = useJobPoll(simJobId);
 
-  const [sortCol, setSortCol] = useState('circ_mv');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-
   const activeRows: ResultRow[] = tab === 'fundamental' ? pickRows : techRows;
 
   /** Latest close of a result row, used to prefill the trade drawer. */
@@ -135,28 +110,6 @@ export function Screening() {
     return row?.close;
   }
   const allCodes = useMemo(() => activeRows.map((r) => r.ts_code), [activeRows]);
-
-  const sortedRows = useMemo(() => {
-    const rows = [...activeRows];
-    rows.sort((a, b) => compareSortValues(getSortValue(a, sortCol), getSortValue(b, sortCol), sortOrder));
-    return rows;
-  }, [activeRows, sortCol, sortOrder]);
-
-  useEffect(() => {
-    if (tab === 'fundamental') {
-      setSortCol('circ_mv');
-      setSortOrder('asc');
-    } else {
-      setSortCol('gradient');
-      setSortOrder('desc');
-    }
-  }, [tab]);
-
-  function onSortColumn(col: string, defaultDesc = false) {
-    const next = toggleSortColumn(sortCol, sortOrder, col, defaultDesc);
-    setSortCol(next.col);
-    setSortOrder(next.order);
-  }
 
   useEffect(() => {
     apiFetch<DataStatus>('/api/data/status').then((d) => {
@@ -296,6 +249,136 @@ export function Screening() {
   }
 
   const presetLabel = (p: PickPreset) => (i18n.language.startsWith('zh') ? p.name : p.name_en);
+
+  const resultColumns: Column<ResultRow>[] = [
+    {
+      key: 'ts_code',
+      label: t('quote.col.ts_code'),
+      sortable: true,
+      sortValue: (row) => row.ts_code,
+      render: (row) => <Link to={`/stocks/${encodeURIComponent(row.ts_code)}`}>{row.ts_code}</Link>,
+    },
+    {
+      key: 'name',
+      label: t('quote.col.name'),
+      sortable: true,
+      sortValue: (row) => getSortValue(row, 'name'),
+      render: (row) => (isPickRow(row) ? row.name ?? '' : row.name ?? ''),
+    },
+    {
+      key: 'industry',
+      label: t('quote.col.industry'),
+      sortable: true,
+      sortValue: (row) => row.industry,
+      render: (row) => row.industry ?? '',
+    },
+    ...(tab === 'fundamental'
+      ? ([
+          {
+            key: 'pe_ttm',
+            label: 'PE',
+            align: 'right',
+            sortable: true,
+            defaultOrder: 'desc',
+            sortValue: (row) => getSortValue(row, 'pe_ttm'),
+            render: (row) => (isPickRow(row) && row.pe_ttm != null ? row.pe_ttm.toFixed(2) : ''),
+          },
+          {
+            key: 'pb',
+            label: 'PB',
+            align: 'right',
+            sortable: true,
+            defaultOrder: 'desc',
+            sortValue: (row) => getSortValue(row, 'pb'),
+            render: (row) => (isPickRow(row) && row.pb != null ? row.pb.toFixed(2) : ''),
+          },
+          {
+            key: 'circ_mv',
+            label: t('screening.circMv'),
+            align: 'right',
+            sortable: true,
+            defaultOrder: 'desc',
+            sortValue: (row) => getSortValue(row, 'circ_mv'),
+            render: (row) =>
+              isPickRow(row) && row.circ_mv != null ? Math.round(row.circ_mv).toLocaleString() : '',
+          },
+          {
+            key: 'pct_chg',
+            label: t('quote.col.pct_chg'),
+            align: 'right',
+            sortable: true,
+            defaultOrder: 'desc',
+            sortValue: (row) => getSortValue(row, 'pct_chg'),
+            render: (row) => (isPickRow(row) && row.pct_chg != null ? row.pct_chg.toFixed(2) : ''),
+          },
+        ] as Column<ResultRow>[])
+      : ([
+          {
+            key: 'trend',
+            label: t('screening.trend'),
+            sortable: true,
+            sortValue: (row) => getSortValue(row, 'trend'),
+            render: (row) => (isPickRow(row) ? '' : row.trend ?? ''),
+          },
+          {
+            key: 'trend_reason',
+            label: t('screening.trendReasonCol'),
+            sortable: true,
+            sortValue: (row) => getSortValue(row, 'trend_reason'),
+            render: (row) => {
+              if (isPickRow(row)) return null;
+              return (
+                <span className="screening-trend-reason" title={row.trend_reason}>
+                  {row.trend_reason
+                    ? t(`screening.trendReason.${row.trend_reason}`, { count: row.bar_count ?? 0 })
+                    : '—'}
+                </span>
+              );
+            },
+          },
+          {
+            key: 'adf',
+            label: 'ADF',
+            align: 'right',
+            sortable: true,
+            sortValue: (row) => getSortValue(row, 'adf'),
+            render: (row) => (!isPickRow(row) && row.adf != null ? Number(row.adf).toFixed(4) : ''),
+          },
+          {
+            key: 'gradient',
+            label: t('screening.gradient'),
+            align: 'right',
+            sortable: true,
+            defaultOrder: 'desc',
+            sortValue: (row) => getSortValue(row, 'gradient'),
+            render: (row) => (!isPickRow(row) && row.gradient != null ? Number(row.gradient).toFixed(4) : ''),
+          },
+        ] as Column<ResultRow>[])),
+    {
+      key: 'actions',
+      label: t('quote.col.actions'),
+      className: 'screening-row-actions',
+      render: (row) =>
+        portfolios[0] ? (
+          <>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => addToWatchlist([row.ts_code], bulkPortfolio || portfolios[0])}
+            >
+              {t('quote.watchlist')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() => setTradeCode(row.ts_code)}
+            >
+              {t('screening.buyNow')}
+            </button>
+          </>
+        ) : null,
+    },
+  ];
 
   return (
     <div className="page-card">
@@ -463,93 +546,18 @@ export function Screening() {
             </button>
           </div>
 
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>
-                  <input
-                    type="checkbox"
-                    checked={selected.size === allCodes.length && allCodes.length > 0}
-                    onChange={(e) => toggleAll(e.target.checked)}
-                  />
-                </th>
-                <SortableTh col="ts_code" label={t('quote.col.ts_code')} sortCol={sortCol} sortOrder={sortOrder} onSort={onSortColumn} />
-                <SortableTh col="name" label={t('quote.col.name')} sortCol={sortCol} sortOrder={sortOrder} onSort={onSortColumn} />
-                <SortableTh col="industry" label={t('quote.col.industry')} sortCol={sortCol} sortOrder={sortOrder} onSort={onSortColumn} />
-                {tab === 'fundamental' ? (
-                  <>
-                    <SortableTh col="pe_ttm" label="PE" sortCol={sortCol} sortOrder={sortOrder} onSort={onSortColumn} defaultDesc />
-                    <SortableTh col="pb" label="PB" sortCol={sortCol} sortOrder={sortOrder} onSort={onSortColumn} defaultDesc />
-                    <SortableTh col="circ_mv" label={t('screening.circMv')} sortCol={sortCol} sortOrder={sortOrder} onSort={onSortColumn} defaultDesc />
-                    <SortableTh col="pct_chg" label={t('quote.col.pct_chg')} sortCol={sortCol} sortOrder={sortOrder} onSort={onSortColumn} defaultDesc />
-                  </>
-                ) : (
-                  <>
-                    <SortableTh col="trend" label={t('screening.trend')} sortCol={sortCol} sortOrder={sortOrder} onSort={onSortColumn} />
-                    <SortableTh col="trend_reason" label={t('screening.trendReasonCol')} sortCol={sortCol} sortOrder={sortOrder} onSort={onSortColumn} />
-                    <SortableTh col="adf" label="ADF" sortCol={sortCol} sortOrder={sortOrder} onSort={onSortColumn} defaultDesc />
-                    <SortableTh col="gradient" label="Gradient" sortCol={sortCol} sortOrder={sortOrder} onSort={onSortColumn} defaultDesc />
-                  </>
-                )}
-                <th>{t('quote.col.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedRows.slice(0, 200).map((row) => (
-                <tr key={row.ts_code}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selected.has(row.ts_code)}
-                      onChange={() => toggleOne(row.ts_code)}
-                    />
-                  </td>
-                  <td>
-                    <Link to={`/stocks/${encodeURIComponent(row.ts_code)}`}>{row.ts_code}</Link>
-                  </td>
-                  <td>{isPickRow(row) ? row.name ?? '' : (row as ScreenRow).name ?? ''}</td>
-                  <td>{row.industry ?? ''}</td>
-                  {tab === 'fundamental' && isPickRow(row) ? (
-                    <>
-                      <td>{row.pe_ttm != null ? row.pe_ttm.toFixed(2) : ''}</td>
-                      <td>{row.pb != null ? row.pb.toFixed(2) : ''}</td>
-                      <td>{row.circ_mv != null ? Math.round(row.circ_mv).toLocaleString() : ''}</td>
-                      <td>{row.pct_chg != null ? row.pct_chg.toFixed(2) : ''}</td>
-                    </>
-                  ) : !isPickRow(row) ? (
-                    <>
-                      <td>{row.trend ?? ''}</td>
-                      <td className="screening-trend-reason" title={row.trend_reason}>
-                        {row.trend_reason ? t(`screening.trendReason.${row.trend_reason}`, { count: row.bar_count ?? 0 }) : '—'}
-                      </td>
-                      <td>{row.adf != null ? Number(row.adf).toFixed(4) : ''}</td>
-                      <td>{row.gradient != null ? Number(row.gradient).toFixed(4) : ''}</td>
-                    </>
-                  ) : null}
-                  <td className="screening-row-actions">
-                    {portfolios[0] && (
-                      <>
-                        <button
-                          type="button"
-                          className="btn btn-sm"
-                          onClick={() => addToWatchlist([row.ts_code], bulkPortfolio || portfolios[0])}
-                        >
-                          {t('quote.watchlist')}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => setTradeCode(row.ts_code)}
-                        >
-                          {t('screening.buyNow')}
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable
+            key={tab}
+            columns={resultColumns}
+            rows={activeRows.slice(0, 200)}
+            rowKey={(row) => row.ts_code}
+            defaultSortCol={tab === 'fundamental' ? 'circ_mv' : 'gradient'}
+            defaultSortOrder={tab === 'fundamental' ? 'asc' : 'desc'}
+            selectable
+            selected={selected}
+            onToggleRow={(key) => toggleOne(key)}
+            onToggleAll={(checked) => toggleAll(checked)}
+          />
         </div>
       )}
 

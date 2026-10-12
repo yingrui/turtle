@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
 import { Pagination } from '../styles/design-system/Pagination';
+import { DataTable, type Column } from '../components/DataTable';
 import './StockList.scss';
 
 type Quote = {
@@ -237,19 +238,62 @@ export function StockList() {
     setMarket(chip.market);
   }
 
-  function toggleSort(col: string) {
-    if (sort === col) {
-      setOrder(order === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSort(col);
-      setOrder(col === 'pct_chg' || col === 'vol' || col === 'amount' ? 'desc' : 'asc');
-    }
-  }
-
-  function sortIndicator(col: string) {
-    if (sort !== col) return '';
-    return order === 'asc' ? ' ↑' : ' ↓';
-  }
+  const columns: Column<StockItem>[] = [
+    ...DISPLAY_COLS.map((col) => ({
+      key: col,
+      label: t(`quote.col.${col}`),
+      align: (col === 'ts_code' || col === 'name' || col === 'industry' ? 'left' : 'right') as 'left' | 'right',
+      sortable: (SORTABLE as readonly string[]).includes(col),
+      defaultOrder: (col === 'pct_chg' || col === 'vol' || col === 'amount' ? 'desc' : 'asc') as 'asc' | 'desc',
+      cellClassName:
+        col === 'pct_chg'
+          ? (row: StockItem) => {
+              const pct = row.quote?.pct_chg;
+              if (pct == null) return undefined;
+              return pct > 0 ? 'price-up' : pct < 0 ? 'price-down' : 'price-flat';
+            }
+          : undefined,
+      render: (row: StockItem) => cellValue(row, col),
+    })),
+    {
+      key: 'actions',
+      label: t('quote.col.actions'),
+      render: (row: StockItem) => (
+        <div className="stock-list-actions" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => navigate(`/stocks/${encodeURIComponent(row.ts_code)}`)}
+          >
+            {t('quote.analyze')}
+          </button>
+          {portfolios.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setWatchlistFor(row.ts_code)}
+            >
+              {t('quote.watchlist')}
+            </button>
+          )}
+          {watchlistFor === row.ts_code && (
+            <div className="stock-list-watchlist-popover">
+              {portfolios.map((portfolio) => (
+                <button
+                  key={portfolio}
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => addWatchlist(row.ts_code, portfolio)}
+                >
+                  {portfolio}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   function cellValue(row: StockItem, col: (typeof DISPLAY_COLS)[number]) {
     if (col === 'ts_code') return row.ts_code;
@@ -378,85 +422,21 @@ export function StockList() {
         <p style={{ color: 'var(--color-text-muted)' }}>{t('quote.empty')}</p>
       ) : (
         <>
-          <div className="stock-list-table-wrap">
-            <table className="data-table stock-list-table">
-              <thead>
-                <tr>
-                  {DISPLAY_COLS.map((col) => (
-                    <th
-                      key={col}
-                      className={SORTABLE.includes(col as (typeof SORTABLE)[number]) ? 'sortable' : undefined}
-                      onClick={() => SORTABLE.includes(col as (typeof SORTABLE)[number]) && toggleSort(col)}
-                    >
-                      {t(`quote.col.${col}`)}
-                      {SORTABLE.includes(col as (typeof SORTABLE)[number]) ? sortIndicator(col) : ''}
-                    </th>
-                  ))}
-                  <th>{t('quote.col.actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((row) => (
-                  <tr
-                    key={row.ts_code}
-                    className="stock-list-row"
-                    onClick={() => navigate(`/stocks/${encodeURIComponent(row.ts_code)}`)}
-                  >
-                    {DISPLAY_COLS.map((col) => (
-                      <td
-                        key={col}
-                        className={
-                          col === 'pct_chg' && row.quote?.pct_chg != null
-                            ? row.quote.pct_chg > 0
-                              ? 'price-up'
-                              : row.quote.pct_chg < 0
-                                ? 'price-down'
-                                : 'price-flat'
-                            : undefined
-                        }
-                      >
-                        {cellValue(row, col)}
-                      </td>
-                    ))}
-                    <td onClick={(e) => e.stopPropagation()}>
-                      <div className="stock-list-actions">
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => navigate(`/stocks/${encodeURIComponent(row.ts_code)}`)}
-                        >
-                          {t('quote.analyze')}
-                        </button>
-                        {portfolios.length > 0 && (
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => setWatchlistFor(row.ts_code)}
-                          >
-                            {t('quote.watchlist')}
-                          </button>
-                        )}
-                      </div>
-                      {watchlistFor === row.ts_code && (
-                        <div style={{ marginTop: 'var(--space-2)', display: 'flex', gap: 'var(--space-1)', flexWrap: 'wrap' }}>
-                          {portfolios.map((p) => (
-                            <button
-                              key={p}
-                              type="button"
-                              className="btn btn-sm"
-                              onClick={() => addWatchlist(row.ts_code, p)}
-                            >
-                              {p}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={columns}
+            rows={items}
+            rowKey={(row) => row.ts_code}
+            sortCol={sort}
+            sortOrder={order}
+            onSortChange={(col, nextOrder) => {
+              setSort(col);
+              setOrder(nextOrder);
+            }}
+            onRowClick={(row) => navigate(`/stocks/${encodeURIComponent(row.ts_code)}`)}
+            wrapperClassName="stock-list-table-wrap"
+            className="stock-list-table"
+            rowClassName={() => 'stock-list-row'}
+          />
           <Pagination
             total={total}
             page={page}
