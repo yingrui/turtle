@@ -287,7 +287,7 @@ export function Watchlist() {
               <tbody>
                 {sortedItems.map((item) => {
                   const pct = item.quote?.pct_chg;
-                  const pctClass = pct != null ? (pct > 0 ? 'up' : pct < 0 ? 'down' : '') : '';
+                  const pctClass = pct != null ? (pct > 0 ? 'price-up' : pct < 0 ? 'price-down' : 'price-flat') : '';
                   return (
                     <tr key={item.ts_code}>
                       <td>

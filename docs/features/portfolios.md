@@ -14,6 +14,14 @@ Create, select, edit, and delete named portfolios. The portfolio page shows the 
 portfolio (`portfolio_stocks`), the buy/sell ledger (`portfolio_transactions`) and the
 risk-control / policy parameters.
 
+The holdings table has per-row actions: **Buy** / **Sell** open a drawer that records a trade
+(方向、日期、股数、价格、费用、备注) and then refreshes the row; **Remove** drops a stock that is not
+held. Stock codes link to the stock detail page. The drawer is bookkeeping only — it never sends
+an order to a broker; it writes a ledger row and the position aggregates in one transaction.
+
+Empty states point at the screening page, and holding rows show latest price, market value and
+unrealized P&L from the latest market quote.
+
 ## Storage
 
 | Table | Holds |

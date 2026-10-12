@@ -34,6 +34,10 @@
   --color-error: #dc2626;
   --color-danger: var(--color-error);
 
+  /* Market colours — A-share convention: up (gain) is red, down (loss) is green. */
+  --color-up: #c0392b;
+  --color-down: #16a34a;
+
   /* Intent surfaces (alerts, inline banners, chips) */
   --color-error-bg: #fef2f2;
   --color-error-border: #fecaca;
@@ -159,6 +163,10 @@
   --color-ontology-source-soft: #c4b5fd;
   --color-ontology-fg: #e9d5ff;
   --color-ontology-fg-muted: #f5f3ff;
+
+  /* Market colours (dark surface values) */
+  --color-up: #f87171;
+  --color-down: #4ade80;
 
   --color-error-bg: #450a0a;
   --color-error-border: #7f1d1d;

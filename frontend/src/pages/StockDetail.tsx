@@ -108,7 +108,8 @@ export function StockDetail() {
 
   const q = snapshot?.quote;
   const f = snapshot?.fundamentals;
-  const pctClass = q?.pct_chg != null ? (q.pct_chg > 0 ? 'up' : q.pct_chg < 0 ? 'down' : '') : '';
+  const pctClass =
+    q?.pct_chg != null ? (q.pct_chg > 0 ? 'price-up' : q.pct_chg < 0 ? 'price-down' : 'price-flat') : '';
 
   return (
     <div className="page-card stock-detail">

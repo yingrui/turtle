@@ -114,18 +114,6 @@
   }
 }
 
-.stock-list-pct-up {
-  color: var(--color-error);
-}
-
-.stock-list-pct-down {
-  color: #16a34a;
-}
-
-[data-theme='dark'] .stock-list-pct-down {
-  color: #4ade80;
-}
-
 .stock-list-actions {
   display: flex;
   gap: var(--space-2);

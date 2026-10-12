@@ -1,5 +1,19 @@
 // Cross-route utilities: prefer tokens over inline TSX styles.
 
+// Market direction — A-share convention (up = red, down = green). Use these instead of
+// page-local `.up` / `.down` rules so quotes, holdings and P&L all read the same.
+.price-up {
+  color: var(--color-up);
+}
+
+.price-down {
+  color: var(--color-down);
+}
+
+.price-flat {
+  color: var(--color-text-secondary);
+}
+
 .page-subtitle--error {
   color: var(--color-error);
 }

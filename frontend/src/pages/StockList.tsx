@@ -314,10 +314,10 @@ export function StockList() {
                 <span
                   className={
                     item.avg_pct_chg > 0
-                      ? 'stock-list-pct-up'
+                      ? 'price-up'
                       : item.avg_pct_chg < 0
-                        ? 'stock-list-pct-down'
-                        : ''
+                        ? 'price-down'
+                        : 'price-flat'
                   }
                 >
                   {formatPct(item.avg_pct_chg)}
@@ -408,10 +408,10 @@ export function StockList() {
                         className={
                           col === 'pct_chg' && row.quote?.pct_chg != null
                             ? row.quote.pct_chg > 0
-                              ? 'stock-list-pct-up'
+                              ? 'price-up'
                               : row.quote.pct_chg < 0
-                                ? 'stock-list-pct-down'
-                                : ''
+                                ? 'price-down'
+                                : 'price-flat'
                             : undefined
                         }
                       >

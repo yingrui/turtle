@@ -28,8 +28,8 @@ type WatchlistItem = {
 
 function pctClass(v: number | null | undefined) {
   if (v == null) return '';
-  if (v > 0) return 'up';
-  if (v < 0) return 'down';
+  if (v > 0) return 'price-up';
+  if (v < 0) return 'price-down';
   return '';
 }
 

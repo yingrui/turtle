@@ -38,6 +38,20 @@ To add a shared component from openKMS later, copy the file pair and register it
 4. **Theme** — toggle sets `data-theme="dark"` on `<html>`
 5. **Layout shell** — sidebar 220px (`--sidebar-width`), header 56px (`--header-height`), accent teal (`--color-accent`)
 
+### Market direction colours
+
+Quote changes, holdings P&L and trade P&L all use the A-share convention: **up/gain is red,
+down/loss is green**. Use the shared utilities instead of page-local `.up` / `.down` rules:
+
+| Token / class | Meaning |
+|---------------|---------|
+| `--color-up` / `.price-up` | Rise, gain, positive P&L |
+| `--color-down` / `.price-down` | Fall, loss, negative P&L |
+| `.price-flat` | Unchanged (`--color-text-secondary`) |
+
+Both tokens have dark-mode values in `_css-variables.scss`. Used by Home, Market, Stock detail,
+Watchlist and Portfolio.
+
 ## New page stylesheet
 
 Colocate `Page.scss` next to the component:

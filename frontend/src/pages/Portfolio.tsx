@@ -42,6 +42,23 @@ type PortfolioTransaction = {
   simulation_run_id: string | null;
 };
 
+type TradeDraft = {
+  side: 'buy' | 'sell';
+  ts_code: string;
+  trade_date: string;
+  shares: string;
+  price: string;
+  fee: string;
+  note: string;
+  available: number;
+};
+
+function todayIso(): string {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 10);
+}
+
 export function Portfolio() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
@@ -51,6 +68,8 @@ export function Portfolio() {
   const [summary, setSummary] = useState<PortfolioConfig | null>(null);
   const [stocks, setStocks] = useState<PortfolioStock[]>([]);
   const [trades, setTrades] = useState<PortfolioTransaction[]>([]);
+  const [draft, setDraft] = useState<TradeDraft | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
 
@@ -73,12 +92,25 @@ export function Portfolio() {
       .finally(() => setLoadingList(false));
   }, [loadList, t]);
 
+  const loadPositions = useCallback(async () => {
+    if (!name) return;
+    const [stockRows, tradeRows] = await Promise.all([
+      apiFetch<{ stocks: PortfolioStock[] }>(`/api/portfolios/${encodeURIComponent(name)}/stocks`),
+      apiFetch<{ transactions: PortfolioTransaction[] }>(
+        `/api/portfolios/${encodeURIComponent(name)}/transactions?limit=50`,
+      ),
+    ]);
+    setStocks(stockRows.stocks);
+    setTrades(tradeRows.transactions);
+  }, [name]);
+
   useEffect(() => {
     if (!name) {
       setYaml('');
       setSummary(null);
       setStocks([]);
       setTrades([]);
+      setDraft(null);
       return;
     }
     apiFetch<{ yaml: string }>(`/api/portfolios/${encodeURIComponent(name)}/yaml`)
@@ -87,15 +119,79 @@ export function Portfolio() {
     apiFetch<PortfolioConfig>(`/api/portfolios/${encodeURIComponent(name)}`)
       .then(setSummary)
       .catch(() => setSummary(null));
-    apiFetch<{ stocks: PortfolioStock[] }>(`/api/portfolios/${encodeURIComponent(name)}/stocks`)
-      .then((d) => setStocks(d.stocks))
-      .catch(() => setStocks([]));
-    apiFetch<{ transactions: PortfolioTransaction[] }>(
-      `/api/portfolios/${encodeURIComponent(name)}/transactions?limit=50`,
-    )
-      .then((d) => setTrades(d.transactions))
-      .catch(() => setTrades([]));
-  }, [name, t]);
+    loadPositions().catch(() => {
+      setStocks([]);
+      setTrades([]);
+    });
+  }, [name, t, loadPositions]);
+
+  function openTrade(side: 'buy' | 'sell', stock: PortfolioStock) {
+    setDraft({
+      side,
+      ts_code: stock.ts_code,
+      trade_date: todayIso(),
+      shares: side === 'sell' ? String(stock.hold_shares) : '',
+      price: String(stock.current_price ?? stock.avg_cost ?? ''),
+      fee: '',
+      note: '',
+      available: stock.hold_shares,
+    });
+  }
+
+  async function submitTrade() {
+    if (!draft || !name) return;
+    const shares = Number(draft.shares);
+    const price = Number(draft.price);
+    if (!Number.isFinite(shares) || shares <= 0 || Math.floor(shares) !== shares) {
+      toast.error(t('portfolio.tradeInvalidShares'));
+      return;
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      toast.error(t('portfolio.tradeInvalidPrice'));
+      return;
+    }
+    if (draft.side === 'sell' && shares > draft.available) {
+      toast.error(t('portfolio.tradeInsufficient', { available: draft.available }));
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await apiFetch(`/api/portfolios/${encodeURIComponent(name)}/transactions`, {
+        method: 'POST',
+        body: JSON.stringify({
+          ts_code: draft.ts_code,
+          side: draft.side,
+          shares,
+          price,
+          trade_date: draft.trade_date,
+          fee: draft.fee === '' ? 0 : Number(draft.fee),
+          reason: draft.note,
+        }),
+      });
+      toast.success(t('portfolio.tradeSaved'));
+      setDraft(null);
+      await loadPositions();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('portfolio.tradeFailed'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function removeStock(stock: PortfolioStock) {
+    if (!name) return;
+    if (!window.confirm(t('portfolio.removeStockConfirm', { code: stock.ts_code }))) return;
+    try {
+      await apiFetch(
+        `/api/portfolios/${encodeURIComponent(name)}/stocks/${encodeURIComponent(stock.ts_code)}`,
+        { method: 'DELETE' },
+      );
+      toast.success(t('portfolio.removeStockDone', { code: stock.ts_code }));
+      await loadPositions();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('portfolio.removeStockFailed'));
+    }
+  }
 
   const statusLabel: Record<string, string> = {
     watching: t('portfolio.statusWatching'),
@@ -177,7 +273,9 @@ export function Portfolio() {
               <h2 className="portfolio-panel-title">{t('portfolio.holdingsTitle')}</h2>
               <p className="portfolio-panel-desc">{t('portfolio.holdingsDesc')}</p>
               {stocks.length === 0 ? (
-                <p className="portfolio-muted">{t('portfolio.emptyHoldings')}</p>
+                <p className="portfolio-muted">
+                  {t('portfolio.emptyHoldings')} <Link to="/screening">{t('portfolio.emptyHoldingsCta')}</Link>
+                </p>
               ) : (
                 <table className="data-table">
                   <thead>
@@ -194,26 +292,54 @@ export function Portfolio() {
                       <th className="num">{t('portfolio.colHolding')}</th>
                       <th className="num">{t('portfolio.colStopLoss')}</th>
                       <th className="num">{t('portfolio.colTarget')}</th>
+                      <th>{t('portfolio.colActions')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {stocks.map((s) => (
                       <tr key={s.ts_code}>
-                        <td>{s.ts_code}</td>
+                        <td>
+                          <Link to={`/stocks/${encodeURIComponent(s.ts_code)}`}>{s.ts_code}</Link>
+                        </td>
                         <td>{statusLabel[s.status] ?? s.status}</td>
                         <td className="num">{s.hold_shares}</td>
                         <td className="num">{money(s.avg_cost)}</td>
                         <td className="num">{money(s.current_price)}</td>
                         <td className="num">{money(s.market_value)}</td>
-                        <td className={(s.unrealized_pnl ?? 0) < 0 ? 'num down' : 'num up'}>
+                        <td className={(s.unrealized_pnl ?? 0) < 0 ? 'num price-down' : 'num price-up'}>
                           {money(s.unrealized_pnl)}
                           {s.unrealized_pct != null ? ` (${s.unrealized_pct}%)` : ''}
                         </td>
                         <td className="num">{money(s.total_cost)}</td>
-                        <td className={s.realized_pnl < 0 ? 'num down' : 'num up'}>{money(s.realized_pnl)}</td>
+                        <td className={s.realized_pnl < 0 ? 'num price-down' : 'num price-up'}>
+                          {money(s.realized_pnl)}
+                        </td>
                         <td className="num">{s.holding_days ?? '—'}</td>
                         <td className="num">{money(s.stop_loss_point)}</td>
                         <td className="num">{money(s.target_amount)}</td>
+                        <td className="portfolio-row-actions">
+                          <button type="button" className="btn btn-sm" onClick={() => openTrade('buy', s)}>
+                            {t('portfolio.actionBuy')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm"
+                            onClick={() => openTrade('sell', s)}
+                            disabled={s.hold_shares <= 0}
+                            title={s.hold_shares <= 0 ? t('portfolio.actionSellDisabled') : undefined}
+                          >
+                            {t('portfolio.actionSell')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => removeStock(s)}
+                            disabled={s.hold_shares > 0}
+                            title={s.hold_shares > 0 ? t('portfolio.removeStockBlocked') : undefined}
+                          >
+                            {t('portfolio.actionRemove')}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -248,7 +374,7 @@ export function Portfolio() {
                         <td className="num">{row.shares}</td>
                         <td className="num">{money(row.price)}</td>
                         <td className="num">{money(row.amount)}</td>
-                        <td className={(row.realized_pnl ?? 0) < 0 ? 'num down' : 'num up'}>
+                        <td className={(row.realized_pnl ?? 0) < 0 ? 'num price-down' : 'num price-up'}>
                           {money(row.realized_pnl)}
                         </td>
                         <td>{sourceLabel[row.source] ?? row.source}</td>
@@ -281,6 +407,88 @@ export function Portfolio() {
             </section>
           )}
         </>
+      )}
+
+      {draft && (
+        <div className="portfolio-drawer-backdrop" role="presentation" onClick={() => setDraft(null)}>
+          <aside
+            className="portfolio-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label={draft.side === 'buy' ? t('portfolio.tradeBuyTitle') : t('portfolio.tradeSellTitle')}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="portfolio-drawer-title">
+              {draft.side === 'buy' ? t('portfolio.tradeBuyTitle') : t('portfolio.tradeSellTitle')}
+            </h2>
+            <p className="portfolio-drawer-code">{draft.ts_code}</p>
+            {draft.side === 'sell' && (
+              <p className="portfolio-muted">{t('portfolio.tradeAvailable', { shares: draft.available })}</p>
+            )}
+
+            <div className="form-row">
+              <label htmlFor="trade-date">{t('portfolio.tradeDate')}</label>
+              <input
+                id="trade-date"
+                type="date"
+                value={draft.trade_date}
+                onChange={(e) => setDraft({ ...draft, trade_date: e.target.value })}
+              />
+            </div>
+            <div className="form-row">
+              <label htmlFor="trade-shares">{t('portfolio.colShares')}</label>
+              <input
+                id="trade-shares"
+                type="number"
+                min={1}
+                step={100}
+                value={draft.shares}
+                onChange={(e) => setDraft({ ...draft, shares: e.target.value })}
+              />
+            </div>
+            <div className="form-row">
+              <label htmlFor="trade-price">{t('portfolio.colPrice')}</label>
+              <input
+                id="trade-price"
+                type="number"
+                min={0}
+                step="0.01"
+                value={draft.price}
+                onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+              />
+            </div>
+            <div className="form-row">
+              <label htmlFor="trade-fee">{t('portfolio.tradeFee')}</label>
+              <input
+                id="trade-fee"
+                type="number"
+                min={0}
+                step="0.01"
+                value={draft.fee}
+                placeholder="0"
+                onChange={(e) => setDraft({ ...draft, fee: e.target.value })}
+              />
+            </div>
+            <div className="form-row">
+              <label htmlFor="trade-note">{t('portfolio.tradeNote')}</label>
+              <input
+                id="trade-note"
+                type="text"
+                value={draft.note}
+                onChange={(e) => setDraft({ ...draft, note: e.target.value })}
+              />
+            </div>
+
+            <div className="portfolio-save-row">
+              <button type="button" className="btn btn-primary" onClick={submitTrade} disabled={submitting}>
+                {submitting ? t('portfolio.tradeSubmitting') : t('portfolio.tradeSubmit')}
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => setDraft(null)} disabled={submitting}>
+                {t('portfolio.tradeCancel')}
+              </button>
+            </div>
+          </aside>
+        </div>
       )}
     </div>
   );
