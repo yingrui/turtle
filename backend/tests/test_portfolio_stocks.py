@@ -113,7 +113,36 @@ def test_aggregates_match_ledger_replay(portfolio, auth_token):
 
     listed = client.get(f"/api/portfolios/{portfolio}/stocks", headers=headers).json()["stocks"][0]
     rebuilt = client.post(f"/api/portfolios/{portfolio}/stocks/600519.SH/rebuild", headers=headers).json()
-    assert listed == rebuilt
+    # `listed` also carries live quote fields (price, market value, unrealized P&L) that are
+    # computed on read; the stored aggregates must match the ledger replay exactly.
+    derived = {"current_price", "price_date", "market_value", "unrealized_pnl", "unrealized_pct"}
+    assert {k: v for k, v in listed.items() if k not in derived} == rebuilt
+
+
+def test_holdings_carry_latest_price_and_unrealized_pnl(portfolio, auth_token):
+    from fixtures.market_data import SERIES_END, close_on, trade_days
+
+    headers = _auth_headers(auth_token)
+    buy_price = 1000.0
+    _buy(portfolio, headers, "600519.SH", 100, buy_price)
+
+    stock = client.get(f"/api/portfolios/{portfolio}/stocks", headers=headers).json()["stocks"][0]
+    latest_day = trade_days()[-1]
+    latest = close_on("600519.SH", SERIES_END)
+    assert stock["current_price"] == latest
+    assert stock["price_date"] == latest_day.isoformat()
+    assert stock["market_value"] == round(latest * 100, 2)
+    assert stock["unrealized_pnl"] == round((latest - buy_price) * 100, 2)
+    assert stock["unrealized_pct"] == round((latest / buy_price - 1) * 100, 2)
+
+
+def test_watchlist_rows_have_no_position_metrics(portfolio, auth_token):
+    headers = _auth_headers(auth_token)
+    client.post(f"/api/portfolios/{portfolio}/watchlist", json={"ts_code": "600519.SH"}, headers=headers)
+
+    stock = client.get(f"/api/portfolios/{portfolio}/stocks", headers=headers).json()["stocks"][0]
+    assert stock["status"] == "watching"
+    assert "unrealized_pnl" not in stock
 
 
 def test_transactions_are_recorded_and_filterable(portfolio, auth_token):

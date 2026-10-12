@@ -23,6 +23,10 @@ type PortfolioStock = {
   holding_days: number | null;
   stop_loss_point: number | null;
   target_amount: number | null;
+  current_price?: number;
+  market_value?: number;
+  unrealized_pnl?: number;
+  unrealized_pct?: number | null;
 };
 
 type PortfolioTransaction = {
@@ -182,6 +186,9 @@ export function Portfolio() {
                       <th>{t('portfolio.colStatus')}</th>
                       <th className="num">{t('portfolio.colShares')}</th>
                       <th className="num">{t('portfolio.colAvgCost')}</th>
+                      <th className="num">{t('portfolio.colLastPrice')}</th>
+                      <th className="num">{t('portfolio.colMarketValue')}</th>
+                      <th className="num">{t('portfolio.colUnrealized')}</th>
                       <th className="num">{t('portfolio.colTotalCost')}</th>
                       <th className="num">{t('portfolio.colRealized')}</th>
                       <th className="num">{t('portfolio.colHolding')}</th>
@@ -196,6 +203,12 @@ export function Portfolio() {
                         <td>{statusLabel[s.status] ?? s.status}</td>
                         <td className="num">{s.hold_shares}</td>
                         <td className="num">{money(s.avg_cost)}</td>
+                        <td className="num">{money(s.current_price)}</td>
+                        <td className="num">{money(s.market_value)}</td>
+                        <td className={(s.unrealized_pnl ?? 0) < 0 ? 'num down' : 'num up'}>
+                          {money(s.unrealized_pnl)}
+                          {s.unrealized_pct != null ? ` (${s.unrealized_pct}%)` : ''}
+                        </td>
                         <td className="num">{money(s.total_cost)}</td>
                         <td className={s.realized_pnl < 0 ? 'num down' : 'num up'}>{money(s.realized_pnl)}</td>
                         <td className="num">{s.holding_days ?? '—'}</td>

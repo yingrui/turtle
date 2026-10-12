@@ -45,7 +45,7 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 | POST | `/{name}/watchlist` | Append `ts_code` to the portfolio's stocks |
 | POST | `/{name}/watchlist/bulk` | Bulk append `{ ts_codes: [] }` |
 | DELETE | `/{name}/watchlist/{ts_code}` | Remove symbol from the watchlist |
-| GET | `/{name}/stocks` | Stocks of the portfolio with cost basis, realized P&L and risk fields |
+| GET | `/{name}/stocks` | Stocks of the portfolio with cost basis, realized P&L, risk fields; held positions also carry `current_price` / `market_value` / `unrealized_pnl` from the latest quote |
 | POST | `/{name}/stocks` | Add a stock (`{ ts_code, … }`) |
 | PATCH | `/{name}/stocks/{ts_code}` | Update status / target amount / stop loss / note |
 | DELETE | `/{name}/stocks/{ts_code}` | Remove a stock (rejected when held or with trade history) |

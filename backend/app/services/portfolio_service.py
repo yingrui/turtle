@@ -502,9 +502,38 @@ class PortfolioService:
 
     # ------------------------------------------------------------ stocks
 
-    def list_stocks(self, name: str) -> list[dict]:
+    def list_stocks(self, name: str, with_quotes: bool = True) -> list[dict]:
         row = self._get_row(name)
-        return [self.stock_to_dict(s) for s in self._stocks(row.id)]
+        stocks = [self.stock_to_dict(s) for s in self._stocks(row.id)]
+        if with_quotes:
+            self._attach_quotes(stocks)
+        return stocks
+
+    @staticmethod
+    def _attach_quotes(stocks: list[dict]) -> None:
+        """Add latest close, market value and unrealized P&L for held positions.
+
+        Prices come from the market-data tables (latest trade date), so one batch query covers
+        every held code; the derived numbers are computed on read and never stored.
+        """
+        from app.core.engine import stock_universe
+
+        codes = [s["ts_code"] for s in stocks if s["hold_shares"] and s["status"] == "holding"]
+        if not codes:
+            return
+        quotes = {q["ts_code"]: q.get("quote") or {} for q in stock_universe.get_quotes_for_codes(codes)}
+        for stock in stocks:
+            quote = quotes.get(stock["ts_code"]) or {}
+            price = quote.get("close")
+            if price is None:
+                continue
+            shares = stock["hold_shares"]
+            avg_cost = stock["avg_cost"]
+            stock["current_price"] = float(price)
+            stock["price_date"] = quote.get("trade_date")
+            stock["market_value"] = round(float(price) * shares, 2)
+            stock["unrealized_pnl"] = round((float(price) - avg_cost) * shares, 2)
+            stock["unrealized_pct"] = round((float(price) / avg_cost - 1) * 100, 2) if avg_cost else None
 
     def get_stock(self, name: str, ts_code: str) -> dict:
         row = self._get_row(name)

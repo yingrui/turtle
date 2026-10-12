@@ -30,6 +30,11 @@ are aggregates over the ledger. `PortfolioService.record_transaction` maintains 
 transaction as the ledger row; `POST /api/portfolios/{name}/stocks/{ts_code}/rebuild` recomputes
 them from the ledger.
 
+Reads of `GET /api/portfolios/{name}/stocks` additionally join the latest market quote for held
+positions and return `current_price`, `price_date`, `market_value`, `unrealized_pnl` and
+`unrealized_pct`. Those are computed on read (never stored), so they stay correct as prices move;
+`holding_days` is likewise derived from `first_buy_date`.
+
 Cost basis is weighted average: buys re-weight `avg_cost`, sells realize
 `(price − avg_cost) × shares` into `realized_pnl` and leave `avg_cost` unchanged. Rows with
 `simulation_run_id` set (backtest trades) never touch the live aggregates.
