@@ -12,6 +12,9 @@ class SimulationRun(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     job_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    portfolio_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("portfolios.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     portfolio_name: Mapped[str] = mapped_column(String(128))
     policy_id: Mapped[int] = mapped_column(Integer)
     config_snapshot: Mapped[str] = mapped_column(Text)
@@ -32,18 +35,5 @@ class SimulationDaily(Base):
     total: Mapped[Decimal] = mapped_column(Numeric(18, 2))
 
 
-class SimulationTrade(Base):
-    __tablename__ = "simulation_trades"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    run_id: Mapped[str] = mapped_column(String(36), ForeignKey("simulation_runs.id"), index=True)
-    trade_date: Mapped[date] = mapped_column(Date)
-    ts_code: Mapped[str] = mapped_column(String(16))
-    hold_shares: Mapped[int] = mapped_column(Integer)
-    hold_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    buy_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
-    sell_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
-    total_cash_return: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)
-    benefit: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)
-    reason: Mapped[str] = mapped_column(String(255), default="")
-    status: Mapped[str] = mapped_column(String(32))
+# Per-trade rows moved to `portfolio_transactions` (tagged with `simulation_run_id`); the
+# legacy `simulation_trades` table is dropped in migration 004.

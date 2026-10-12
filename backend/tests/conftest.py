@@ -15,3 +15,14 @@ def _create_db_schema():
 
     Base.metadata.create_all(bind=engine)
     yield
+
+
+@pytest.fixture
+def db_session():
+    from app.database import SessionLocal
+
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()

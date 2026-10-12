@@ -8,12 +8,16 @@ Schema is applied by Alembic (`backend/alembic/versions/`). ORM models live in `
 |-------|---------|
 | `users` | Local auth — login, password hash, `is_admin` |
 | `jobs` | Background tasks — type, status, progress, payload, result, log |
-| `portfolios` | Named portfolio configs (`config` JSON column) |
-| `simulation_runs` | Backtest metadata — portfolio name, policy id, config snapshot |
+| `portfolios` | Named portfolios — `start_date`, `initial_investment`, `balance` |
+| `portfolio_stocks` | One row per portfolio × stock (watchlist + holdings): shares, `avg_cost`, `total_cost`, `realized_pnl`, dates, risk fields |
+| `portfolio_transactions` | Buy/sell ledger; `simulation_run_id` marks backtest trades |
+| `portfolio_risk_controls` | 1:1 risk parameters per portfolio |
+| `portfolio_policies` | Ordered backtest policies with parameters (`params` JSON) |
+| `portfolio_cash_flows` | Cash in/out per portfolio |
+| `simulation_runs` | Backtest metadata — portfolio name/id, policy id, config snapshot |
 | `simulation_daily` | Per-day equity curve for a run |
-| `simulation_trades` | Individual trades for a run |
 
-Migrations: `001_initial.py`, `003_portfolios.py`.
+Migrations: `001_initial.py`, `003_portfolios.py`, `004_portfolio_normalization.py`.
 
 ## `tushare` schema (market data)
 

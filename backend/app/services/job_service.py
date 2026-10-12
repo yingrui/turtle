@@ -2,18 +2,28 @@ import json
 import threading
 import uuid
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import SessionLocal
 from app.models.job import Job
-from app.models.simulation import SimulationDaily, SimulationRun, SimulationTrade
+from app.models.portfolio import PortfolioTransaction
+from app.models.simulation import SimulationDaily, SimulationRun
 from app.services.portfolio_service import PortfolioService
 from app.services.screening_service import ScreeningService
 from app.core.engine.InvestmentLogger import InvestmentLogger
 from app.core.simulation.runner import run_simulation
+
+
+def _decimal_or_none(value) -> Decimal | None:
+    if value is None or str(value) == "nan" or value == "":
+        return None
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return None
 
 
 class JobService:
@@ -70,11 +80,13 @@ class JobService:
                     policy_ids = list(range(len(config["policies"])))
                 run_ids: list[str] = []
                 portfolio_name = config.get("name", config_name)
+                portfolio_id = portfolio_svc.get_portfolio_id(config_name)
                 for policy_id in policy_ids:
                     run_id = str(uuid.uuid4())
                     run = SimulationRun(
                         id=run_id,
                         job_id=job.id,
+                        portfolio_id=portfolio_id,
                         portfolio_name=portfolio_name,
                         policy_id=policy_id,
                         config_snapshot=json.dumps(config, default=str),
@@ -142,27 +154,35 @@ class JobService:
                     total=Decimal(str(row["total"])),
                 )
             )
-        for _, row in logger.get_trade_log().iterrows():
-            hold_date = row.get("hold_date")
-            if hold_date is not None and hasattr(hold_date, "date"):
-                hold_date = hold_date.date()
-            trade_date = row["date"]
-            if hasattr(trade_date, "date"):
-                trade_date = trade_date.date()
-            db.add(
-                SimulationTrade(
-                    run_id=run_id,
-                    trade_date=trade_date,
-                    ts_code=row["ts_code"],
-                    hold_shares=int(row["hold_shares"]),
-                    hold_date=hold_date,
-                    buy_price=Decimal(str(row["buy_price"])) if row.get("buy_price") is not None and str(row["buy_price"]) != "nan" else None,
-                    sell_price=Decimal(str(row["sell_price"])) if row.get("sell_price") is not None and str(row["sell_price"]) != "nan" else None,
-                    total_cash_return=Decimal(str(row["total_cash_return"])) if row.get("total_cash_return") is not None and str(row["total_cash_return"]) != "nan" else None,
-                    benefit=Decimal(str(row["benefit"])) if row.get("benefit") is not None and str(row["benefit"]) != "nan" else None,
-                    reason=str(row.get("reason", "")),
-                    status=str(row["status"]),
+        # Trades land in the shared ledger, tagged with the run. Daily holding snapshots from
+        # the simulator are skipped: positions are replayable from buys/sells.
+        if run.portfolio_id:
+            for _, row in logger.get_trade_log().iterrows():
+                if str(row.get("status")) not in ("buy", "win", "loss"):
+                    continue
+                trade_date = row["date"]
+                if hasattr(trade_date, "date"):
+                    trade_date = trade_date.date()
+                side = "buy" if str(row.get("status")) == "buy" else "sell"
+                shares = int(row["hold_shares"])
+                price = _decimal_or_none(row.get("buy_price")) if side == "buy" else _decimal_or_none(row.get("sell_price"))
+                if price is None:
+                    continue
+                db.add(
+                    PortfolioTransaction(
+                        id=str(uuid.uuid4()),
+                        portfolio_id=run.portfolio_id,
+                        simulation_run_id=run_id,
+                        ts_code=str(row["ts_code"]),
+                        trade_date=trade_date,
+                        side=side,
+                        shares=shares,
+                        price=price,
+                        amount=(price * shares).quantize(Decimal("0.01")),
+                        realized_pnl=_decimal_or_none(row.get("benefit")) if side == "sell" else None,
+                        reason=str(row.get("reason") or ""),
+                        source="simulation",
+                    )
                 )
-            )
         run.finished_at = datetime.utcnow()
         db.commit()

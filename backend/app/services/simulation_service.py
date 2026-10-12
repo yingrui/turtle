@@ -5,7 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models.simulation import SimulationDaily, SimulationRun, SimulationTrade
+from app.models.simulation import SimulationDaily, SimulationRun
+from app.models.portfolio import PortfolioTransaction
 from app.core.util import chart_data
 from app.core.util.json_utils import dataframe_to_records
 from app.core.util.simulation_analysis import calculate_cagr, get_stock_benefit, load_simulation_logs_from_disk
@@ -50,10 +51,17 @@ class SimulationService:
             )
             df = df_trade_list[run.policy_id]
         closed = df[df["status"].isin(["win", "loss"])]
+        if {"side", "shares"}.issubset(df.columns):
+            positions = df.groupby("ts_code")["shares"].apply(
+                lambda s: int(df.loc[s.index, "side"].map({"buy": 1, "sell": -1}).mul(s).sum())
+            )
+            holding = int((positions > 0).sum())
+        else:  # legacy on-disk logs still carry daily holding snapshots
+            holding = int((df["status"] == "holding").sum())
         return {
             "win": int((closed["status"] == "win").sum()),
             "loss": int((closed["status"] == "loss").sum()),
-            "holding": int((df["status"] == "holding").sum()),
+            "holding": holding,
         }
 
     def get_daily_from_db(self, db: Session, run_id: str) -> pd.DataFrame:
@@ -75,20 +83,24 @@ class SimulationService:
         )
 
     def get_trades_from_db(self, db: Session, run_id: str) -> pd.DataFrame:
-        rows = db.scalars(select(SimulationTrade).where(SimulationTrade.run_id == run_id)).all()
+        """Trades of a run, read from the shared ledger (`portfolio_transactions`)."""
+        rows = db.scalars(
+            select(PortfolioTransaction)
+            .where(PortfolioTransaction.simulation_run_id == run_id)
+            .order_by(PortfolioTransaction.trade_date, PortfolioTransaction.created_at)
+        ).all()
         return pd.DataFrame(
             [
                 {
                     "date": r.trade_date,
                     "ts_code": r.ts_code,
-                    "hold_shares": r.hold_shares,
-                    "hold_date": r.hold_date,
-                    "buy_price": float(r.buy_price) if r.buy_price is not None else None,
-                    "sell_price": float(r.sell_price) if r.sell_price is not None else None,
-                    "total_cash_return": float(r.total_cash_return) if r.total_cash_return is not None else None,
-                    "benefit": float(r.benefit) if r.benefit is not None else None,
+                    "side": r.side,
+                    "shares": r.shares,
+                    "price": float(r.price),
+                    "amount": float(r.amount or 0),
+                    "benefit": float(r.realized_pnl) if r.realized_pnl is not None else 0.0,
                     "reason": r.reason,
-                    "status": r.status,
+                    "status": "buy" if r.side == "buy" else ("win" if (r.realized_pnl or 0) > 0 else "loss"),
                 }
                 for r in rows
             ]

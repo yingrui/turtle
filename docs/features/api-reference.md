@@ -37,14 +37,27 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 | GET | `/watchlist` | Aggregated watchlist across all portfolios (legacy) |
 | GET | `/{name}/watchlist` | Watchlist stocks + quotes for one portfolio |
 | POST | `/` | Create portfolio |
-| GET | `/{name}` | Get config JSON |
+| GET | `/{name}` | Composed config dict (`follow_stocks`, `investments`, `risk_control`, `policies`) |
 | GET | `/{name}/yaml` | Get YAML representation |
-| PUT | `/{name}` | Update config JSON |
+| PUT | `/{name}` | Update from a config dict (decomposed into tables) |
 | PUT | `/{name}/yaml` | Update from YAML body |
 | DELETE | `/{name}` | Delete portfolio |
-| POST | `/{name}/watchlist` | Append `ts_code` to `follow_stocks` |
+| POST | `/{name}/watchlist` | Append `ts_code` to the portfolio's stocks |
 | POST | `/{name}/watchlist/bulk` | Bulk append `{ ts_codes: [] }` |
-| DELETE | `/{name}/watchlist/{ts_code}` | Remove symbol from watchlist |
+| DELETE | `/{name}/watchlist/{ts_code}` | Remove symbol from the watchlist |
+| GET | `/{name}/stocks` | Stocks of the portfolio with cost basis, realized P&L and risk fields |
+| POST | `/{name}/stocks` | Add a stock (`{ ts_code, … }`) |
+| PATCH | `/{name}/stocks/{ts_code}` | Update status / target amount / stop loss / note |
+| DELETE | `/{name}/stocks/{ts_code}` | Remove a stock (rejected when held or with trade history) |
+| POST | `/{name}/stocks/{ts_code}/rebuild` | Recompute aggregates from the ledger |
+| GET | `/{name}/transactions` | Ledger, filterable by `ts_code` / `simulation_run_id` |
+| POST | `/{name}/transactions` | Record a buy/sell (`side`, `shares`, `price`, `trade_date`, …) |
+| GET | `/{name}/risk-control` | Risk parameters (flattened engine keys) |
+| PUT | `/{name}/risk-control` | Update risk parameters |
+| GET | `/{name}/policies` | Ordered policies with parameters |
+| PUT | `/{name}/policies` | Replace the policy list |
+| GET | `/{name}/cash-flows` | Cash in/out records |
+| POST | `/{name}/cash-flows` | Add a cash flow (`{ flow_date, amount, kind? }`) |
 
 ## Jobs — `/api/jobs`
 

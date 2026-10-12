@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -29,6 +29,56 @@ class WatchlistBody(BaseModel):
 
 class WatchlistBulkBody(BaseModel):
     ts_codes: list[str]
+
+
+class StockBody(BaseModel):
+    ts_code: str
+    status: str | None = None
+    target_amount: float | None = None
+    target_weight: float | None = None
+    stop_loss_point: float | None = None
+    max_holding_days: int | None = None
+    atr: float | None = None
+    note: str | None = None
+
+
+class StockPatchBody(BaseModel):
+    status: str | None = None
+    target_amount: float | None = None
+    target_weight: float | None = None
+    stop_loss_point: float | None = None
+    max_holding_days: int | None = None
+    atr: float | None = None
+    note: str | None = None
+
+
+class TransactionBody(BaseModel):
+    ts_code: str
+    side: str
+    shares: int
+    price: float
+    trade_date: str | None = None
+    amount: float | None = None
+    fee: float | None = None
+    tax: float | None = None
+    stop_loss_point: float | None = None
+    reason: str | None = None
+    source: str | None = None
+
+
+class RiskControlBody(BaseModel):
+    risk_control: dict
+
+
+class PoliciesBody(BaseModel):
+    policies: list[dict]
+
+
+class CashFlowBody(BaseModel):
+    flow_date: str
+    amount: float
+    kind: str | None = None
+    note: str | None = None
 
 
 @router.get("")
@@ -175,3 +225,198 @@ def delete_portfolio(name: str, db: Session = Depends(get_db), _: User = Depends
         return {"ok": True}
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+# --------------------------------------------------------------- stocks
+
+@router.get("/{name}/stocks")
+def list_portfolio_stocks(
+    name: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)
+):
+    svc = PortfolioService(db)
+    try:
+        return {"stocks": svc.list_stocks(name)}
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/{name}/stocks")
+def upsert_portfolio_stock(
+    name: str,
+    body: StockBody,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return svc.upsert_stock(name, body.ts_code, body.model_dump(exclude={"ts_code"}))
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.patch("/{name}/stocks/{ts_code}")
+def patch_portfolio_stock(
+    name: str,
+    ts_code: str,
+    body: StockPatchBody,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return svc.upsert_stock(name, ts_code, body.model_dump(exclude_none=True))
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.delete("/{name}/stocks/{ts_code}")
+def delete_portfolio_stock(
+    name: str,
+    ts_code: str,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        svc.remove_stock(name, ts_code)
+        return {"ok": True}
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/{name}/stocks/{ts_code}/rebuild")
+def rebuild_portfolio_stock(
+    name: str,
+    ts_code: str,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return svc.rebuild_stock_from_transactions(name, ts_code)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+# --------------------------------------------------------------- transactions
+
+@router.get("/{name}/transactions")
+def list_portfolio_transactions(
+    name: str,
+    ts_code: str | None = Query(None),
+    simulation_run_id: str | None = Query(None),
+    limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return {
+            "transactions": svc.list_transactions(
+                name, ts_code=ts_code, simulation_run_id=simulation_run_id, limit=limit, offset=offset
+            )
+        }
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/{name}/transactions")
+def create_portfolio_transaction(
+    name: str,
+    body: TransactionBody,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return svc.record_transaction(name, body.model_dump())
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+# --------------------------------------------------------------- risk / policies / cash
+
+@router.get("/{name}/risk-control")
+def get_risk_control(name: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    svc = PortfolioService(db)
+    try:
+        return svc.get_risk_control(name)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.put("/{name}/risk-control")
+def update_risk_control(
+    name: str,
+    body: RiskControlBody,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return svc.update_risk_control(name, body.risk_control)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/{name}/policies")
+def list_policies(name: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    svc = PortfolioService(db)
+    try:
+        return {"policies": svc.list_policies(name)}
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.put("/{name}/policies")
+def replace_policies(
+    name: str,
+    body: PoliciesBody,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return {"policies": svc.replace_policies(name, body.policies)}
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/{name}/cash-flows")
+def list_cash_flows(name: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    svc = PortfolioService(db)
+    try:
+        return {"cash_flows": svc.list_cash_flows(name)}
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/{name}/cash-flows")
+def create_cash_flow(
+    name: str,
+    body: CashFlowBody,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return svc.create_cash_flow(name, body.model_dump())
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

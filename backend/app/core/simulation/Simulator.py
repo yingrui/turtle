@@ -92,6 +92,7 @@ class Simulator:
                     self._portfolio.buy(signal.ts_code, price=price, position_size=position_size,
                                         position_control=self._risk_controller.position_control,
                                         hold_date=day, stop_loss_point=stop_loss_point)
+                    self._logger.log_buy_action(self._portfolio.get_stock(signal.ts_code), day, 'buy signal')
             elif signal.status == 'sell':
                 if self._portfolio.has_stock(signal.ts_code):
                     self._logger.log('{0}| {1}'.format(day.strftime('%Y-%m-%d'), signal))
