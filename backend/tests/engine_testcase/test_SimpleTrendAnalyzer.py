@@ -24,10 +24,10 @@ class TestTrendAnalyzer(TestCase):
 
         trend_analyzer = TrendAnalyzer(ts_code=ts_code, trade_data=trade_data, parameters=self.parameters)
         trend = trend_analyzer.analysis_trend()
-        print(trend)
         self.assertEqual('up', trend.status)
-        self.assertEqual(0.1078, round(trend.gradient, 4))
-        self.assertEqual(0.0282, round(trend.stationary, 4))
+        # 600519.SH rises 0.5/weekday in the fixture.
+        self.assertEqual(0.1098, round(trend.gradient, 4))
+        self.assertEqual(0.007, round(trend.stationary, 4))
 
     def test_trend_with_negative_gradient(self):
         ts_code = '000710.SZ'
@@ -37,5 +37,7 @@ class TestTrendAnalyzer(TestCase):
 
         trend_analyzer = TrendAnalyzer(ts_code=ts_code, trade_data=trade_data, parameters=self.parameters)
         trend = trend_analyzer.analysis_trend()
-        print(trend)
-        self.assertEqual(0.1582, round(trend.gradient, 4))
+        self.assertEqual('down', trend.status)
+        # 000710.SZ falls 0.2/weekday in the fixture.
+        self.assertEqual(-0.1098, round(trend.gradient, 4))
+        self.assertEqual(2.0546, round(trend.stationary, 4))

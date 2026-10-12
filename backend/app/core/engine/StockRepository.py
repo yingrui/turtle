@@ -41,3 +41,7 @@ class StockRepository:
         if industry is not None and isinstance(industry, str):
             df_stock = pd.read_sql(f"select * from {T('stock_basic')} where industry='{industry}'", con=self._sql_conn)
             return self._convert_to_stock_list(df_stock)
+
+    @staticmethod
+    def _convert_to_stock_list(df_stock) -> list[Stock]:
+        return [Stock(row.ts_code, df_stock) for row in df_stock.itertuples()]

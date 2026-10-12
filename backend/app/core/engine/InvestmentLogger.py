@@ -1,5 +1,5 @@
 import os
-from datetime import date
+from datetime import date, datetime
 from typing import Callable
 
 import pandas as pd
@@ -7,6 +7,14 @@ import pandas as pd
 from app.core.util.math_methods import round_down
 
 OnSaveCallback = Callable[["InvestmentLogger"], None]
+
+
+def _as_date(value) -> date:
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    return pd.Timestamp(value).date()
 
 
 class InvestmentLogger:
@@ -51,6 +59,15 @@ class InvestmentLogger:
         })
         self._df_trade = pd.concat([self._df_trade, df], ignore_index=True)
 
+    def log_buy_action(self, investment, current_date, reason=''):
+        df = pd.DataFrame({
+            'date': [current_date], 'ts_code': [investment.ts_code], 'hold_shares': [investment.hold_shares],
+            'hold_date': [investment.hold_date], 'buy_price': [investment.buy_price],
+            'sell_price': [None], 'total_cash_return': [None],
+            'benefit': [None], 'reason': [reason], 'status': ['buy']
+        })
+        self._df_trade = pd.concat([self._df_trade, df], ignore_index=True)
+
     def log_holding_shares(self, portfolio, current_date):
         for investment in portfolio.investments:
             df = pd.DataFrame({
@@ -71,8 +88,10 @@ class InvestmentLogger:
         self._df_daily = pd.concat([self._df_daily, df], ignore_index=True)
 
     def get_summary(self):
-        start_date = date.fromtimestamp(self._df_daily.date.values[0].astype(int) / 1e9)
-        end_date = date.fromtimestamp(self._df_daily.date.values[-1].astype(int) / 1e9)
+        # `date` holds Timestamps, numpy datetime64 or plain dates depending on how the frame
+        # was assembled, so normalise instead of assuming numpy datetime64.
+        start_date = _as_date(self._df_daily.date.values[0])
+        end_date = _as_date(self._df_daily.date.values[-1])
         years = end_date.year - start_date.year if end_date.year > start_date.year else 1
         initial_total = self._df_daily.total.values[0]
         total = self._df_daily.total.values[-1]

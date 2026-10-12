@@ -11,6 +11,11 @@ class StockTradeDataEngine:
     def __init__(self):
         self._connection_pool = get_connection_pool()
 
+    @staticmethod
+    def _norm(ts_code):
+        """Market data is stored with upper-case codes; callers may pass either case."""
+        return ts_code.upper() if isinstance(ts_code, str) else ts_code
+
     def _read_sql(self, sql):
         sql_conn = self._connection_pool.connect()
         df = pd.read_sql(sql, con=sql_conn)
@@ -19,6 +24,7 @@ class StockTradeDataEngine:
 
     @lru_cache(maxsize=96)
     def get_trade_data_by_code(self, ts_code, start_date=None, end_date=None):
+        ts_code = self._norm(ts_code)
         sql = (
             f"select s.*, a.adj_factor from {T('stock_trade_daily')} s "
             f"inner join {T('stock_adj_daily')} a on s.ts_code=a.ts_code and s.trade_date=a.trade_date "
@@ -40,6 +46,7 @@ class StockTradeDataEngine:
 
     @lru_cache(maxsize=96)
     def _get_all_trade_data_by_code(self, ts_code):
+        ts_code = self._norm(ts_code)
         sql = (
             f"select s.*, a.adj_factor from {T('stock_trade_daily')} s "
             f"inner join {T('stock_adj_daily')} a on s.ts_code=a.ts_code and s.trade_date=a.trade_date "
@@ -72,6 +79,7 @@ class StockTradeDataEngine:
         return last.close.values[0], last.high.values[0], last.low.values[0]
 
     def is_open(self, ts_code, current_date):
+        ts_code = self._norm(ts_code)
         sql = (
             f"select s.ts_code, s.trade_date from {T('stock_trade_daily')} s "
             f"where s.ts_code='{ts_code}' and s.trade_date='{current_date.strftime('%Y-%m-%d')}'"
@@ -88,6 +96,7 @@ class StockTradeDataEngine:
         return self._read_sql(sql)
 
     def get_dividents_data_on_date(self, ts_code, day):
+        ts_code = self._norm(ts_code)
         sql = (
             f"select * from {T('dividends')} "
             f"where ts_code='{ts_code}' and ex_date='{day.strftime('%Y-%m-%d')}' and div_proc='实施'"

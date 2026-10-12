@@ -84,6 +84,11 @@ cd frontend && npm install && npm run dev
 cd backend && source .venv/bin/activate && pytest tests/
 ```
 
+Backend tests need no PostgreSQL and no market data: `tests/conftest.py` runs the suite against a
+throwaway sqlite file (ignoring `DB_URL`) and loads the deterministic market-data fixture from
+`tests/fixtures/market_data.py` into it. Engine assertions are written against that fixture, so
+numbers in `tests/engine_testcase/` stay valid without the developer's data.
+
 ## Frontend design system
 
 Core SCSS was copied from [openKMS](https://github.com/yingrui/openKMS) `frontend/src/styles/design-system/`. See [Design system](../design-system.md) for what is included vs omitted.

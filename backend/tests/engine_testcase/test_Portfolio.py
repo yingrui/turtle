@@ -59,12 +59,14 @@ class TestPortfolio(TestCase):
     def test_adjust_holding_shares(self):
         ts_code = '600519.sh'
         portfolio = StubPortfolio.empty_portfolio(balance=400000)
-        # buy 100 shares
+        # buy 100 shares at 2030 (balance 197000)
         portfolio.buy(ts_code=ts_code, price=2030, hold_date=date(2022, 6, 29))
+        # 2022-06-30 is ex-date of the fixture's cash dividend (2.0/share -> +200 cash),
+        # and the fixture close is 1977.5 that day.
         portfolio.adjust_holding_shares(date(2022, 6, 30))
-        self.assertEqual(401500 + 2167.5, portfolio.total)
-        self.assertEqual(2167.5, portfolio.benefit)
-        self.assertEqual(400000 - 203000 + 2167.5, portfolio.balance)
+        self.assertEqual(197200 + 100 * 1977.5, portfolio.total)
+        self.assertEqual(200, portfolio.benefit)
+        self.assertEqual(197200, portfolio.balance)
 
     def test_merge_investments_with_same_code(self):
         ts_code = '600519.sh'
@@ -72,9 +74,9 @@ class TestPortfolio(TestCase):
         # buy 100 shares
         portfolio.buy(ts_code=ts_code, price=1800, hold_date=date(2023, 1, 20))
 
-        # the price is 1900 now.
+        # the fixture close on 2023-01-20 is 2050.5
         portfolio.update_current_price(date(2023, 1, 20))
-        self.assertEqual(406001, portfolio.total)
+        self.assertEqual(220000 + 100 * 2050.5, portfolio.total)
         self.assertEqual(220000, portfolio.balance)
         self.assertEqual('2023-01-20', portfolio.get_investment(ts_code).hold_date.strftime('%Y-%m-%d'))
 
@@ -83,7 +85,7 @@ class TestPortfolio(TestCase):
         self.assertEqual(100, shares)
         self.assertEqual('Success', msg)
 
-        self.assertEqual(406001, portfolio.total)
+        self.assertEqual(220000 + 100 * 2050.5, portfolio.total)
         self.assertEqual(30000, portfolio.balance)
         self.assertEqual(1, len(portfolio.investments))
         self.assertEqual(10000, portfolio.get_investment(ts_code).benefit)
@@ -95,15 +97,16 @@ class TestPortfolio(TestCase):
         portfolio = StubPortfolio.portfolio_with_100_shares_of_600519()
 
         portfolio.update_current_price(date(2023, 1, 20))
-        self.assertEqual(1860.01, portfolio.investments[0].current_price)
+        self.assertEqual(2050.5, portfolio.investments[0].current_price)
 
         sell_shares, benefit = portfolio.sell(ts_code='600519.sh')
         self.assertEqual(100, sell_shares)
-        self.assertEqual(6001, benefit)
+        self.assertEqual(25050, benefit)  # 100 * (2050.5 - 1800)
 
-        self.assertEqual(6001, portfolio.benefit)
-        self.assertEqual(206001, portfolio.total)
-        self.assertEqual(206001, portfolio.balance)
+        self.assertEqual(25050, portfolio.benefit)
+        # balance 20000 after the first buy + 100 * 2050.5
+        self.assertEqual(20000 + 100 * 2050.5, portfolio.total)
+        self.assertEqual(20000 + 100 * 2050.5, portfolio.balance)
         self.assertEqual(0, len(portfolio.investments))
 
 

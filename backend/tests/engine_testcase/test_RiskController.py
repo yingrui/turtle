@@ -9,9 +9,10 @@ from engine_testcase.StubPortfolio import StubPortfolio
 class TestRiskController(TestCase):
     def test_evaluate_max_position_size(self):
         ts_code = '600519.sh'
-        initial_investment = 400000
+        initial_investment = 4000000
         parameters = {
-            'risk_control.bearable_trading_loss': 0.01
+            'bearable_trading_loss': 0.01,
+            'max_position_ratio': 0.5,
         }
 
         data_engine = StockTradeDataEngine()
@@ -21,5 +22,8 @@ class TestRiskController(TestCase):
         today = date(2023, 1, 19)
         trade_data = data_engine.get_trade_data_by_date(ts_code, today)
         max_position_size, atr = risk_controller.evaluate_buying_position_size(ts_code, trade_data)
-        self.assertEqual(1, max_position_size)
-        self.assertEqual(36.47, atr)
+        # 4000000 * 0.01 / 2 / 100 = 200 lots, then clamped by the 50% position cap
+        # (9 * 100 * 2050.5 = 1,845,450 <= 2,000,000 < 10 * 100 * 2050.5).
+        self.assertEqual(9, max_position_size)
+        # The fixture keeps high - low = 2 every day, so the 20-day ATR is exactly 2.
+        self.assertEqual(2.0, atr)
