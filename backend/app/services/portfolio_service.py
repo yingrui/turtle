@@ -438,6 +438,9 @@ class PortfolioService:
                     stock.status = "watching"
                 continue
             price = spec["price"]
+            # Re-establishing a position from the config/YAML editor starts a new holding streak.
+            if shares and stock.hold_shares == 0:
+                stock.first_buy_date = start_date
             stock.hold_shares = shares
             stock.avg_cost = _q(price)
             stock.total_cost = _q(price * shares)
@@ -446,7 +449,6 @@ class PortfolioService:
             )
             stock.status = "holding" if shares else "watching"
             if shares:
-                stock.first_buy_date = stock.first_buy_date or start_date
                 stock.last_trade_date = start_date
                 if not self._has_transactions(portfolio_id, code):
                     self.db.add(
@@ -674,6 +676,10 @@ class PortfolioService:
 
         realized: Decimal | None = None
         if side == "buy":
+            # A buy that starts from zero shares opens a new holding streak, so the holding
+            # period restarts (a previous streak's first buy must not leak into this one).
+            if stock.hold_shares == 0:
+                stock.first_buy_date = trade_date
             new_shares = stock.hold_shares + shares
             new_cost = _dec(stock.total_cost) + amount
             avg = _q(new_cost / new_shares)
@@ -681,7 +687,6 @@ class PortfolioService:
             stock.avg_cost = avg
             stock.total_cost = _q(avg * new_shares)
             stock.status = "holding"
-            stock.first_buy_date = stock.first_buy_date or trade_date
         else:
             if shares > stock.hold_shares:
                 raise ValueError(f"Cannot sell {shares} shares; holding only {stock.hold_shares}")
@@ -764,15 +769,18 @@ class PortfolioService:
         for t in txns:
             amount = _dec(t.amount)
             if t.side == "buy":
+                if shares == 0:
+                    first_buy = t.trade_date  # start of the current streak
                 shares += t.shares
                 total_cost += amount
                 avg = _q(total_cost / shares) if shares else Decimal("0")
                 total_cost = _q(avg * shares)
-                first_buy = first_buy or t.trade_date
             else:
                 shares -= t.shares
                 realized += _q((_dec(t.price) - avg) * t.shares, "0.01")
                 total_cost = _q(avg * shares)
+                if shares == 0:
+                    first_buy = None
             last_trade = t.trade_date
 
         stock.hold_shares = shares

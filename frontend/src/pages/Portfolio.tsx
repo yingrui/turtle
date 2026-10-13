@@ -23,6 +23,8 @@ type PortfolioStock = {
   total_cost: number;
   realized_pnl: number;
   holding_days: number | null;
+  first_buy_date: string | null;
+  last_trade_date: string | null;
   max_holding_days: number | null;
   stop_loss_point: number | null;
   target_amount: number | null;
@@ -236,6 +238,12 @@ export function Portfolio() {
       label: t('portfolio.colHolding'),
       align: 'right',
       render: (row) => row.holding_days ?? '—',
+    },
+    {
+      key: 'first_buy',
+      label: t('portfolio.colFirstBuy'),
+      align: 'right',
+      render: (row) => row.first_buy_date ?? '—',
     },
     {
       key: 'stop_loss',

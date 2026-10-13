@@ -1,6 +1,7 @@
 """portfolio holdings/trades — relational storage, aggregates, backtest linkage."""
 
 import uuid
+from datetime import date
 
 import pytest
 from fastapi.testclient import TestClient
@@ -317,3 +318,38 @@ def test_risk_policies_and_cash_flow_endpoints(portfolio, auth_token):
     assert created.status_code == 200
     assert created.json()["amount"] == 3000.0
     assert len(client.get(f"/api/portfolios/{portfolio}/cash-flows", headers=headers).json()["cash_flows"]) == 1
+
+
+def test_reopening_a_position_restarts_the_holding_period(portfolio, auth_token):
+    """Closing and re-buying must not keep the previous streak's first buy date."""
+    headers = _auth_headers(auth_token)
+    _buy(portfolio, headers, "600519.SH", 100, 10, trade_date="2026-03-02")
+    _sell(portfolio, headers, "600519.SH", 100, 12, trade_date="2026-04-01")
+    _buy(portfolio, headers, "600519.SH", 100, 8, trade_date="2026-10-12")
+
+    stock = client.get(f"/api/portfolios/{portfolio}/stocks", headers=headers).json()["stocks"][0]
+    assert stock["first_buy_date"] == "2026-10-12"
+    assert stock["last_trade_date"] == "2026-10-12"
+    # holding_days is derived from today, so compare against the new streak rather than a constant
+    expected_days = (date.today() - date(2026, 10, 12)).days
+    assert stock["holding_days"] == expected_days
+    assert stock["holding_days"] < 200  # the old streak (from 2026-03-02) would be ~225
+    assert stock["realized_pnl"] == 200.0  # realized P&L still accumulates across streaks
+    assert stock["avg_cost"] == 8.0        # cost basis restarts with the new streak
+
+    rebuilt = client.post(f"/api/portfolios/{portfolio}/stocks/600519.SH/rebuild", headers=headers).json()
+    assert rebuilt["first_buy_date"] == "2026-10-12"
+    assert rebuilt["holding_days"] == expected_days
+    assert rebuilt["avg_cost"] == 8.0
+    assert rebuilt["realized_pnl"] == 200.0
+
+
+def test_adding_to_a_position_keeps_the_original_first_buy(portfolio, auth_token):
+    headers = _auth_headers(auth_token)
+    _buy(portfolio, headers, "600519.SH", 100, 10, trade_date="2026-03-02")
+    _buy(portfolio, headers, "600519.SH", 100, 14, trade_date="2026-03-30")
+
+    stock = client.get(f"/api/portfolios/{portfolio}/stocks", headers=headers).json()["stocks"][0]
+    assert stock["first_buy_date"] == "2026-03-02"  # unchanged by the add-on buy
+    assert stock["last_trade_date"] == "2026-03-30"
+    assert stock["avg_cost"] == 12.0

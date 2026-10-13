@@ -62,6 +62,12 @@ positions and return `current_price`, `price_date`, `market_value`, `unrealized_
 `unrealized_pct`. Those are computed on read (never stored), so they stay correct as prices move;
 `holding_days` is likewise derived from `first_buy_date`.
 
+Holding period: `portfolio_transactions.trade_date` is the buy/sell date, and
+`portfolio_stocks.first_buy_date` / `last_trade_date` carry the start and end of the **current**
+holding streak — closing a position clears `first_buy_date`, so re-buying later restarts
+`holding_days`; realized P&L still accumulates across streaks. The holdings table shows the
+held-days count next to the first-buy date.
+
 Cost basis is weighted average: buys re-weight `avg_cost`, sells realize
 `(price − avg_cost) × shares` into `realized_pnl` and leave `avg_cost` unchanged. Rows with
 `simulation_run_id` set (backtest trades) never touch the live aggregates.
