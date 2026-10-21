@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models.portfolio import Portfolio
+from app.services import openkms_sync
 from app.services.portfolio_service import STATUSES, PortfolioService
 
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
@@ -99,8 +100,13 @@ async def openkms_portfolio_changes(request: Request, db: Session = Depends(get_
 
     svc = PortfolioService(db)
     results = [_apply_change(svc, change if isinstance(change, dict) else {}) for change in changes]
+    applied = sum(1 for r in results if r["ok"])
+    if applied:
+        # Holders changed, so the ontology's mirror of them is stale: refresh it. Off the request
+        # thread, and best-effort — the write already happened.
+        openkms_sync.request_reindex()
     return {
-        "applied": sum(1 for r in results if r["ok"]),
+        "applied": applied,
         "failed": sum(1 for r in results if not r["ok"]),
         "results": results,
     }

@@ -43,26 +43,21 @@ class Settings(BaseSettings):
     # Callback after a simulation run, so openKMS can re-index the Simulation objects.
     stock_openkms_base_url: str = Field(default="", validation_alias="STOCK_OPENKMS_BASE_URL")
     stock_openkms_api_key: str = Field(default="", validation_alias="STOCK_OPENKMS_API_KEY")
-    stock_openkms_simulation_type_id: str = Field(
-        default="", validation_alias="STOCK_OPENKMS_SIMULATION_TYPE_ID"
-    )
     stock_openkms_neo4j_data_source_id: str = Field(
         default="", validation_alias="STOCK_OPENKMS_NEO4J_DATA_SOURCE_ID"
     )
-    #: The `simulationOf` link type — a new run needs both the node and its edge indexed.
-    stock_openkms_simulation_link_type_id: str = Field(
-        default="", validation_alias="STOCK_OPENKMS_SIMULATION_LINK_TYPE_ID"
-    )
+    #: JSON list of the ontology types that mirror this app's data, refreshed after every write —
+    #: e.g. [{"kind": "object_type", "id": "…"}, {"kind": "link_type", "id": "…"}].
+    stock_openkms_reindex: str = Field(default="", validation_alias="STOCK_OPENKMS_REINDEX")
 
     @property
     def openkms_index_configured(self) -> bool:
-        """All four openKMS settings are needed to push simulation results back into the graph."""
+        """openKMS can be asked to re-index: base URL, key, graph target, and at least one type."""
         return bool(
             self.stock_openkms_base_url
             and self.stock_openkms_api_key
-            and self.stock_openkms_simulation_type_id
-            and self.stock_openkms_simulation_link_type_id
             and self.stock_openkms_neo4j_data_source_id
+            and self.stock_openkms_reindex
         )
 
     @property

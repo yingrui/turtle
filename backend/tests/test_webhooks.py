@@ -119,3 +119,65 @@ def test_unknown_action_is_reported_per_change(webhook_secret, portfolio_id):
     res = _post({"changes": [{"id": "c8", "action": "teleport", "portfolio_id": portfolio_id, "ts_code": "600866.SH"}]})
     assert res.json()["results"][0]["ok"] is False
     assert "action must be" in res.json()["results"][0]["error"]
+
+
+# --- the ontology mirror is refreshed after a write -------------------------
+@pytest.fixture
+def reindex_calls(monkeypatch):
+    """Record re-index requests instead of spawning the callback thread."""
+    from app.services import openkms_sync
+
+    calls: list[bool] = []
+    monkeypatch.setattr(openkms_sync, "request_reindex", lambda: calls.append(True))
+    return calls
+
+
+def test_a_change_that_was_applied_refreshes_the_ontology(webhook_secret, portfolio_id, reindex_calls):
+    res = _post({"changes": [{"id": "c1", "action": "add", "portfolio_id": portfolio_id, "ts_code": "600519.SH"}]})
+    assert res.json()["applied"] == 1
+    assert reindex_calls == [True]
+
+
+def test_nothing_applied_means_nothing_to_refresh(webhook_secret, reindex_calls):
+    res = _post({"changes": [{"id": "c9", "action": "add", "portfolio_id": "nope", "ts_code": "600519.SH"}]})
+    assert res.json()["applied"] == 0
+    assert reindex_calls == []
+
+
+def test_reindex_targets_parses_the_configured_list(monkeypatch):
+    from app.config import settings
+    from app.services.openkms_sync import reindex_targets
+
+    monkeypatch.setattr(
+        settings,
+        "stock_openkms_reindex",
+        '[{"kind":"object_type","id":"ot1"},{"kind":"link_type","id":"lt1"},{"kind":"nope","id":"x"},{"kind":"object_type"}]',
+    )
+    assert [(t.kind, t.id) for t in reindex_targets()] == [
+        ("object_type", "ot1"),
+        ("link_type", "lt1"),
+    ]
+
+
+def test_a_malformed_reindex_config_is_ignored_not_fatal(monkeypatch):
+    from app.config import settings
+    from app.services.openkms_sync import reindex_targets
+
+    for bad in ("", "not json", '{"kind":"object_type"}'):
+        monkeypatch.setattr(settings, "stock_openkms_reindex", bad)
+        assert reindex_targets() == []
+
+
+def test_the_target_path_names_the_kind(monkeypatch):
+    from app.config import settings
+    from app.services.openkms_sync import reindex_targets
+
+    monkeypatch.setattr(
+        settings,
+        "stock_openkms_reindex",
+        '[{"kind":"object_type","id":"ot1"},{"kind":"link_type","id":"lt1"}]',
+    )
+    assert [t.path for t in reindex_targets()] == [
+        "/api/object-types/ot1/index-to-neo4j",
+        "/api/link-types/lt1/index-to-neo4j",
+    ]

@@ -189,4 +189,4 @@ class JobService:
         db.commit()
         # The ontology reads objects from its graph, so the new run only becomes visible after a
         # re-index. Best-effort: a failed callback must not fail a run that already finished.
-        openkms_sync.notify_simulation_indexed()
+        openkms_sync.request_reindex()
