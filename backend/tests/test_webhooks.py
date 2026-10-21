@@ -197,3 +197,68 @@ def test_the_target_path_names_the_kind(monkeypatch):
         "/api/object-types/ot1/index-to-neo4j",
         "/api/link-types/lt1/index-to-neo4j",
     ]
+
+
+# --- the generic Action envelope -------------------------------------------
+def _action_envelope(**overrides):
+    body = {
+        "event": "action.executed",
+        "action": {"api_name": "setHoldingWeight", "rule_type": "object_modify"},
+        "object": {
+            "object_type": "Holding",
+            "id": "h-1",
+            "properties": {"portfolio_id": None, "ts_code": "600519.SH", "target_weight": 0.01},
+        },
+        "input": {"target_weight": 0.05},
+        "applied": {"modified_ids": ["h-1"]},
+    }
+    body.update(overrides)
+    return body
+
+
+def test_an_action_envelope_mirrors_the_holding(webhook_secret, portfolio_id, reindex_calls):
+    envelope = _action_envelope()
+    envelope["object"]["properties"]["portfolio_id"] = portfolio_id
+    res = _post(envelope)
+    assert res.status_code == 200, res.text
+    assert res.json()["applied"] == 1
+    assert reindex_calls == [True]
+
+    db = SessionLocal()
+    try:
+        row = (
+            db.query(PortfolioStock)
+            .filter(PortfolioStock.portfolio_id == portfolio_id, PortfolioStock.ts_code == "600519.SH")
+            .one()
+        )
+        assert float(row.target_weight) == 0.05
+        assert row.hold_shares == 0
+    finally:
+        db.close()
+
+
+def test_only_the_fields_the_action_touched_are_written(webhook_secret, portfolio_id):
+    envelope = _action_envelope()
+    envelope["object"]["properties"].update(
+        {"portfolio_id": portfolio_id, "ts_code": "600036.SH", "status": "holding", "note": "object"}
+    )
+    envelope["input"] = {"target_weight": 0.02}
+    assert _post(envelope).json()["applied"] == 1
+    db = SessionLocal()
+    try:
+        row = (
+            db.query(PortfolioStock)
+            .filter(PortfolioStock.portfolio_id == portfolio_id, PortfolioStock.ts_code == "600036.SH")
+            .one()
+        )
+        assert float(row.target_weight) == 0.02
+        assert row.status == "watching"  # not copied from the mirror
+        assert row.note == ""
+    finally:
+        db.close()
+
+
+def test_an_action_envelope_for_another_object_type_is_refused(webhook_secret, portfolio_id):
+    envelope = _action_envelope()
+    envelope["object"] = {"object_type": "Stock", "id": "x", "properties": {"ts_code": "1"}}
+    assert _post(envelope).status_code == 400

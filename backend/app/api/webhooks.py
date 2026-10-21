@@ -1,10 +1,16 @@
-"""Inbound webhooks from openKMS — the ontology proposes, this app applies.
+"""Inbound webhooks from openKMS — the ontology decides, this app applies.
 
-A Function in openKMS cannot write this database (it may only reach the HTTP surface), so a
-portfolio change travels as a *proposal*: the agent creates `PortfolioChange` objects in the
-ontology, then a Function posts them here. This endpoint is the only door, it is signed with a
-shared secret, and it applies changes through `PortfolioService` so ledger invariants hold —
-`hold_shares` / `avg_cost` stay aggregates of `portfolio_transactions`, never a raw write.
+Two shapes arrive here, both signed with the shared secret and both applied through
+`PortfolioService` so ledger invariants hold (`hold_shares` / `avg_cost` stay aggregates of
+`portfolio_transactions`, never a raw write):
+
+* `{"changes": [...]}` — a batch of portfolio changes, pushed by a Function.
+* `{"event": "action.executed", "object": {...}, "input": {...}}` — an **Action webhook**: the
+  ontology edited a `Holding` object and the platform announces it. The holding is mirrored from the
+  object's own properties, limited to the fields the Action actually touched, so a weight/status
+  change lands without the ontology having to know this app's column layout.
+
+Neither shape creates or deletes rows the ledger owns; add/remove stay explicit instructions.
 """
 
 from __future__ import annotations
@@ -51,6 +57,48 @@ def _portfolio_name(db: Session, portfolio_id: str | None) -> str:
     return portfolio.name
 
 
+#: Fields a `Holding` object may carry that this app accepts as a direct write.
+HOLDING_FIELDS = (
+    "status",
+    "target_amount",
+    "target_weight",
+    "stop_loss_point",
+    "max_holding_days",
+    "note",
+)
+
+
+def _apply_action_event(db: Session, body: dict[str, Any]) -> dict[str, Any]:
+    """Mirror a `Holding` object an Action just edited.
+
+    Only the fields named in the Action's `input` are applied: the envelope also carries the whole
+    object, and rewriting untouched columns from a mirror is how drift starts.
+    """
+    obj = body.get("object") or {}
+    if obj.get("object_type") != "Holding":
+        raise ValueError(f"this app mirrors Holding actions, not {obj.get('object_type')!r}")
+    props = obj.get("properties") or {}
+    ts_code = str(props.get("ts_code") or "").strip().upper()
+    if not ts_code:
+        raise ValueError("the Holding object has no ts_code")
+    name = _portfolio_name(db, props.get("portfolio_id"))
+    changes = body.get("input") or {}
+    fields = {k: changes[k] for k in HOLDING_FIELDS if changes.get(k) is not None}
+    if not fields:
+        return {
+            "applied": 0,
+            "failed": 0,
+            "results": [{"id": str(obj.get("id") or ""), "ok": True, "skipped": "no writable field"}],
+        }
+    svc = PortfolioService(db)
+    svc.upsert_stock(name, ts_code, fields)
+    return {
+        "applied": 1,
+        "failed": 0,
+        "results": [{"id": str(obj.get("id") or ""), "ok": True, "fields": sorted(fields)}],
+    }
+
+
 def _apply_change(svc: PortfolioService, change: dict[str, Any]) -> dict[str, Any]:
     change_id = str(change.get("id") or "")
     action = str(change.get("action") or "")
@@ -94,9 +142,17 @@ async def openkms_portfolio_changes(request: Request, db: Session = Depends(get_
         payload = json.loads(raw or b"{}")
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail="Body must be JSON") from exc
+    if payload.get("event") == "action.executed":
+        try:
+            outcome = _apply_action_event(db, payload)
+        except (ValueError, FileNotFoundError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        openkms_sync.request_reindex()
+        return outcome
+
     changes = payload.get("changes")
     if not isinstance(changes, list) or not changes:
-        raise HTTPException(status_code=400, detail="changes[] is required")
+        raise HTTPException(status_code=400, detail="changes[] or an action.executed event is required")
 
     svc = PortfolioService(db)
     results = [_apply_change(svc, change if isinstance(change, dict) else {}) for change in changes]
