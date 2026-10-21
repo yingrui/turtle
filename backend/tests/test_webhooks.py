@@ -168,6 +168,22 @@ def test_a_malformed_reindex_config_is_ignored_not_fatal(monkeypatch):
         assert reindex_targets() == []
 
 
+def test_a_target_may_ask_to_prune(monkeypatch):
+    from app.config import settings
+    from app.services.openkms_sync import reindex_targets
+
+    monkeypatch.setattr(
+        settings,
+        "stock_openkms_reindex",
+        '[{"kind":"object_type","id":"ot1","prune":true},{"kind":"link_type","id":"lt1"}]',
+    )
+    targets = reindex_targets()
+    assert [t.path for t in targets] == [
+        "/api/object-types/ot1/index-to-neo4j?prune=true",
+        "/api/link-types/lt1/index-to-neo4j",
+    ]
+
+
 def test_the_target_path_names_the_kind(monkeypatch):
     from app.config import settings
     from app.services.openkms_sync import reindex_targets

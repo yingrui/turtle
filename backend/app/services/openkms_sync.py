@@ -6,7 +6,8 @@ types are re-indexed. This module is that nudge, called after a simulation finis
 portfolio change is applied.
 
 One configuration list, not one per event: `STOCK_OPENKMS_REINDEX` names the object/link types that
-mirror this app's data, and every write refreshes all of them. The alternative — a list per event —
+mirror this app's data, and every write refreshes all of them (with `"prune": true` where a removed
+row must also stop existing in the graph). The alternative — a list per event —
 drifts the moment a second writer appears, and re-indexing a handful of small types is cheap.
 
 Best-effort by design: a callback that fails (openKMS down, key rotated) must never fail a write
@@ -35,11 +36,15 @@ TARGET_KINDS = ("object_type", "link_type")
 class ReindexTarget:
     kind: Literal["object_type", "link_type"]
     id: str
+    #: Delete graph entries this index run did not write. Right for a mirror of data we own —
+    #: a removed holding must stop answering queries, and MERGE alone never removes anything.
+    prune: bool = False
 
     @property
     def path(self) -> str:
         prefix = "object-types" if self.kind == "object_type" else "link-types"
-        return f"/api/{prefix}/{self.id}/index-to-neo4j"
+        suffix = "?prune=true" if self.prune else ""
+        return f"/api/{prefix}/{self.id}/index-to-neo4j{suffix}"
 
 
 def reindex_targets() -> list[ReindexTarget]:
@@ -69,7 +74,13 @@ def reindex_targets() -> list[ReindexTarget]:
         if kind not in TARGET_KINDS or not target_id:
             logger.warning("STOCK_OPENKMS_REINDEX entry needs kind=%s and an id: %r", TARGET_KINDS, entry)
             continue
-        targets.append(ReindexTarget(kind=kind, id=target_id))  # type: ignore[arg-type]
+        targets.append(
+            ReindexTarget(
+                kind=kind,  # type: ignore[arg-type]
+                id=target_id,
+                prune=bool(entry.get("prune")),
+            )
+        )
     return targets
 
 

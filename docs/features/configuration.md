@@ -28,7 +28,7 @@ Compose sets host to `postgres` inside the stack via `docker-compose.yml`.
 | `STOCK_OPENKMS_BASE_URL` | — | openKMS origin, used to ask for a re-index after a simulation run |
 | `STOCK_OPENKMS_API_KEY` | — | Personal API key for that callback (needs object-type write on the Simulation type) |
 | `STOCK_OPENKMS_NEO4J_DATA_SOURCE_ID` | — | Neo4j data source the re-index targets |
-| `STOCK_OPENKMS_REINDEX` | — | JSON list of the ontology types that mirror this app, refreshed after **every** write (a finished run, an applied portfolio change): `[{"kind":"object_type","id":"…"},{"kind":"link_type","id":"…"}]`. Nodes and edges both need indexing — a run whose type is indexed but whose link type is not appears as a floating node. Malformed entries are logged and skipped, never fatal |
+| `STOCK_OPENKMS_REINDEX` | — | JSON list of the ontology types that mirror this app, refreshed after **every** write (a finished run, an applied portfolio change): `[{"kind":"object_type","id":"…","prune":true},{"kind":"link_type","id":"…"}]`. Nodes and edges both need indexing — a run whose type is indexed but whose link type is not appears as a floating node. `prune: true` makes the re-index also delete graph entries whose source row is gone (a removed holding would otherwise keep answering queries). Malformed entries are logged and skipped, never fatal |
 
 All five are optional: unset, the app behaves exactly as before — proposals are refused (503) and no callback is sent.
 | `STOCK_SECRET_KEY` | dev placeholder | HS256 signing for `local` — **rotate if using local** |
