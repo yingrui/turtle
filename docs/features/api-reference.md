@@ -125,3 +125,9 @@ Snapshot `fundamentals` (when `daily_basic` exists): `pe_ttm`, `pb`, `ps_ttm`, `
 |--------|------|-------------|
 | GET | `/health` | `{"status":"ok","started_at":"<iso8601>"}` (worker boot time; useful after hot reload) |
 | POST | `/-/reload` | Dev/test only — bumps a sentinel so `uvicorn --reload` restarts; `{"ok":true,"sentinel":"…"}` |
+
+## Webhooks (inbound, openKMS → turtle)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/api/webhooks/openkms/portfolio-changes` | Apply proposed holding changes from the ontology. Signed: `X-OpenKMS-Signature: sha256=HMAC(secret, raw body)`, verified in constant time; **503** when `STOCK_OPENKMS_WEBHOOK_SECRET` is unset, **401** on a bad signature. Body `{"changes": [{id, action, portfolio_id, ts_code, target_weight?, target_status?}]}`, `action ∈ add \| remove \| set_weight \| set_status`. Applied through `PortfolioService`, so `hold_shares` / `avg_cost` stay ledger aggregates; a position with holdings or history is **closed**, not deleted. Idempotent per change. Returns `{applied, failed, results: [{id, ok, error?}]}` — one bad change does not fail the batch. |

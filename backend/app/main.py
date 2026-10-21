@@ -5,7 +5,17 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, data, jobs, portfolios, screening, simulations, stock_pick, stocks
+from app.api import (
+    auth,
+    data,
+    jobs,
+    portfolios,
+    screening,
+    simulations,
+    stock_pick,
+    stocks,
+    webhooks,
+)
 from app.config import settings
 from app.database import Base, engine
 
@@ -39,6 +49,7 @@ app.include_router(jobs.router)
 app.include_router(simulations.router)
 app.include_router(stocks.router)
 app.include_router(stock_pick.router)
+app.include_router(webhooks.router)
 
 
 @app.get("/health")

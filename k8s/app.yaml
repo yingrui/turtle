@@ -20,6 +20,11 @@ data:
   STOCK_ALLOW_SIGNUP: "false"
   STOCK_FRONTEND_URL: ""
   STOCK_LOGS_DIR: /app/logs
+  # openKMS integration (optional). The webhook secret and API key live in stock-secrets.
+  STOCK_OPENKMS_BASE_URL: http://host.docker.internal:8102
+  STOCK_OPENKMS_SIMULATION_TYPE_ID: 5620a6b1-761f-4ccd-b673-6f968fcfb35e
+  STOCK_OPENKMS_NEO4J_DATA_SOURCE_ID: ee7b2787-8d88-4a37-9213-96b40ce29025
+  STOCK_OPENKMS_SIMULATION_LINK_TYPE_ID: 11dbcb42-90e5-4bdf-b525-1e3e2ae2536b
 ---
 apiVersion: apps/v1
 kind: Deployment
