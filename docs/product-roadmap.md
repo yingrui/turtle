@@ -64,7 +64,7 @@ Phase 1 行情体验 ✅ 已完成。
 
 | # | 任务 | 说明 |
 |---|------|------|
-| 3.1 | `factor_values` 表 + 批算 job | 动量、波动、MA 偏离 |
+| 3.1 | ~~`factor_values` 表~~ + 批算 job | 表已建（`factor_definitions` / `factor_values`，迁移 `006`）；动量、波动、MA 偏离的批算 job 待做 |
 | 3.2 | 多因子 JSON 规则引擎 | AND/OR，统一 screening |
 | 3.3 | `/factor` 研究页 | 分布、简要 IC |
 | 3.4 | 行情/列表性能 | 物化 latest quotes、索引 |

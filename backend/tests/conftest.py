@@ -21,6 +21,7 @@ tushare_schema.TUSHARE_SCHEMA = "main"
 
 @pytest.fixture(scope="session", autouse=True)
 def _create_db_schema():
+    from app import models  # noqa: F401  (registers every table on Base.metadata)
     from app.database import Base, engine
 
     Base.metadata.create_all(bind=engine)

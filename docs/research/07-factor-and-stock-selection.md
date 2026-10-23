@@ -14,7 +14,7 @@
 | 行情筛选 | `/market` 行业/涨跌/搜索 | 非因子逻辑，不能与回测因子一致 |
 | 估值字段 | `daily_basic` 已在库 | 未暴露为可组合因子 |
 | 回测 | 多 policy 模拟 | 与选股条件脱节 |
-| 因子存储 | 无 | F-406 待建 |
+| 因子存储 | `factor_definitions` / `factor_values`（迁移 `006`，空表） | 批算 job、`/api/factors`、UI 待做 |
 
 当前 `/screening` 是**第一代选股**：引擎内硬编码规则，不是可配置因子表达式。
 
@@ -81,8 +81,8 @@ flowchart TB
 
 | 能力 | 说明 |
 |------|------|
-| `factor_definitions` | 因子元数据：名称、公式、来源表 |
-| `factor_values` | `(ts_code, trade_date, factor_id, value)` |
+| `factor_definitions` | 因子元数据：`code`（唯一、代码引用它）、名称、分类、方向、逻辑、`params` JSONB、回看天数、IC 统计、来源 |
+| `factor_values` | `(factor_id, ts_code, trade_date) → value`，自然键做主键（重算即 upsert）；`extra` 放多输出因子的附带数值 |
 | 批任务 | 日终 job 计算动量、波动、均线距离等 |
 | API | `GET /api/factors`, `GET /api/factors/{id}/values` |
 
