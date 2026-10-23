@@ -555,7 +555,17 @@ class PortfolioService:
             raise ValueError("ts_code is required")
         stock = self._get_stock(row.id, code)
         if stock is None:
-            stock = PortfolioStock(id=str(uuid.uuid4()), portfolio_id=row.id, ts_code=code, status="watching")
+            stock = PortfolioStock(
+                id=str(uuid.uuid4()), portfolio_id=row.id, ts_code=code, status="watching"
+            )
+            # An id supplied by the caller is honoured: the ontology creates the Holding object
+            # first and announces it, so this row must carry the same identity — otherwise the
+            # next index sees two different objects for one holding.
+            supplied_id = str(fields.get("id") or "").strip()
+            if supplied_id:
+                if self.db.get(PortfolioStock, supplied_id) is not None:
+                    raise ValueError(f"stock id {supplied_id} is already used")
+                stock.id = supplied_id
             self.db.add(stock)
         self.update_stock_fields(stock, fields)
         self.db.commit()

@@ -33,6 +33,9 @@ class WatchlistBulkBody(BaseModel):
 
 class StockBody(BaseModel):
     ts_code: str
+    #: Optional caller-supplied identity: the ontology creates the Holding object first and the
+    #: row must carry the same id, or the next index sees two objects for one holding.
+    id: str | None = None
     status: str | None = None
     target_amount: float | None = None
     target_weight: float | None = None

@@ -379,3 +379,18 @@ def test_the_stocks_route_accepts_a_portfolio_id(auth_token):
 
     listed = client.get(f"/api/portfolios/{portfolio_id}/stocks", headers=headers).json()["stocks"]
     assert [s["ts_code"] for s in listed] == ["600519.SH"]
+
+
+def test_an_upsert_honours_a_supplied_id(auth_token, portfolio):
+    """The ontology creates the Holding, then the webhook inserts the row with that identity."""
+    import uuid as _uuid
+
+    headers = _auth_headers(auth_token)
+    supplied = str(_uuid.uuid4())
+    res = client.post(
+        f"/api/portfolios/{portfolio}/stocks",
+        json={"ts_code": "600519.SH", "id": supplied, "target_weight": 0.03},
+        headers=headers,
+    )
+    assert res.status_code == 200, res.text
+    assert res.json()["id"] == supplied
