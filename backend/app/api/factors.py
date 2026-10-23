@@ -44,6 +44,31 @@ def list_factors(
     }
 
 
+@router.get("/screen")
+def screen_by_factors(
+    factors: str = Query(..., description="因子条件：code[:topPercent]，逗号分隔，如 ROE:20,EP:30"),
+    trade_date: date | None = Query(None, description="默认取各因子的最新截面"),
+    limit: int = Query(200, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """条件交集选股：每个因子取前 N% 后求交集（按各因子方向排序）。"""
+    specs: list[tuple[str, float]] = []
+    for chunk in factors.split(","):
+        part = chunk.strip()
+        if not part:
+            continue
+        code, _, pct = part.partition(":")
+        try:
+            specs.append((code.strip(), float(pct) if pct else 20.0))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=f"invalid factor condition: {part}") from exc
+    try:
+        return FactorService().screen(db, specs, trade_date=trade_date, limit=limit)
+    except FactorError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @router.get("/{code}")
 def get_factor(code: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     try:

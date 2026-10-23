@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
 import { TradeDrawer } from '../components/portfolio/TradeDrawer';
 import { DataTable, type Column } from '../components/DataTable';
+import { FactorScreen } from '../components/screening/FactorScreen';
 import { useJobPoll } from '../hooks/useJobPoll';
 
 type DataStatus = {
@@ -71,7 +72,10 @@ function getSortValue(row: ResultRow, col: string): string | number | null | und
 
 export function Screening() {
   const { t, i18n } = useTranslation();
-  const [tab, setTab] = useState<'fundamental' | 'technical'>('fundamental');
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<'fundamental' | 'technical' | 'factor'>(
+    (searchParams.get('tab') as 'fundamental' | 'technical' | 'factor') ?? 'fundamental',
+  );
   const [dataStatus, setDataStatus] = useState<DataStatus | null>(null);
   const [presets, setPresets] = useState<PickPreset[]>([]);
   const [portfolios, setPortfolios] = useState<string[]>([]);
@@ -423,7 +427,22 @@ export function Screening() {
         >
           {t('screening.tabTechnical')}
         </button>
+        <button
+          type="button"
+          className={`btn${tab === 'factor' ? ' btn-primary' : ' btn-secondary'}`}
+          onClick={() => setTab('factor')}
+        >
+          {t('screening.tabFactor')}
+        </button>
       </div>
+
+      {tab === 'factor' && (
+        <FactorScreen
+          portfolios={portfolios}
+          bulkPortfolio={bulkPortfolio || portfolios[0] || ''}
+          onBuy={(tsCode) => setTradeCode(tsCode)}
+        />
+      )}
 
       {tab === 'fundamental' && (
         <>

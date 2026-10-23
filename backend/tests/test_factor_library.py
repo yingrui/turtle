@@ -42,6 +42,13 @@ def _definition(**overrides):
     return FactorDefinition(**payload)
 
 
+
+def _value(definition, ts_code, trade_date, value):
+    from app.models import FactorValue
+
+    return FactorValue(factor_id=definition.id, ts_code=ts_code, trade_date=trade_date, value=value)
+
+
 def test_a_factor_is_identified_by_its_code(db_session):
     code = f"dup_{uuid.uuid4().hex[:8]}"
     db_session.add(_definition(code=code))
@@ -178,3 +185,44 @@ def test_a_restart_closes_the_jobs_it_killed(db_session):
     assert stale.status == "failed" and "restart" in (stale.error or "")
     assert queued.status == "failed"
     assert done.status == "completed"          # finished work is left alone
+
+
+def test_screen_respects_direction_then_intersects(db_session):
+    """Top-N% uses each factor's own direction (higher-is-better vs lower-is-better), then cuts."""
+    from app.services.factor_service import FactorService
+
+    positive = _definition(code="screen_pos", direction="positive")
+    negative = _definition(code="screen_neg", direction="negative")
+    db_session.add_all([positive, negative])
+    db_session.commit()
+
+    day = date(2026, 3, 2)
+    # positive: 000004 > 000001 > 000002 > 000003
+    # negative (lower is better): 000004 < 000001 < 000002 < 000003
+    for ts_code, pos_value, neg_value in [
+        ("000001.SZ", 3, 2),
+        ("000002.SZ", 1, 3),
+        ("000003.SZ", 0.5, 4),
+        ("000004.SZ", 4, 1),
+    ]:
+        db_session.add(_value(positive, ts_code, day, pos_value))
+        db_session.add(_value(negative, ts_code, day, neg_value))
+    db_session.commit()
+
+    result = FactorService().screen(
+        db_session, [("screen_pos", 50), ("screen_neg", 50)], trade_date=day
+    )
+    # Both cuts select {000004, 000001}; a direction-blind implementation would intersect an
+    # empty set here, so this assertion is what pins the direction semantics.
+    assert result["total"] == 2
+    assert [row["ts_code"] for row in result["rows"]] == ["000001.SZ", "000004.SZ"]
+    assert result["rows"][1]["values"] == {"screen_pos": 4.0, "screen_neg": 1.0}
+    assert result["factors"][1]["direction"] == "negative"
+    assert result["factors"][0]["coverage"] == 4
+
+
+def test_screen_rejects_unknown_factor(db_session):
+    from app.services.factor_service import FactorError, FactorService
+
+    with pytest.raises(FactorError):
+        FactorService().screen(db_session, [("nope", 20)])

@@ -44,6 +44,85 @@ class FactorService:
             raise FactorError(f"unknown factor: {code}")
         return definition
 
+    def screen(
+        self,
+        db,
+        specs: list[tuple[str, float]],
+        *,
+        trade_date: date | None = None,
+        limit: int = 200,
+    ) -> dict:
+        """Intersect "top N% by factor" conditions into one candidate list.
+
+        ``specs`` is ``[(factor_code, top_percent), …]``. Each factor is cut on its own latest
+        available cross-section (or ``trade_date`` when given), ranked by the factor's direction,
+        then the resulting code sets are intersected. Values and the trade date of every condition
+        ride along so the caller can show the numbers behind the cut.
+        """
+        if not specs:
+            raise FactorError("no factor conditions given")
+
+        conditions: list[dict] = []
+        codes: set[str] | None = None
+        for code, top_percent in specs:
+            definition = self.get_definition(db, code)
+            day = trade_date or db.scalar(
+                select(func.max(FactorValue.trade_date)).where(FactorValue.factor_id == definition.id)
+            )
+            if day is None:
+                raise FactorError(f"{code} has no computed values")
+            descending = definition.direction != "negative"
+            value_col = FactorValue.value.desc() if descending else FactorValue.value.asc()
+            rows = db.execute(
+                select(FactorValue.ts_code, FactorValue.value)
+                .where(FactorValue.factor_id == definition.id, FactorValue.trade_date == day)
+                .order_by(value_col)
+            ).all()
+            if not rows:
+                raise FactorError(f"{code} has no values on {day}")
+            take = max(1, math.ceil(len(rows) * max(0.0, min(100.0, top_percent)) / 100))
+            picked = rows[:take]
+            selected = {ts_code for ts_code, _ in picked}
+            codes = selected if codes is None else (codes & selected)
+            conditions.append(
+                {
+                    "code": definition.code,
+                    "name": definition.name,
+                    "direction": definition.direction,
+                    "unit": definition.unit,
+                    "trade_date": day.isoformat(),
+                    "coverage": len(rows),
+                    "top_percent": top_percent,
+                    "values": {ts_code: _float(value) for ts_code, value in picked},
+                }
+            )
+
+        codes = codes or set()
+        rows: list[dict] = []
+        if codes:
+            ordered = sorted(codes)[:limit]
+            info = _stock_info(db, ordered)
+            for ts_code in ordered:
+                rows.append(
+                    {
+                        "ts_code": ts_code,
+                        "name": info.get(ts_code, {}).get("name"),
+                        "industry": info.get(ts_code, {}).get("industry"),
+                        "values": {
+                            condition["code"]: condition["values"].get(ts_code)
+                            for condition in conditions
+                        },
+                    }
+                )
+        return {
+            "trade_date": conditions[0]["trade_date"] if conditions else None,
+            "factors": [
+                {k: v for k, v in condition.items() if k != "values"} for condition in conditions
+            ],
+            "total": len(codes),
+            "rows": rows,
+        }
+
     def compute(
         self,
         db,
@@ -146,6 +225,22 @@ class FactorService:
         return db.scalars(
             select(FactorDefinition.code).where(FactorDefinition.formula.isnot(None))
         ).all()
+
+
+def _stock_info(db, codes: list[str]) -> dict[str, dict]:
+    """Name/industry for the screened codes, read from the read-only market-data table."""
+    if not codes:
+        return {}
+    from sqlalchemy import text
+
+    from app.core.tushare_schema import tushare_table
+
+    sql = text(
+        f"SELECT ts_code, name, industry FROM {tushare_table('stock_basic')} "
+        f"WHERE ts_code IN ({', '.join(f':c{i}' for i in range(len(codes)))})"
+    )
+    result = db.execute(sql, {f"c{i}": code for i, code in enumerate(codes)}).all()
+    return {row[0]: {"name": row[1], "industry": row[2]} for row in result}
 
 
 def definition_payload(definition: FactorDefinition) -> dict:
