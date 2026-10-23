@@ -1,0 +1,646 @@
+[
+ {
+  "code": "APR_TTM",
+  "name": "应计利润占比TTM",
+  "category": "fundamental",
+  "direction": "negative",
+  "logic": "(净利润-经营活动现金流)/总资产",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "ATD",
+  "name": "总资产周转天数",
+  "category": "fundamental",
+  "direction": "negative",
+  "logic": "365/(营业收入/平均总资产)",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "ATR",
+  "name": "平均真实波幅",
+  "category": "technical",
+  "direction": "negative",
+  "logic": "max(当日振幅,当日最高-前日收盘,前日收盘-当日最低)的14日EMA",
+  "formula": "ema(maximum(high - low, maximum(abs(high - shift(close, 1)), abs(low - shift(close, 1)))), 14)",
+  "params": {
+   "window": 14
+  },
+  "lookback_days": 15,
+  "ic_ir": null,
+  "source_ref": "alpha-factor-engineering",
+  "description": null
+ },
+ {
+  "code": "CAFR",
+  "name": "一致性修正因子",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "分析师盈利预测上调/下调综合评分",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "CCR",
+  "name": "现金流动负债比率",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "经营活动现金流/流动负债",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "CFOA",
+  "name": "全部资产现金回收率",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "经营活动现金流 / 全部资产",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": 0.48,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "CMA",
+  "name": "投资风格因子(Conservative Minus Aggressive)",
+  "category": "academic",
+  "direction": "positive",
+  "logic": "保守投资组合-激进投资组合",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "alpha-factor-engineering",
+  "description": null
+ },
+ {
+  "code": "DAD",
+  "name": "债务资产比",
+  "category": "fundamental",
+  "direction": "negative",
+  "logic": "总负债/总资产",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "DP",
+  "name": "股息率",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "股息/股价",
+  "formula": "dv_ratio / 100",
+  "params": {},
+  "lookback_days": 0,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "EPS_Q_YOY",
+  "name": "单季EPS同比增长率",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "(本期EPS-去年同期EPS)/|去年同期EPS|",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "EP_TTM",
+  "name": "盈利率TTM",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "净利润TTM/总市值",
+  "formula": "where(pe_ttm > 0, 1 / pe_ttm, nan)",
+  "params": {},
+  "lookback_days": 0,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "GPMD",
+  "name": "毛利率变动",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "(本期毛利率-上期毛利率)",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": 0.63,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "Growth",
+  "name": "综合成长因子",
+  "category": "composite",
+  "direction": "positive",
+  "logic": "多期成长类单因子的加权组合",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "HML",
+  "name": "价值因子(High Minus Low)",
+  "category": "academic",
+  "direction": "positive",
+  "logic": "高账面市值比组合-低账面市值比组合",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "alpha-factor-engineering",
+  "description": null
+ },
+ {
+  "code": "HN_z",
+  "name": "股东数目标准分数",
+  "category": "fundamental",
+  "direction": "negative",
+  "logic": "(股东数-均值)/标准差",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "Ln_IH",
+  "name": "持仓机构对数",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "ln(持仓机构数)",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "Ln_MC",
+  "name": "总市值对数",
+  "category": "fundamental",
+  "direction": "negative",
+  "logic": "ln(总市值)",
+  "formula": "log(total_mv)",
+  "params": {},
+  "lookback_days": 0,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "MACD",
+  "name": "指数平滑异同移动平均线",
+  "category": "technical",
+  "direction": "positive",
+  "logic": "12EMA-26EMA, 再计算9日信号线",
+  "formula": "ema(close, 12) - ema(close, 26)",
+  "params": {
+   "fast": 12,
+   "slow": 26
+  },
+  "lookback_days": 26,
+  "ic_ir": null,
+  "source_ref": "alpha-factor-engineering",
+  "description": null
+ },
+ {
+  "code": "MOM",
+  "name": "动量因子(Momentum)",
+  "category": "academic",
+  "direction": "positive",
+  "logic": "过去12个月赢家组合-输家组合",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "alpha-factor-engineering",
+  "description": null
+ },
+ {
+  "code": "NP_SUE1",
+  "name": "标准化预期外净利润",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "(实际EPS-预期EPS)/预期EPS标准差",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": 0.74,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "OCFP_TTM",
+  "name": "经营现金流市值比TTM",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "经营活动现金流TTM/总市值",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "OPMD",
+  "name": "营业利润率变动",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "(本期营业利润率-上期营业利润率)",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": 0.63,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "QPT",
+  "name": "业绩趋势因子",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "多期盈利趋势综合评分",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": 0.91,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "QQC",
+  "name": "综合质量因子",
+  "category": "composite",
+  "direction": "positive",
+  "logic": "跨多个质量维度的综合评分",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "RMW",
+  "name": "盈利能力因子(Robust Minus Weak)",
+  "category": "academic",
+  "direction": "positive",
+  "logic": "高盈利组合-低盈利组合",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "alpha-factor-engineering",
+  "description": null
+ },
+ {
+  "code": "ROA_TTM",
+  "name": "总资产收益率TTM",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "净利润/总资产(TTM)",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "ROE_TTM",
+  "name": "净资产收益率TTM",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "净利润/净资产(TTM)",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": 0.37,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "RSI",
+  "name": "相对强弱指标",
+  "category": "technical",
+  "direction": "negative",
+  "logic": "14日平均涨幅/(平均涨幅+平均跌幅)*100",
+  "formula": "100 * ma(where(ts_ret(close, 1) > 0, ts_ret(close, 1), 0), 14) / (ma(where(ts_ret(close, 1) > 0, ts_ret(close, 1), 0), 14) + ma(where(ts_ret(close, 1) < 0, -ts_ret(close, 1), 0), 14))",
+  "params": {
+   "window": 14
+  },
+  "lookback_days": 15,
+  "ic_ir": null,
+  "source_ref": "alpha-factor-engineering",
+  "description": null
+ },
+ {
+  "code": "SMB",
+  "name": "规模因子(Small Minus Big)",
+  "category": "academic",
+  "direction": "positive",
+  "logic": "小盘股组合收益-大盘股组合收益",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "alpha-factor-engineering",
+  "description": null
+ },
+ {
+  "code": "TOP_MANA_INCOME",
+  "name": "高管薪酬",
+  "category": "fundamental",
+  "direction": "positive",
+  "logic": "高管薪酬总额",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": 0.61,
+  "source_ref": "fundamental-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "buy_shift_dist_l",
+  "name": "大单买入偏移",
+  "category": "price-volume",
+  "direction": "positive",
+  "logic": "大单驱动的股价偏离度",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": 0.78,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "corr_price_turn_1M",
+  "name": "量价同步因子1月",
+  "category": "price-volume",
+  "direction": "negative",
+  "logic": "价格与换手率的同期相关性",
+  "formula": "corr(close, turnover_rate, 20)",
+  "params": {
+   "window": 20
+  },
+  "lookback_days": 20,
+  "ic_ir": -1.0,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "corr_ret_turn_post_1M",
+  "name": "量能领先因子1月",
+  "category": "price-volume",
+  "direction": "positive",
+  "logic": "昨日换手率与今日收益的滞后相关性",
+  "formula": "corr(shift(turnover_rate, 1), ts_ret(close, 1), 20)",
+  "params": {
+   "window": 20
+  },
+  "lookback_days": 21,
+  "ic_ir": 0.52,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "distribution_ret_std",
+  "name": "收益分布标准差",
+  "category": "price-volume",
+  "direction": "negative",
+  "logic": "收益序列的分布特征",
+  "formula": "std(ts_ret(close, 1), 60)",
+  "params": {
+   "window": 60
+  },
+  "lookback_days": 60,
+  "ic_ir": null,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "inflow_shift_dist_open_l",
+  "name": "开盘资金流入偏移",
+  "category": "price-volume",
+  "direction": "positive",
+  "logic": "开盘时段资金净流入的股价影响",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "liq_turn_std_6M",
+  "name": "换手率标准差6月",
+  "category": "price-volume",
+  "direction": "negative",
+  "logic": "近6个月日换手率的标准差",
+  "formula": "std(turnover_rate, 120)",
+  "params": {
+   "window": 120
+  },
+  "lookback_days": 120,
+  "ic_ir": -0.81,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "liq_vstd_1M",
+  "name": "成交量标准差1月",
+  "category": "price-volume",
+  "direction": "negative",
+  "logic": "近1个月成交量的标准差",
+  "formula": "std(vol, 20)",
+  "params": {
+   "window": 20
+  },
+  "lookback_days": 20,
+  "ic_ir": null,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "mmt_overnight_A",
+  "name": "隔夜动量",
+  "category": "price-volume",
+  "direction": "positive",
+  "logic": "当日开盘价/前日收盘价",
+  "formula": "open / shift(close, 1) - 1",
+  "params": {
+   "window": 1
+  },
+  "lookback_days": 1,
+  "ic_ir": 0.63,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "mmt_range_M",
+  "name": "月度价格区间动量",
+  "category": "price-volume",
+  "direction": "negative",
+  "logic": "当月最高价与最低价之比",
+  "formula": "ts_max(high, 20) / ts_min(low, 20)",
+  "params": {
+   "window": 20
+  },
+  "lookback_days": 20,
+  "ic_ir": -1.03,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "north_hold_prefer",
+  "name": "北向持仓偏好",
+  "category": "price-volume",
+  "direction": "positive",
+  "logic": "北向资金相对基准的超配比例",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": 0.69,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "north_hold_prop",
+  "name": "北向持仓比例",
+  "category": "price-volume",
+  "direction": "positive",
+  "logic": "北向资金持有市值/流通市值",
+  "formula": null,
+  "params": {},
+  "lookback_days": null,
+  "ic_ir": null,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "vol_down_std_1M",
+  "name": "下跌波动率1月",
+  "category": "price-volume",
+  "direction": "negative",
+  "logic": "仅用下跌日计算的波动率",
+  "formula": "std(where(ts_ret(close, 1) < 0, ts_ret(close, 1), nan), 20, 5)",
+  "params": {
+   "window": 20
+  },
+  "lookback_days": 20,
+  "ic_ir": null,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "vol_highlow_std",
+  "name": "高低价波动标准差",
+  "category": "price-volume",
+  "direction": "negative",
+  "logic": "日内高低价比值的标准差",
+  "formula": "std(high / low, 20)",
+  "params": {
+   "window": 20
+  },
+  "lookback_days": 20,
+  "ic_ir": null,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "vol_up_std_1M",
+  "name": "上涨波动率1月",
+  "category": "price-volume",
+  "direction": "negative",
+  "logic": "仅用上涨日计算的波动率",
+  "formula": "std(where(ts_ret(close, 1) > 0, ts_ret(close, 1), nan), 20, 5)",
+  "params": {
+   "window": 20
+  },
+  "lookback_days": 20,
+  "ic_ir": -0.79,
+  "source_ref": "price-volume-factor-handbook",
+  "description": null
+ },
+ {
+  "code": "mom_20d",
+  "name": "20日动量",
+  "category": "price-volume",
+  "direction": "positive",
+  "logic": "close / close[-20] - 1",
+  "formula": "close / shift(close, 20) - 1",
+  "params": {
+   "window": 20
+  },
+  "lookback_days": 20,
+  "ic_ir": null,
+  "source_ref": "turtle",
+  "description": "Roadmap 3.1 baseline factor."
+ },
+ {
+  "code": "vol_60d",
+  "name": "60日波动率",
+  "category": "price-volume",
+  "direction": "negative",
+  "logic": "日收益率 60 日标准差",
+  "formula": "std(ts_ret(close, 1), 60)",
+  "params": {
+   "window": 60
+  },
+  "lookback_days": 60,
+  "ic_ir": null,
+  "source_ref": "turtle",
+  "description": "Roadmap 3.1 baseline factor."
+ },
+ {
+  "code": "ma_dev_20",
+  "name": "20日均线偏离度",
+  "category": "technical",
+  "direction": "negative",
+  "logic": "close / MA20 - 1",
+  "formula": "close / ma(close, 20) - 1",
+  "params": {
+   "window": 20
+  },
+  "lookback_days": 20,
+  "ic_ir": null,
+  "source_ref": "turtle",
+  "description": "Roadmap 3.1 baseline factor."
+ }
+]

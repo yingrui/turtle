@@ -53,6 +53,9 @@ class FactorDefinition(Base):
     unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
     #: How it is computed, in words or pseudo-code.
     logic: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: How it is computed, exactly — an expression the engine in `app/core/factor` evaluates.
+    #: Null means documentation only: the factor is defined, nothing computes it.
+    formula: Mapped[str | None] = mapped_column(Text, nullable=True)
     #: Parameters of a parameterised family (`window`, `n_times_atr`, …).
     params: Mapped[dict] = mapped_column(
         JSON_TYPE, nullable=False, default=dict, server_default="{}"

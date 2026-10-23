@@ -65,7 +65,7 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 |--------|------|-------------|
 | GET | `/` | List jobs |
 | GET | `/{job_id}` | Job detail |
-| POST | `/` | Create job (`portfolio_screen` or `simulation`) |
+| POST | `/` | Create job (`portfolio_screen`, `simulation`, `factor_compute`) |
 
 `data_sync` / `calendar_sync` are **rejected** (400) — use external ETL.
 
@@ -82,6 +82,16 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/` | Run screen (returns job or results) |
+
+## Factors — `/api/factors`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Catalogue with coverage (`computable`, `category` filters) |
+| GET | `/{code}` | One definition + coverage |
+| GET | `/{code}/dates` | Dates that have values, newest first |
+| GET | `/{code}/values` | Values — `ts_code` (history) or `trade_date` (cross-section), plus `start`/`end`/`sort`/`order`/`limit`/`offset` |
+| POST | `/{code}/compute` | Start a `factor_compute` job for a window (`start`, `end`); 400 if the factor has no formula |
 
 ## Simulations — `/api/simulations`
 

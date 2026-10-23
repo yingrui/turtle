@@ -14,7 +14,7 @@
 | 行情筛选 | `/market` 行业/涨跌/搜索 | 非因子逻辑，不能与回测因子一致 |
 | 估值字段 | `daily_basic` 已在库 | 未暴露为可组合因子 |
 | 回测 | 多 policy 模拟 | 与选股条件脱节 |
-| 因子存储 | `factor_definitions` / `factor_values`（迁移 `006`，空表） | 批算 job、`/api/factors`、UI 待做 |
+| 因子库 | `factor_definitions` / `factor_values`（迁移 `006`/`007`）、表达式引擎、`factor_compute` job、`/factor` 页（19 个因子可算） | IC / 分层检验、多因子规则引擎待做 |
 
 当前 `/screening` 是**第一代选股**：引擎内硬编码规则，不是可配置因子表达式。
 
@@ -83,8 +83,8 @@ flowchart TB
 |------|------|
 | `factor_definitions` | 因子元数据：`code`（唯一、代码引用它）、名称、分类、方向、逻辑、`params` JSONB、回看天数、IC 统计、来源 |
 | `factor_values` | `(factor_id, ts_code, trade_date) → value`，自然键做主键（重算即 upsert）；`extra` 放多输出因子的附带数值 |
-| 批任务 | 日终 job 计算动量、波动、均线距离等 |
-| API | `GET /api/factors`, `GET /api/factors/{id}/values` |
+| 批任务 | `POST /api/factors/{code}/compute` → `factor_compute` job（动量、波动、均线距离等 19 个） |
+| API | `GET /api/factors`, `GET /api/factors/{code}/values`, `POST /api/factors/{code}/compute` |
 
 ### 阶段 C — 多因子选股与分析
 
@@ -141,7 +141,7 @@ flowchart TB
 | 路由 | 用途 |
 |------|------|
 | `/screening` | 升级为「选股中心」：条件 + 结果 + 导出 |
-| `/factor`（新） | 因子列表、单因子分布、IC 研究（阶段 C） |
+| `/factor` | 因子列表、单股时序、当日截面（分布与 IC 待做） |
 | `/market` | 浏览；选中条件「复制到选股」 |
 | `/stocks/:tsCode` | 因子分位 Tab |
 

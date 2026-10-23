@@ -14,6 +14,7 @@ from app.models.job import Job
 from app.models.portfolio import PortfolioTransaction
 from app.models.simulation import SimulationDaily, SimulationRun
 from app.services.portfolio_service import PortfolioService
+from app.services.factor_service import FactorError, FactorService
 from app.services.screening_service import ScreeningService
 from app.core.engine.InvestmentLogger import InvestmentLogger
 from app.core.simulation.runner import run_simulation
@@ -123,6 +124,24 @@ class JobService:
                     "ts_codes_count": len(config.get("follow_stocks") or []),
                     "portfolio": config_name,
                 })
+            elif job.type == "factor_compute":
+                service = FactorService()
+                codes = payload.get("codes") or [payload["code"]]
+                start = date.fromisoformat(payload["start"]) if payload.get("start") else None
+                end = date.fromisoformat(payload["end"]) if payload.get("end") else None
+                results = []
+                for code in codes:
+                    try:
+                        result = service.compute(db, code, start=start, end=end, log=log_fn)
+                    except FactorError as exc:
+                        log_fn(f"{code}: {exc}")
+                        continue
+                    results.append(result)
+                    log_fn(
+                        f"{code}: {result['rows_written']} values, "
+                        f"{result['stocks']} stocks, {result['dates']} days"
+                    )
+                job.result = json.dumps({"factors": results})
             else:
                 raise ValueError(f"Unknown job type: {job.type}")
 

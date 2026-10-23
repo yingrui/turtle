@@ -58,6 +58,7 @@ nav:
       - Simulation: features/simulation.md
       - Screening & analysis: features/screening-and-analysis.md
       - Stock picking: features/stock-pick.md
+      - Factors: features/factors.md
       - Auth: features/auth.md
       - Configuration: features/configuration.md
       - Data models: features/data-models.md

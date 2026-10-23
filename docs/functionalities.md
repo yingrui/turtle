@@ -10,7 +10,7 @@ Index of stock trading features. Each page links to behaviour, API routes, and r
 |---------|-----|-----------|
 | Market quotes (universe) | [Stock universe](features/stock-universe.md) | `/market`, `/stocks/:tsCode` |
 | Stock picking (选股) | [Screening & factors](features/screening-and-analysis.md) | `/screening` |
-| Factor analysis (因子) | [Research · factors](research/07-factor-and-stock-selection.md) | `/factor` (planned) |
+| Factor library (因子) | [Factors](features/factors.md) | `/factor` |
 | Portfolios | [Portfolios](features/portfolios.md) | `/portfolio` |
 | Backtest simulation | [Simulation](features/simulation.md) | `/simulation`, `/simulation/results` |
 | Charts & forecast | [Screening & analysis](features/screening-and-analysis.md) | `/stocks`, `/forecast` |
