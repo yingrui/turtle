@@ -226,3 +226,25 @@ def test_screen_rejects_unknown_factor(db_session):
 
     with pytest.raises(FactorError):
         FactorService().screen(db_session, [("nope", 20)])
+
+
+def test_latest_for_stock_returns_the_newest_value_per_factor(db_session):
+    from app.services.factor_service import FactorService
+
+    momentum = _definition(code="latest_mom", direction="positive")
+    quality = _definition(code="latest_qual", direction="positive")
+    db_session.add_all([momentum, quality])
+    db_session.commit()
+
+    db_session.add(_value(momentum, "600519.SH", date(2026, 3, 2), 0.1))
+    db_session.add(_value(momentum, "600519.SH", date(2026, 3, 5), 0.3))
+    db_session.add(_value(quality, "600519.SH", date(2026, 3, 4), 0.7))
+    db_session.add(_value(quality, "000001.SZ", date(2026, 3, 4), 0.9))
+    db_session.commit()
+
+    rows = FactorService().latest_for_stock(db_session, "600519.SH")
+    by_code = {row["code"]: row for row in rows}
+    assert set(by_code) == {"latest_mom", "latest_qual"}
+    assert by_code["latest_mom"]["value"] == 0.3  # newest day, not the older one
+    assert by_code["latest_mom"]["trade_date"] == "2026-03-05"
+    assert by_code["latest_qual"]["trade_date"] == "2026-03-04"

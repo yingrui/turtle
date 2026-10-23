@@ -16,7 +16,7 @@ Sidebar is grouped by task: **研究** (工作台/选股/因子/行情) · **组
 | Factor library (因子) | [Factors](features/factors.md) | `/factor`, `/factor/:code` |
 | Portfolios & watchlist | [Portfolios](features/portfolios.md) | `/portfolio?tab=holdings&status=…` (`/watchlist` redirects) |
 | Backtest simulation | [Simulation](features/simulation.md) | `/simulation`, `/simulation/results` |
-| Charts & forecast | [Screening & analysis](features/screening-and-analysis.md) | `/stocks`, `/forecast` |
+| Charts, factors & forecast | [Screening & analysis](features/screening-and-analysis.md) | `/stocks/:tsCode` tabs (`/stocks`, `/forecast` redirect to `/market`) |
 | Settings | [Configuration](features/configuration.md) | `/settings` |
 | Background jobs / data status | [Simulation](features/simulation.md) / [Data models](features/data-models.md) | `/jobs`, `/data` (secondary) |
 

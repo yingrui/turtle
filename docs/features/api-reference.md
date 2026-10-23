@@ -117,7 +117,8 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 | GET | `/` | List symbols in a portfolio (`?portfolio=name`) |
 | GET | `/{ts_code}/snapshot` | Basic info + latest quote + `fundamentals` from `daily_basic` |
 | GET | `/{ts_code}/ohlcv` | QFQ-adjusted OHLCV series (`?limit=250`, max 2000) |
-| GET | `/{ts_code}/indicators` | Technical indicators |
+| GET | `/{ts_code}/indicators` | Technical indicators (`chart=ma|donchian|atr|bolling|distribution`) |
+| GET | `/{ts_code}/factors` | Latest value of every factor computed for this symbol |
 | POST | `/{ts_code}/forecast` | Forecast job |
 
 ### `GET /universe` query parameters

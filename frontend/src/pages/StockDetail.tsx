@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
 import { CandlestickChart, LineChart, type OhlcvData } from '../components/Chart';
+import { ForecastPanel } from '../components/stock/ForecastPanel';
+import { FactorPanel } from '../components/stock/FactorPanel';
 import './StockDetail.scss';
 
 type Quote = {
@@ -42,6 +44,7 @@ const INDICATOR_TYPES = [
   { id: 'donchian', labelKey: 'stockDetail.indicator.donchian' },
   { id: 'atr', labelKey: 'stockDetail.indicator.atr' },
   { id: 'bolling', labelKey: 'stockDetail.indicator.bolling' },
+  { id: 'distribution', labelKey: 'stockDetail.indicator.distribution' },
 ];
 
 function formatAmount(v: number | undefined) {
@@ -64,7 +67,7 @@ export function StockDetail() {
 
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [ohlcv, setOhlcv] = useState<OhlcvData | null>(null);
-  const [tab, setTab] = useState<'kline' | 'indicator'>('kline');
+  const [tab, setTab] = useState<'kline' | 'indicator' | 'factor' | 'forecast'>('kline');
   const [indicatorType, setIndicatorType] = useState('ma');
   const [indicatorChart, setIndicatorChart] = useState<{
     dates: string[];
@@ -211,6 +214,20 @@ export function StockDetail() {
         >
           {t('stockDetail.tab.indicator')}
         </button>
+        <button
+          type="button"
+          className={`stock-detail-tab${tab === 'factor' ? ' stock-detail-tab--active' : ''}`}
+          onClick={() => setTab('factor')}
+        >
+          {t('stockDetail.tab.factor')}
+        </button>
+        <button
+          type="button"
+          className={`stock-detail-tab${tab === 'forecast' ? ' stock-detail-tab--active' : ''}`}
+          onClick={() => setTab('forecast')}
+        >
+          {t('stockDetail.tab.forecast')}
+        </button>
       </div>
 
       {tab === 'kline' && ohlcv && ohlcv.dates.length > 0 && (
@@ -221,6 +238,10 @@ export function StockDetail() {
       {tab === 'kline' && (!ohlcv || ohlcv.dates.length === 0) && (
         <p style={{ color: 'var(--color-text-muted)' }}>{t('stockDetail.noChartData')}</p>
       )}
+
+      {tab === 'factor' && <FactorPanel tsCode={tsCode} />}
+
+      {tab === 'forecast' && <ForecastPanel tsCode={tsCode} />}
 
       {tab === 'indicator' && (
         <>

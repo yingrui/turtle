@@ -14,8 +14,6 @@ import { SimulationLayout } from './pages/SimulationLayout';
 import { SimulationResults } from './pages/SimulationResults';
 import { StockList } from './pages/StockList';
 import { StockDetail } from './pages/StockDetail';
-import { StockAnalysis } from './pages/StockAnalysis';
-import { Forecast } from './pages/Forecast';
 import { Jobs } from './pages/Jobs';
 import { Settings } from './pages/Settings';
 
@@ -47,8 +45,8 @@ export function App() {
         <Route path="/market" element={<StockList />} />
         <Route path="/stocks/list" element={<Navigate to="/market" replace />} />
         <Route path="/stocks/:tsCode" element={<StockDetail />} />
-        <Route path="/stocks" element={<StockAnalysis />} />
-        <Route path="/forecast" element={<Forecast />} />
+        <Route path="/stocks" element={<Navigate to="/market" replace />} />
+        <Route path="/forecast" element={<Navigate to="/market" replace />} />
         <Route path="/jobs" element={<Jobs />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

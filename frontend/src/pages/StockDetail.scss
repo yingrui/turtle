@@ -116,3 +116,25 @@
     font-weight: var(--font-weight-medium);
   }
 }
+
+.stock-detail-inline-form {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+
+  .form-row {
+    max-width: 120px;
+  }
+}
+
+.stock-detail-forecast-summary {
+  max-height: 12rem;
+  overflow: auto;
+  margin-top: var(--space-3);
+}
+
+.stock-detail-hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

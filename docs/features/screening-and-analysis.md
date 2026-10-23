@@ -34,9 +34,10 @@ Universe list, industry summary, K-line charts. Snapshot includes `fundamentals`
 
 ## Stock analysis & forecast
 
-Routes: **`/stocks`**, **`/forecast`**
-
-Indicators and ARIMA forecast for a single symbol. Data is **read from `tushare`** (populated externally).
+Route: **`/stocks/:tsCode`** — one page with four tabs: **K线 / 指标 / 因子 / 预测**. Indicators
+(`ma`, `donchian`, `atr`, `bolling`, `distribution`) and the ARIMA forecast live here instead of on
+separate pages; the old `/stocks` and `/forecast` routes redirect to `/market`. Data is **read from
+`tushare`** (populated externally), factor values come from `factor_values`.
 
 Charts: **Apache ECharts** — `frontend/src/components/Chart.tsx`.
 

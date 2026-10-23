@@ -44,6 +44,46 @@ class FactorService:
             raise FactorError(f"unknown factor: {code}")
         return definition
 
+    def latest_for_stock(self, db, ts_code: str) -> list[dict]:
+        """Latest value of every factor that has ever been computed for one stock."""
+        latest = (
+            select(FactorValue.factor_id, func.max(FactorValue.trade_date).label("latest_date"))
+            .where(FactorValue.ts_code == ts_code)
+            .group_by(FactorValue.factor_id)
+            .subquery()
+        )
+        rows = db.execute(
+            select(
+                FactorDefinition.code,
+                FactorDefinition.name,
+                FactorDefinition.category,
+                FactorDefinition.direction,
+                FactorDefinition.unit,
+                FactorValue.trade_date,
+                FactorValue.value,
+            )
+            .join(FactorValue, FactorValue.factor_id == FactorDefinition.id)
+            .join(
+                latest,
+                (latest.c.factor_id == FactorValue.factor_id)
+                & (latest.c.latest_date == FactorValue.trade_date),
+            )
+            .where(FactorValue.ts_code == ts_code)
+            .order_by(FactorDefinition.category, FactorDefinition.code)
+        ).all()
+        return [
+            {
+                "code": row.code,
+                "name": row.name,
+                "category": row.category,
+                "direction": row.direction,
+                "unit": row.unit,
+                "trade_date": row.trade_date.isoformat(),
+                "value": _float(row.value),
+            }
+            for row in rows
+        ]
+
     def screen(
         self,
         db,

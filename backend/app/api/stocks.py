@@ -110,6 +110,14 @@ def stock_indicators(ts_code: str, chart: str = Query("ma"), _: User = Depends(g
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.get("/{ts_code}/factors")
+def stock_factors(ts_code: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """Latest factor values for one symbol (the 因子 tab on the stock page)."""
+    from app.services.factor_service import FactorService
+
+    return {"ts_code": ts_code.upper(), "factors": FactorService().latest_for_stock(db, ts_code.upper())}
+
+
 @router.post("/{ts_code}/forecast")
 def stock_forecast(ts_code: str, body: ForecastRequest, _: User = Depends(get_current_user)):
     return StockService().forecast(ts_code, body.steps)

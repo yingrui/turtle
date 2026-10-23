@@ -109,6 +109,12 @@ Turtle-native factors live here and can be pushed to the knowledge base later; t
 `code`.
 
 
+## A stock's factor values
+
+`GET /api/stocks/{ts_code}/factors` returns the **latest** value of every factor that has ever been
+computed for that symbol (one row per factor, newest `trade_date` each). The stock page's **因子**
+tab renders it directly, so you can see a name's factor fingerprint without leaving the page.
+
 ## Screening by factors
 
 `GET /api/factors/screen?factors=ROE:20,EP:30` takes each factor's latest cross-section (or a
