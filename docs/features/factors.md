@@ -75,11 +75,17 @@ whole table and pivoting it at once ran a 1 GiB pod out of memory for a single f
 | `GET /api/factors/{code}/dates` | `limit` | dates that have values, newest first |
 | `GET /api/factors/{code}/values` | `ts_code` **or** `trade_date`, `start`, `end`, `sort`, `order`, `limit`, `offset` | one stock's history, or one day across the market |
 
-## The page
+## The pages
 
-`/factor` lists the catalogue (search, category, *computable only*), and for the selected factor
-shows its definition, formula, coverage, a Compute control with the job's log, and a values table
-with two views: **one stock** (its history) and **one day** (the cross-section, ranked).
+Two routes, because they answer different questions and are worth linking separately:
+
+| Route | Shows |
+|-------|-------|
+| `/factor` | the catalogue — search, category, *computable only*, and each factor's coverage (`values`, `latest`) |
+| `/factor/{code}` | one factor — definition, formula, coverage, the Compute control with the job's log, and its values with two views: **one stock** (history) and **one day** (cross-section, ranked) |
+
+A factor's code is the address (`/factor/mom_20d`), so a link to a factor survives a reload. An
+unknown code renders "unknown factor" rather than an empty shell.
 
 ## Adding a factor
 

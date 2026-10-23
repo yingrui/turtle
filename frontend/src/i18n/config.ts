@@ -98,6 +98,11 @@ const resources = {
         matches: '{{total}} values match',
         notComputedYet: 'Nothing stored for this factor yet — run Compute.',
         noValues: 'No values for this selection.',
+        back: 'All factors',
+        pickHint: 'Pick a factor to see its formula, compute it, and read its values.',
+        notFoundTitle: 'Unknown factor',
+        notFound: 'There is no factor with code {{code}}.',
+        computeSummary: '{{values}} values · {{stocks}} stocks · {{dates}} days',
       },
       screening: {
         buyNow: 'Buy',
@@ -515,6 +520,11 @@ const resources = {
         matches: '匹配 {{total}} 条',
         notComputedYet: '该因子还没有值，点击「计算」。',
         noValues: '当前条件下没有值。',
+        back: '全部因子',
+        pickHint: '点一个因子，查看它的公式、计算它、并读取它的值。',
+        notFoundTitle: '未知因子',
+        notFound: '没有代码为 {{code}} 的因子。',
+        computeSummary: '{{values}} 个值 · {{stocks}} 只股票 · {{dates}} 个交易日',
       },
       screening: {
         buyNow: '买入',

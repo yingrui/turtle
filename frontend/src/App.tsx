@@ -7,7 +7,8 @@ import { Register } from './pages/Register';
 import { DataCollection } from './pages/DataCollection';
 import { Portfolio } from './pages/Portfolio';
 import { Screening } from './pages/Screening';
-import { Factors } from './pages/Factors';
+import { FactorList } from './pages/FactorList';
+import { FactorDetail } from './pages/FactorDetail';
 import { Watchlist } from './pages/Watchlist';
 import { Simulation } from './pages/Simulation';
 import { SimulationLayout } from './pages/SimulationLayout';
@@ -35,7 +36,8 @@ export function App() {
         <Route path="/data" element={<DataCollection />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/screening" element={<Screening />} />
-        <Route path="/factor" element={<Factors />} />
+        <Route path="/factor" element={<FactorList />} />
+        <Route path="/factor/:code" element={<FactorDetail />} />
         <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/simulation" element={<SimulationLayout />}>
           <Route index element={<Simulation />} />

@@ -26,7 +26,7 @@ const navItems = [
   { to: '/data', icon: Database, key: 'data', end: true },
   { to: '/watchlist', icon: Star, key: 'watchlist', end: true },
   { to: '/screening', icon: Filter, key: 'screening', end: true },
-  { to: '/factor', icon: FlaskConical, key: 'factor', end: true },
+  { to: '/factor', icon: FlaskConical, key: 'factor', end: false },
   { to: '/simulation', icon: Play, key: 'simulation', end: false },
   { to: '/market', icon: CandlestickChart, key: 'quote', end: true },
   { to: '/stocks', icon: LineChart, key: 'stocks', end: true },
