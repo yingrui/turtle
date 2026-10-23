@@ -66,6 +66,14 @@ on read: `last_date` tells you when someone last ran it.
 Only the fields the formula names are read, and each field is pivoted on its own — reading the
 whole table and pivoting it at once ran a 1 GiB pod out of memory for a single factor.
 
+## Coverage is stored, not aggregated
+
+`value_count`, `stock_count`, `first_date`, `last_date` and `computed_at` live on the definition and
+are written when a compute finishes (`FactorService.refresh_coverage`). They answer "what did the
+last run leave?", which is the same question `last_date` answers for an index run — and it keeps the
+catalogue a 47-row read. Aggregating `factor_values` on every page view cost 2.3 s at seven million
+rows; the stored column answers in 2 ms.
+
 ## Reading
 
 | Route | Query | Use |
@@ -73,7 +81,7 @@ whole table and pivoting it at once ran a 1 GiB pod out of memory for a single f
 | `GET /api/factors` | `computable`, `category` | catalogue + coverage (`value_count`, `stock_count`, `last_date`) |
 | `GET /api/factors/{code}` | — | one definition with coverage |
 | `GET /api/factors/{code}/dates` | `limit` | dates that have values, newest first |
-| `GET /api/factors/{code}/values` | `ts_code` **or** `trade_date`, `start`, `end`, `sort`, `order`, `limit`, `offset` | one stock's history, or one day across the market |
+| `GET /api/factors/{code}/values` | `ts_code` **or** `trade_date`, `start`, `end`, `sort`, `order`, `limit`, `offset` | one stock's history, or one day across the market. Default order is `trade_date` for a stock (index-friendly) and `value` for a cross-section |
 
 ## The pages
 

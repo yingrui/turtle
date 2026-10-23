@@ -125,3 +125,37 @@ def test_a_cross_section_reads_one_factor_for_one_day(db_session):
         select(FactorValue).where(FactorValue.factor_id == mom.id, FactorValue.trade_date == day)
     ).all()
     assert {r.ts_code for r in rows} == {"600519.SH", "000001.SZ"}
+
+
+def test_coverage_is_a_column_so_the_catalogue_never_aggregates(db_session):
+    from app.models import FactorValue
+    from app.services.factor_service import FactorService
+
+    factor = _definition()
+    db_session.add(factor)
+    db_session.commit()
+    day = date(2024, 5, 6)
+    db_session.add_all(
+        [
+            FactorValue(factor_id=factor.id, ts_code="600519.SH", trade_date=day, value=0.03),
+            FactorValue(
+                factor_id=factor.id, ts_code="600519.SH", trade_date=date(2024, 5, 7), value=0.04
+            ),
+            FactorValue(factor_id=factor.id, ts_code="000001.SZ", trade_date=day, value=-0.01),
+        ]
+    )
+    db_session.commit()
+
+    service = FactorService()
+    # Before a compute has recorded anything, the catalogue says zero rather than aggregating.
+    assert {f["code"]: f for f in service.list_definitions(db_session)}[factor.code][
+        "value_count"
+    ] == 0
+
+    service.refresh_coverage(db_session, factor)
+    row = {f["code"]: f for f in service.list_definitions(db_session)}[factor.code]
+    assert row["value_count"] == 3
+    assert row["stock_count"] == 2
+    assert row["first_date"] == day
+    assert row["last_date"] == date(2024, 5, 7)
+    assert row["computed_at"] is not None

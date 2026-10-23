@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Iterable
 
 from sqlalchemy import func, select
@@ -32,95 +32,17 @@ def _insert_for(db):
 
 class FactorService:
     def list_definitions(self, db, *, only_active: bool = True) -> list[dict]:
-        """Every factor with its coverage, so the list page needs one query per fact."""
+        """Every factor with the coverage of its last compute — a 47-row read, not an aggregate."""
         query = select(FactorDefinition).order_by(FactorDefinition.category, FactorDefinition.code)
         if only_active:
             query = query.where(FactorDefinition.is_active.is_(True))
-        definitions = db.scalars(query).all()
-        coverage = {
-            row.factor_id: row
-            for row in db.execute(
-                select(
-                    FactorValue.factor_id,
-                    func.count().label("rows"),
-                    func.min(FactorValue.trade_date).label("first_date"),
-                    func.max(FactorValue.trade_date).label("last_date"),
-                    func.count(func.distinct(FactorValue.ts_code)).label("stocks"),
-                ).group_by(FactorValue.factor_id)
-            ).all()
-        }
-        out = []
-        for definition in definitions:
-            stats = coverage.get(definition.id)
-            out.append(
-                {
-                    "code": definition.code,
-                    "name": definition.name,
-                    "category": definition.category,
-                    "direction": definition.direction,
-                    "unit": definition.unit,
-                    "logic": definition.logic,
-                    "formula": definition.formula,
-                    "params": definition.params or {},
-                    "lookback_days": definition.lookback_days,
-                    "ic_ir": _float(definition.ic_ir),
-                    "source_ref": definition.source_ref,
-                    "is_computable": bool(definition.formula),
-                    "value_count": int(stats.rows) if stats else 0,
-                    "stock_count": int(stats.stocks) if stats else 0,
-                    "first_date": stats.first_date if stats else None,
-                    "last_date": stats.last_date if stats else None,
-                }
-            )
-        return out
+        return [definition_payload(definition) for definition in db.scalars(query).all()]
 
     def get_definition(self, db, code: str) -> FactorDefinition:
         definition = db.scalar(select(FactorDefinition).where(FactorDefinition.code == code))
         if not definition:
             raise FactorError(f"unknown factor: {code}")
         return definition
-
-    def get_values(
-        self,
-        db,
-        code: str,
-        *,
-        ts_code: str | None = None,
-        trade_date: date | None = None,
-        start: date | None = None,
-        end: date | None = None,
-        limit: int = 500,
-        offset: int = 0,
-    ) -> dict:
-        definition = self.get_definition(db, code)
-        query = select(FactorValue).where(FactorValue.factor_id == definition.id)
-        if ts_code:
-            query = query.where(FactorValue.ts_code == ts_code)
-        if trade_date:
-            query = query.where(FactorValue.trade_date == trade_date)
-        if start:
-            query = query.where(FactorValue.trade_date >= start)
-        if end:
-            query = query.where(FactorValue.trade_date <= end)
-        total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
-        rows = db.scalars(
-            query.order_by(FactorValue.trade_date.desc(), FactorValue.ts_code).limit(limit).offset(offset)
-        ).all()
-        return {
-            "code": definition.code,
-            "name": definition.name,
-            "total": int(total),
-            "dates": sorted({row.trade_date for row in rows}, reverse=True)[:2],
-            "rows": [
-                {
-                    "ts_code": row.ts_code,
-                    "trade_date": row.trade_date,
-                    "value": _float(row.value),
-                    "extra": row.extra,
-                }
-                for row in rows
-            ],
-        }
 
     def compute(
         self,
@@ -162,6 +84,7 @@ class FactorService:
                 "the formula produced no values in this window (not enough history yet?)"
             )
         written = self._upsert(db, rows)
+        self.refresh_coverage(db, definition)
         return {
             "code": definition.code,
             # ISO strings: the job layer stores this dict as JSON.
@@ -196,10 +119,55 @@ class FactorService:
         db.commit()
         return len(rows)
 
+    def refresh_coverage(self, db, definition: FactorDefinition) -> dict:
+        """Store what this factor now holds. One aggregate, run when values change."""
+        stats = db.execute(
+            select(
+                func.count().label("rows"),
+                func.count(func.distinct(FactorValue.ts_code)).label("stocks"),
+                func.min(FactorValue.trade_date).label("first_date"),
+                func.max(FactorValue.trade_date).label("last_date"),
+            ).where(FactorValue.factor_id == definition.id)
+        ).one()
+        definition.value_count = int(stats.rows or 0)
+        definition.stock_count = int(stats.stocks or 0)
+        definition.first_date = stats.first_date
+        definition.last_date = stats.last_date
+        definition.computed_at = datetime.utcnow()
+        db.commit()
+        return {
+            "value_count": definition.value_count,
+            "stock_count": definition.stock_count,
+            "first_date": definition.first_date,
+            "last_date": definition.last_date,
+        }
+
     def computable_codes(self, db) -> Iterable[str]:
         return db.scalars(
             select(FactorDefinition.code).where(FactorDefinition.formula.isnot(None))
         ).all()
+
+
+def definition_payload(definition: FactorDefinition) -> dict:
+    return {
+        "code": definition.code,
+        "name": definition.name,
+        "category": definition.category,
+        "direction": definition.direction,
+        "unit": definition.unit,
+        "logic": definition.logic,
+        "formula": definition.formula,
+        "params": definition.params or {},
+        "lookback_days": definition.lookback_days,
+        "ic_ir": _float(definition.ic_ir),
+        "source_ref": definition.source_ref,
+        "is_computable": bool(definition.formula),
+        "value_count": int(definition.value_count or 0),
+        "stock_count": int(definition.stock_count or 0),
+        "first_date": definition.first_date,
+        "last_date": definition.last_date,
+        "computed_at": definition.computed_at,
+    }
 
 
 def _float(value) -> float | None:

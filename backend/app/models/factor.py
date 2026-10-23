@@ -17,6 +17,7 @@ from decimal import Decimal
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Date,
     DateTime,
     ForeignKey,
@@ -68,6 +69,13 @@ class FactorDefinition(Base):
     #: Provenance: handbook, paper, or the module that computes it.
     source_ref: Mapped[str | None] = mapped_column(String(128), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True, server_default="true")
+    # Coverage of the values this factor has produced, written when a compute finishes. Reading it
+    # as a column keeps the catalogue a 47-row read instead of an aggregate over `factor_values`.
+    value_count: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
+    stock_count: Mapped[int] = mapped_column(default=0, server_default="0")
+    first_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    last_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    computed_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
