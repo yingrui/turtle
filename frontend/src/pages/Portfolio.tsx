@@ -6,6 +6,7 @@ import { apiFetch } from '../utils/api';
 import { TradeDrawer } from '../components/portfolio/TradeDrawer';
 import { DataTable, type Column } from '../components/DataTable';
 import { StockDetailDrawer } from '../components/portfolio/StockDetailDrawer';
+import { LineChart } from '../components/Chart';
 import { usePortfolioContext } from '../contexts/PortfolioContext';
 import './Portfolio.scss';
 
@@ -72,6 +73,7 @@ export function Portfolio() {
     (searchParams.get('status') as 'watching' | 'holding' | 'closed') ?? 'holding',
   );
   const [detail, setDetail] = useState<PortfolioStock | null>(null);
+  const [equity, setEquity] = useState<{ dates: string[]; series: { name: string; data: number[] }[] } | null>(null);
 
   function setTab(next: 'overview' | 'holdings' | 'trades' | 'risk' | 'advanced') {
     setTabState(next);
@@ -156,6 +158,23 @@ export function Portfolio() {
     apiFetch<PortfolioConfig>(`/api/portfolios/${encodeURIComponent(name)}`)
       .then(setSummary)
       .catch(() => setSummary(null));
+    apiFetch<{ points: { date: string; market_value: number; cost_basis: number }[] }>(
+      `/api/portfolios/${encodeURIComponent(name)}/equity?days=180`,
+    )
+      .then((d) => {
+        if (!d.points?.length) {
+          setEquity(null);
+          return;
+        }
+        setEquity({
+          dates: d.points.map((p) => p.date),
+          series: [
+            { name: t('portfolio.equityMarketValue'), data: d.points.map((p) => p.market_value) },
+            { name: t('portfolio.equityCost'), data: d.points.map((p) => p.cost_basis) },
+          ],
+        });
+      })
+      .catch(() => setEquity(null));
     loadPositions().catch(() => {
       setStocks([]);
       setTrades([]);
@@ -483,6 +502,13 @@ export function Portfolio() {
 
               {tab === 'overview' && (
                 <>
+                  {equity && (
+                    <section className="portfolio-equity">
+                      <h2 className="portfolio-panel-title">{t('portfolio.equityTitle')}</h2>
+                      <p className="portfolio-panel-desc">{t('portfolio.equityDesc')}</p>
+                      <LineChart data={equity} />
+                    </section>
+                  )}
                   <div className="stat-grid">
                     <div className="stat-card">
                       <span>{t('portfolio.kpiHoldings')}</span>

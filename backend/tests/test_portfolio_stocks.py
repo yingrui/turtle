@@ -394,3 +394,28 @@ def test_an_upsert_honours_a_supplied_id(auth_token, portfolio):
     )
     assert res.status_code == 200, res.text
     assert res.json()["id"] == supplied
+
+
+def test_equity_curve_follows_the_ledger_and_prices(portfolio, auth_token):
+    from fixtures.market_data import close_on, trade_days
+
+    headers = _auth_headers(auth_token)
+    days = trade_days()
+    first, second = days[-6], days[-3]
+    _buy(portfolio, headers, "600519.SH", 100, 1000, trade_date=first.isoformat())
+
+    curve = client.get(f"/api/portfolios/{portfolio}/equity?days=2000", headers=headers).json()
+    assert curve["points"], "curve should have points after a buy"
+    by_date = {p["date"]: p for p in curve["points"]}
+
+    start_point = by_date[first.isoformat()]
+    assert start_point["market_value"] == round(close_on("600519.SH", first) * 100, 2)
+    assert start_point["cost_basis"] == 100000.0
+    assert start_point["unrealized_pnl"] == round(start_point["market_value"] - 100000.0, 2)
+
+    # A later sell must leave zero market value from the next day on (position closed).
+    _sell(portfolio, headers, "600519.SH", 100, 1200, trade_date=second.isoformat())
+    curve = client.get(f"/api/portfolios/{portfolio}/equity?days=2000", headers=headers).json()
+    by_date = {p["date"]: p for p in curve["points"]}
+    assert by_date[second.isoformat()]["market_value"] == 0.0
+    assert by_date[second.isoformat()]["realized_pnl"] == 20000.0

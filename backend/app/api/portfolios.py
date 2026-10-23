@@ -311,6 +311,20 @@ def rebuild_portfolio_stock(
 
 # --------------------------------------------------------------- transactions
 
+@router.get("/{name}/equity")
+def portfolio_equity(
+    name: str,
+    days: int = Query(180, ge=5, le=2000),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    svc = PortfolioService(db)
+    try:
+        return svc.equity_curve(name, days=days)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.get("/{name}/transactions")
 def list_portfolio_transactions(
     name: str,

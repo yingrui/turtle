@@ -808,6 +808,98 @@ class PortfolioService:
         self.db.refresh(stock)
         return self.stock_to_dict(stock)
 
+    # ------------------------------------------------------------ equity curve
+
+    def equity_curve(self, name: str, days: int = 180) -> dict:
+        """Rebuild the portfolio's daily market value from the ledger and market closes.
+
+        No snapshot table: the curve is recomputed from ``portfolio_transactions`` on every read,
+        so it stays correct after a backfilled trade or a corrected price. Cost is fine at the
+        scale of a personal portfolio (one close query for the held codes + a replay).
+        """
+        row = self._get_row(name)
+        txns = self.db.scalars(
+            select(PortfolioTransaction)
+            .where(PortfolioTransaction.portfolio_id == row.id)
+            .order_by(PortfolioTransaction.trade_date, PortfolioTransaction.created_at)
+        ).all()
+        if not txns:
+            return {"portfolio": name, "as_of_date": None, "points": []}
+
+        codes = sorted({t.ts_code for t in txns})
+        closes = self._closes_by_date(codes)
+        if not closes:
+            return {"portfolio": name, "as_of_date": None, "points": []}
+
+        all_dates = sorted(closes["dates"])
+        start = max(txns[0].trade_date, all_dates[max(0, len(all_dates) - days)])
+        dates = [d for d in all_dates if d >= start]
+
+        shares: dict[str, int] = {}
+        cost: dict[str, Decimal] = {}
+        realized = Decimal("0")
+        pointer = 0
+        points: list[dict] = []
+        for day in dates:
+            while pointer < len(txns) and txns[pointer].trade_date <= day:
+                txn = txns[pointer]
+                if txn.side == "buy":
+                    shares[txn.ts_code] = shares.get(txn.ts_code, 0) + txn.shares
+                    cost[txn.ts_code] = _dec(cost.get(txn.ts_code, Decimal("0"))) + _dec(txn.amount)
+                else:
+                    held = shares.get(txn.ts_code, 0)
+                    avg = _dec(txn.price) - _dec(txn.realized_pnl) / txn.shares if txn.shares else Decimal("0")
+                    shares[txn.ts_code] = max(0, held - txn.shares)
+                    cost[txn.ts_code] = _q(avg * shares[txn.ts_code])
+                    realized += _dec(txn.realized_pnl)
+                pointer += 1
+
+            day_closes = closes["by_date"].get(day, {})
+            market_value = Decimal("0")
+            cost_basis = Decimal("0")
+            for code, held in shares.items():
+                if held <= 0:
+                    continue
+                cost_basis += _dec(cost.get(code, Decimal("0")))
+                price = day_closes.get(code)
+                if price is not None:
+                    market_value += _dec(price) * held
+            points.append(
+                {
+                    "date": day.isoformat(),
+                    "market_value": float(_q(market_value, "0.01")),
+                    "cost_basis": float(_q(cost_basis, "0.01")),
+                    "unrealized_pnl": float(_q(market_value - cost_basis, "0.01")),
+                    "realized_pnl": float(_q(realized, "0.01")),
+                }
+            )
+        return {
+            "portfolio": name,
+            "as_of_date": points[-1]["date"] if points else None,
+            "points": points,
+        }
+
+    def _closes_by_date(self, codes: list[str]) -> dict:
+        """Closes for the given codes from the read-only market table, grouped by trade date."""
+        from sqlalchemy import text
+
+        from app.core.tushare_schema import tushare_table
+
+        if not codes:
+            return {}
+        sql = text(
+            f"SELECT trade_date, ts_code, close FROM {tushare_table('stock_trade_daily')} "
+            f"WHERE ts_code IN ({', '.join(f':c{i}' for i in range(len(codes)))})"
+        )
+        rows = self.db.execute(sql, {f"c{i}": code for i, code in enumerate(codes)}).all()
+        by_date: dict[date, dict[str, Decimal]] = {}
+        for trade_date, ts_code, close in rows:
+            if close is None:
+                continue
+            key = trade_date if isinstance(trade_date, date) else date.fromisoformat(str(trade_date)[:10])
+            by_date.setdefault(key, {})[ts_code] = _dec(close)
+        return {"dates": list(by_date.keys()), "by_date": by_date}
+
     # ------------------------------------------------------------ risk / policies / cash
 
     def get_risk_control(self, name: str) -> dict:

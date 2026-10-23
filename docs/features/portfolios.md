@@ -75,6 +75,14 @@ Cost basis is weighted average: buys re-weight `avg_cost`, sells realize
 `(price − avg_cost) × shares` into `realized_pnl` and leave `avg_cost` unchanged. Rows with
 `simulation_run_id` set (backtest trades) never touch the live aggregates.
 
+## Equity curve
+
+`GET /api/portfolios/{name}/equity` rebuilds the daily market value from
+`portfolio_transactions` + daily closes instead of reading a snapshot table: positions are
+replayed from the ledger, valued with that day's close, and cost basis / realized P&L come along.
+Trade-off — recomputation on every read (cheap for a personal portfolio) buys correctness after a
+backfilled trade or a corrected price, which a nightly snapshot would miss.
+
 ## API
 
 See [API reference — Portfolios](api-reference.md#portfolios-apiportfolios).

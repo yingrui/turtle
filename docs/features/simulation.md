@@ -4,7 +4,7 @@ Backtests run a portfolio config + trading policy over historical data in `tusha
 
 ## SPA
 
-- **`/simulation`** — configure and start a simulation job (portfolio, policy, date range).
+- **`/simulation`** — two columns: run configuration on the left, the eight most recent runs on the right (each links to its results) (portfolio, policy, date range).
   Accepts `?portfolio=<name>` to preselect a portfolio (used by the portfolio page's
   *Backtest this portfolio* button).
 - **`/simulation/results`** — compare runs, equity curves, trade tables; `?run_id=<id>` deep-links

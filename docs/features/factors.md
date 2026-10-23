@@ -107,3 +107,16 @@ unknown code renders "unknown factor" rather than an empty shell.
 Turtle-native factors live here and can be pushed to the knowledge base later; the openKMS
 `AlphaFactor` objects stay the documentation layer (prose, handbook source, wiki link), matched by
 `code`.
+
+
+## Screening by factors
+
+`GET /api/factors/screen?factors=ROE:20,EP:30` takes each factor's latest cross-section (or a
+given `trade_date`), cuts the top N% **using the factor's own direction** (`positive` sorts
+descending, `negative` ascending, `neutral` descending), then intersects the code sets. The
+response carries the surviving rows with each factor's value plus the trade date and coverage of
+every condition.
+
+The SPA exposes this as the **因子** tab on `/screening`: conditions are editable chips, the query
+lives in the URL (`?tab=factor&factors=ROE:20,EP:30`), and the results reuse the same batch actions
+(add to portfolio / buy / backtest) as the other tabs.

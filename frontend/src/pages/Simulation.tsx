@@ -21,6 +21,13 @@ export function Simulation() {
   const [selectedPolicies, setSelectedPolicies] = useState<number[]>([]);
   const [jobId, setJobId] = useState<string | null>(searchParams.get('job_id'));
   const job = useJobPoll(jobId);
+  const [runs, setRuns] = useState<{ id: string; policy_id: number; started_at: string | null; finished_at: string | null }[]>([]);
+
+  useEffect(() => {
+    apiFetch<{ runs: typeof runs }>('/api/simulations')
+      .then((d) => setRuns((d.runs ?? []).slice(0, 8)))
+      .catch(() => setRuns([]));
+  }, [job?.status]);
 
   useEffect(() => {
     const fromUrl = searchParams.get('job_id');
@@ -85,7 +92,8 @@ export function Simulation() {
   const policyCount = config?.policies?.length ?? 0;
 
   return (
-    <>
+    <div className="simulation-layout">
+      <div className="simulation-config">
       <div className="form-row" style={{ maxWidth: 300 }}>
         <label htmlFor="portfolio">Portfolio</label>
         <select id="portfolio" value={portfolio} onChange={(e) => setPortfolio(e.target.value)}>
@@ -138,6 +146,28 @@ export function Simulation() {
           {job.log && <pre className="log-panel">{job.log}</pre>}
         </div>
       )}
-    </>
+      </div>
+
+      <aside className="simulation-runs">
+        <h2 className="simulation-runs-title">{t('simulation.recentRuns')}</h2>
+        {runs.length === 0 ? (
+          <p className="simulation-runs-empty">{t('simulation.noRuns')}</p>
+        ) : (
+          <ul>
+            {runs.map((run) => (
+              <li key={run.id}>
+                <Link to={`/simulation/results?run_id=${encodeURIComponent(run.id)}`}>
+                  <span>{run.started_at ? run.started_at.slice(0, 16).replace('T', ' ') : '—'}</span>
+                  <span className="simulation-run-policy">Policy {run.policy_id}</span>
+                  <span className={run.finished_at ? 'simulation-run-done' : 'simulation-run-open'}>
+                    {run.finished_at ? t('simulation.runDone') : t('simulation.runOpen')}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </aside>
+    </div>
   );
 }

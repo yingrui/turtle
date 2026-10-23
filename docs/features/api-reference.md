@@ -51,6 +51,7 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 | DELETE | `/{name}/stocks/{ts_code}` | Remove a stock (rejected when held or with trade history) |
 | POST | `/{name}/stocks/{ts_code}/rebuild` | Recompute aggregates from the ledger |
 | GET | `/{name}/transactions` | Ledger, filterable by `ts_code` / `simulation_run_id` |
+| GET | `/{name}/equity` | Daily market value / cost basis rebuilt from the ledger (`?days=180`) |
 | POST | `/{name}/transactions` | Record a buy/sell (`side`, `shares`, `price`, `trade_date`, …) |
 | GET | `/{name}/risk-control` | Risk parameters (flattened engine keys) |
 | PUT | `/{name}/risk-control` | Update risk parameters |
