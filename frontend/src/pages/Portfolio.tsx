@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
 import { TradeDrawer } from '../components/portfolio/TradeDrawer';
 import { DataTable, type Column } from '../components/DataTable';
+import { StockDetailDrawer } from '../components/portfolio/StockDetailDrawer';
+import { usePortfolioContext } from '../contexts/PortfolioContext';
 import './Portfolio.scss';
 
 type PortfolioConfig = {
@@ -54,7 +56,7 @@ type TradeDraft = {
 
 export function Portfolio() {
   const { t } = useTranslation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [portfolios, setPortfolios] = useState<string[]>([]);
   const [name, setName] = useState(searchParams.get('portfolio') ?? '');
   const [yaml, setYaml] = useState('');
@@ -62,7 +64,31 @@ export function Portfolio() {
   const [stocks, setStocks] = useState<PortfolioStock[]>([]);
   const [trades, setTrades] = useState<PortfolioTransaction[]>([]);
   const [draft, setDraft] = useState<TradeDraft | null>(null);
-  const [tab, setTab] = useState<'overview' | 'holdings' | 'trades' | 'risk' | 'advanced'>('overview');
+  const { portfolio: ctxPortfolio, setPortfolio: setCtxPortfolio } = usePortfolioContext();
+  const [tab, setTabState] = useState<'overview' | 'holdings' | 'trades' | 'risk' | 'advanced'>(
+    (searchParams.get('tab') as 'overview' | 'holdings' | 'trades' | 'risk' | 'advanced') ?? 'overview',
+  );
+  const [statusFilter, setStatusFilter] = useState<'watching' | 'holding' | 'closed'>(
+    (searchParams.get('status') as 'watching' | 'holding' | 'closed') ?? 'holding',
+  );
+  const [detail, setDetail] = useState<PortfolioStock | null>(null);
+
+  function setTab(next: 'overview' | 'holdings' | 'trades' | 'risk' | 'advanced') {
+    setTabState(next);
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', next);
+    if (next === 'holdings') params.set('status', statusFilter);
+    else params.delete('status');
+    setSearchParams(params, { replace: true });
+  }
+
+  function setStatus(next: 'watching' | 'holding' | 'closed') {
+    setStatusFilter(next);
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', 'holdings');
+    params.set('status', next);
+    setSearchParams(params, { replace: true });
+  }
   const [risk, setRisk] = useState<Record<string, number | boolean> | null>(null);
   const [riskDraft, setRiskDraft] = useState<Record<string, string | boolean>>({});
   const [savingRisk, setSavingRisk] = useState(false);
@@ -103,6 +129,16 @@ export function Portfolio() {
     setRiskDraft(
       Object.fromEntries(Object.entries(riskRow).map(([key, value]) => [key, String(value)])),
     );
+  }, [name]);
+
+  useEffect(() => {
+    if (ctxPortfolio && ctxPortfolio !== name) setName(ctxPortfolio);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctxPortfolio]);
+
+  useEffect(() => {
+    if (name && name !== ctxPortfolio) setCtxPortfolio(name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name]);
 
   useEffect(() => {
@@ -227,61 +263,10 @@ export function Portfolio() {
     },
     { key: 'total_cost', label: t('portfolio.colTotalCost'), align: 'right', render: (row) => money(row.total_cost) },
     {
-      key: 'realized',
-      label: t('portfolio.colRealized'),
-      align: 'right',
-      cellClassName: (row) => (row.realized_pnl < 0 ? 'price-down' : 'price-up'),
-      render: (row) => money(row.realized_pnl),
-    },
-    {
       key: 'holding_days',
       label: t('portfolio.colHolding'),
       align: 'right',
       render: (row) => row.holding_days ?? '—',
-    },
-    {
-      key: 'first_buy',
-      label: t('portfolio.colFirstBuy'),
-      align: 'right',
-      render: (row) => row.first_buy_date ?? '—',
-    },
-    {
-      key: 'stop_loss',
-      label: t('portfolio.colStopLoss'),
-      align: 'right',
-      render: (row) => (
-        <input
-          className="portfolio-cell-input"
-          type="number"
-          step="0.01"
-          defaultValue={row.stop_loss_point ?? ''}
-          aria-label={t('portfolio.colStopLoss')}
-          onBlur={(e) => {
-            const raw = e.target.value.trim();
-            const next = raw === '' ? null : Number(raw);
-            if (next !== (row.stop_loss_point ?? null)) patchStock(row, { stop_loss_point: next });
-          }}
-        />
-      ),
-    },
-    {
-      key: 'target',
-      label: t('portfolio.colTarget'),
-      align: 'right',
-      render: (row) => (
-        <input
-          className="portfolio-cell-input"
-          type="number"
-          step="1"
-          defaultValue={row.target_amount ?? ''}
-          aria-label={t('portfolio.colTarget')}
-          onBlur={(e) => {
-            const raw = e.target.value.trim();
-            const next = raw === '' ? null : Number(raw);
-            if (next !== (row.target_amount ?? null)) patchStock(row, { target_amount: next });
-          }}
-        />
-      ),
     },
     {
       key: 'risk',
@@ -615,9 +600,25 @@ export function Portfolio() {
                 <>
               <h2 className="portfolio-panel-title">{t('portfolio.holdingsTitle')}</h2>
               <p className="portfolio-panel-desc">{t('portfolio.holdingsDesc')}</p>
+              <div className="portfolio-segments" role="group" aria-label={t('portfolio.colStatus')}>
+                {(['watching', 'holding', 'closed'] as const).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={statusFilter === key ? 'portfolio-segment portfolio-segment--active' : 'portfolio-segment'}
+                    onClick={() => setStatus(key)}
+                  >
+                    {statusLabel[key]}
+                    <span className="portfolio-segment-count">
+                      {stocks.filter((row) => row.status === key).length}
+                    </span>
+                  </button>
+                ))}
+              </div>
               <DataTable
                 columns={holdingColumns}
-                rows={stocks}
+                rows={stocks.filter((row) => row.status === statusFilter)}
+                onRowClick={(row) => setDetail(row)}
                 rowKey={(row) => row.ts_code}
                 empty={
                   <>
@@ -730,6 +731,21 @@ export function Portfolio() {
             </section>
           )}
         </>
+      )}
+
+      {detail && (
+        <StockDetailDrawer
+          stock={detail}
+          flags={riskFlags(detail)}
+          money={money}
+          onClose={() => setDetail(null)}
+          onPatch={(patch) => patchStock(detail, patch)}
+          onTrade={(side) => {
+            const target = detail;
+            setDetail(null);
+            openTrade(side, target);
+          }}
+        />
       )}
 
       {draft && name && (

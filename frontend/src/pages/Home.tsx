@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../utils/api';
+import { TodayTodo } from '../components/home/TodayTodo';
 import './Home.scss';
 
 type DataStatus = {
@@ -46,7 +47,6 @@ export function Home() {
   const [industries, setIndustries] = useState<IndustryItem[]>([]);
   const [portfolio, setPortfolio] = useState<string | null>(null);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
-  const [watchlistTotal, setWatchlistTotal] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,7 +75,6 @@ export function Home() {
           );
           if (!cancelled) {
             const all = wl.items ?? [];
-            setWatchlistTotal(all.length);
             const sorted = [...all].sort(
               (a, b) => Math.abs(b.quote?.pct_chg ?? 0) - Math.abs(a.quote?.pct_chg ?? 0),
             );
@@ -83,7 +82,6 @@ export function Home() {
           }
         } else {
           setWatchlist([]);
-          setWatchlistTotal(0);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -96,7 +94,6 @@ export function Home() {
     };
   }, []);
 
-  const dailyBasicDate = dataStatus?.tables.find((tb) => tb.name === 'daily_basic')?.latest_trade_date;
   const marketDate = meta?.latest_trade_date ?? dataStatus?.as_of_date;
   const industryLeaders = industries.slice(0, 5);
   const industryLaggards = [...industries].reverse().slice(0, 5);
@@ -112,25 +109,14 @@ export function Home() {
         <p className="home-muted">{t('home.loading')}</p>
       ) : (
         <>
-          <div className="home-stats">
-            <div className="stat-card">
-              <span>{t('home.statMarket')}</span>
-              <strong>{marketDate ?? '—'}</strong>
-              <small>{t('home.listedCount', { count: meta?.listed_count ?? 0 })}</small>
-            </div>
-            <div className="stat-card">
-              <span>{t('home.statDailyBasic')}</span>
-              <strong>{dailyBasicDate ?? '—'}</strong>
-              {!dailyBasicDate && (
-                <small className="home-warn">{t('home.dailyBasicMissing')}</small>
-              )}
-            </div>
-            <div className="stat-card">
-              <span>{t('home.statPortfolio')}</span>
-              <strong>{portfolio ?? t('home.noPortfolio')}</strong>
-              <small>{t('home.watchlistCount', { count: watchlistTotal })}</small>
-            </div>
-          </div>
+          <TodayTodo />
+
+          <p className="home-muted home-asof">
+            {t('home.marketLine', {
+              date: marketDate ?? t('settings.unknown'),
+              count: meta?.listed_count ?? 0,
+            })}
+          </p>
 
           <div className="home-grid">
             <section className="home-panel">

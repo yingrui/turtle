@@ -23,7 +23,8 @@ Aggregated `follow_stocks` across portfolios with latest quotes: `GET /api/portf
 
 ## Factor analysis (因子)
 
-**Planned** — dedicated `/factor` page and `factor_values` table (Phase 3).
+Implemented — see [Factors](factors.md) for the `/factor` catalogue, formulas, coverage and values.
+
 
 ## Market quotes
 

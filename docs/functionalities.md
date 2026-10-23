@@ -6,15 +6,19 @@ Index of stock trading features. Each page links to behaviour, API routes, and r
 
 ## Trading & research
 
+Sidebar is grouped by task: **研究** (工作台/选股/因子/行情) · **组合** (组合/回测) · **设置**.
+
 | Feature | Doc | SPA route |
 |---------|-----|-----------|
+| Workbench (今日待办) | [Design system](design-system.md) | `/` |
 | Market quotes (universe) | [Stock universe](features/stock-universe.md) | `/market`, `/stocks/:tsCode` |
 | Stock picking (选股) | [Screening & factors](features/screening-and-analysis.md) | `/screening` |
 | Factor library (因子) | [Factors](features/factors.md) | `/factor`, `/factor/:code` |
-| Portfolios | [Portfolios](features/portfolios.md) | `/portfolio` |
+| Portfolios & watchlist | [Portfolios](features/portfolios.md) | `/portfolio?tab=holdings&status=…` (`/watchlist` redirects) |
 | Backtest simulation | [Simulation](features/simulation.md) | `/simulation`, `/simulation/results` |
 | Charts & forecast | [Screening & analysis](features/screening-and-analysis.md) | `/stocks`, `/forecast` |
-| Background jobs | [Simulation](features/simulation.md) | `/jobs` |
+| Settings | [Configuration](features/configuration.md) | `/settings` |
+| Background jobs / data status | [Simulation](features/simulation.md) / [Data models](features/data-models.md) | `/jobs`, `/data` (secondary) |
 
 ## Data (external)
 

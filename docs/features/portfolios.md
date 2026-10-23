@@ -30,8 +30,11 @@ budget (`max_holding_days` vs `holding_days`) and position weight vs `max_positi
 **Risk & policies** edits the ten risk parameters through a form (they are also visible in the YAML
 tab as flattened `snake.case` keys) and lists the backtest policies read-only.
 
-Holdings expose **inline editing** of `target_amount` (planned budget) and `stop_loss_point`
-(committed on blur via `PATCH /stocks/{ts_code}`).
+The holdings tab is split by status with a **segmented control** (`watching` / `holding` /
+`closed`, deep-linkable via `?tab=holdings&status=…`); the table carries the actionable columns and
+a **row click opens a detail drawer** with the low-frequency fields (累计成本、已实现、首次买入、
+最后交易) plus editable stop loss / target amount / max holding days. `/watchlist` redirects to
+`/portfolio?tab=holdings&status=watching`.
 
 The holdings table has per-row actions: **Buy** / **Sell** open a drawer that records a trade
 (方向、日期、股数、价格、费用、备注) and then refreshes the row; **Remove** drops a stock that is not

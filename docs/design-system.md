@@ -59,6 +59,10 @@ Watchlist and Portfolio.
 | `DataTable` | `frontend/src/components/DataTable.tsx` | Every data table. Column definitions (`align`, `sortable`, `sortValue`, `render`, `cellClassName`), client-side sorting by default, optional controlled sorting for server-sorted data, selection checkboxes, loading/empty slots, row click, horizontal scroll. |
 | `Pagination` | `styles/design-system/Pagination.tsx` | Page controls next to a table. |
 | `TradeDrawer` | `components/portfolio/TradeDrawer.tsx` | Record a buy/sell for one symbol (portfolio page and screening results). |
+| `StockDetailDrawer` | `components/portfolio/StockDetailDrawer.tsx` | Right-hand detail panel for one holding: read-mostly facts plus editable limits. |
+
+Right-hand **drawers** are the standard pattern for "more detail / one action" — they keep the
+list context instead of navigating away. Backdrop closes on click, panel stops propagation.
 
 ```tsx
 const columns: Column<Row>[] = [

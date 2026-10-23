@@ -1,0 +1,113 @@
+.detail-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  justify-content: flex-end;
+  background: rgb(0 0 0 / 28%);
+}
+
+.detail-drawer {
+  width: min(28rem, 100vw);
+  height: 100%;
+  padding: var(--space-5);
+  overflow-y: auto;
+  background: var(--color-bg-elevated);
+  border-left: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.detail-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+
+  a {
+    font-size: var(--text-sm);
+  }
+}
+
+.detail-drawer-title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.detail-drawer-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+}
+
+.detail-drawer-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-4);
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-subtle);
+  }
+
+  dt {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+.detail-drawer-subtitle {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+.detail-drawer-edit {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  input {
+    padding: var(--space-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-elevated);
+    color: var(--color-text);
+    font: inherit;
+    text-align: right;
+  }
+}
+
+.detail-drawer-note {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.detail-drawer-actions {
+  display: flex;
+  gap: var(--space-2);
+}
