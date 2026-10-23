@@ -85,11 +85,10 @@ export default defineConfig({
     allowedHosts: true,
     hmr: hmrOff ? false : undefined,
     proxy: {
-      // Turtle API only — never `/api/app-builder/…`.
-      '^/api/(auth|data|jobs|portfolios|screening|simulations|stocks|stock-pick)(/|$)': {
-        target: proxyTarget,
-        changeOrigin: true,
-      },
+      // Every backend route goes to turtle — except the openKMS Apps control plane, which the
+      // host owns. Listing the routes instead meant a new one (`/api/factors`) silently hit this
+      // dev server and 404'd as HTML.
+      '^/api/(?!app-builder/)': { target: proxyTarget, changeOrigin: true },
       '/health': { target: proxyTarget, changeOrigin: true },
     },
   },
