@@ -29,6 +29,17 @@ _STARTED_AT = datetime.now(timezone.utc).isoformat()
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
+    # A job is a thread in this process: anything still marked running died with the last one.
+    from app.database import SessionLocal
+    from app.services.job_service import JobService
+
+    db = SessionLocal()
+    try:
+        interrupted = JobService().mark_interrupted(db)
+        if interrupted:
+            print(f"Marked {interrupted} interrupted job(s) as failed", flush=True)
+    finally:
+        db.close()
     yield
 
 

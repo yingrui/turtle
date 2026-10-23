@@ -159,3 +159,22 @@ def test_coverage_is_a_column_so_the_catalogue_never_aggregates(db_session):
     assert row["first_date"] == day
     assert row["last_date"] == date(2024, 5, 7)
     assert row["computed_at"] is not None
+
+
+def test_a_restart_closes_the_jobs_it_killed(db_session):
+    """A job is a thread in the API process; a restart abandons it, so the row must not say running."""
+    import json
+
+    from app.models import Job
+    from app.services.job_service import JobService
+
+    stale = Job(id="job-stale", type="factor_compute", status="running", payload=json.dumps({}))
+    queued = Job(id="job-queued", type="factor_compute", status="pending", payload=json.dumps({}))
+    done = Job(id="job-done", type="factor_compute", status="completed", payload=json.dumps({}))
+    db_session.add_all([stale, queued, done])
+    db_session.commit()
+
+    assert JobService().mark_interrupted(db_session) == 2
+    assert stale.status == "failed" and "restart" in (stale.error or "")
+    assert queued.status == "failed"
+    assert done.status == "completed"          # finished work is left alone

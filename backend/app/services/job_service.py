@@ -45,6 +45,20 @@ class JobService:
         thread.start()
         return job
 
+    def mark_interrupted(self, db: Session) -> int:
+        """Close out jobs a previous process left behind.
+
+        Jobs run as threads inside this process, so a restart — a deploy, a reload, an OOM kill —
+        abandons whatever was in flight. Without this the row keeps saying ``running`` and the UI
+        polls something that will never finish. Called once at startup.
+        """
+        jobs = db.query(Job).filter(Job.status.in_(("pending", "running"))).all()
+        for job in jobs:
+            job.status = "failed"
+            job.error = "Interrupted: the API process restarted while this job was running."
+        db.commit()
+        return len(jobs)
+
     def _run_job(self, job_id: str) -> None:
         db = SessionLocal()
         try:

@@ -58,7 +58,10 @@ POST /api/factors/{code}/compute?start=2026-07-01&end=2026-10-09
 → {"job_id": "...", "code": "mom_20d", "status": "pending"}
 ```
 
-A job, not a request: the run walks the whole panel. History before `start` is loaded (and not
+A job, not a request: the run walks the whole panel. Jobs are threads inside the API process, so a
+restart (deploy, `/-/reload`, an OOM kill) abandons whatever was running — on startup the service
+marks leftover `pending`/`running` rows as failed with "interrupted by a restart", so the Jobs page
+and the compute control never poll something that will not finish. History before `start` is loaded (and not
 stored) so a rolling operator has its window — `lookback_days` decides how much. Values upsert by
 `(factor_id, ts_code, trade_date)`, so re-running a window corrects it in place. Nothing recomputes
 on read: `last_date` tells you when someone last ran it.
