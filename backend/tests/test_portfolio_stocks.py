@@ -353,3 +353,29 @@ def test_adding_to_a_position_keeps_the_original_first_buy(portfolio, auth_token
     assert stock["first_buy_date"] == "2026-03-02"  # unchanged by the add-on buy
     assert stock["last_trade_date"] == "2026-03-30"
     assert stock["avg_cost"] == 12.0
+
+
+def test_the_stocks_route_accepts_a_portfolio_id(auth_token):
+    """An Action webhook targets this path with the ontology's `portfolio_id` — no name needed."""
+    from app.database import SessionLocal
+    from app.models.portfolio import Portfolio
+
+    headers = _auth_headers(auth_token)
+    name = f"byid{uuid.uuid4().hex[:6]}"
+    client.post("/api/portfolios", json={"name": name}, headers=headers)
+    db = SessionLocal()
+    try:
+        portfolio_id = db.query(Portfolio).filter(Portfolio.name == name).one().id
+    finally:
+        db.close()
+    by_id = client.post(
+        f"/api/portfolios/{portfolio_id}/stocks",
+        json={"ts_code": "600519.SH", "target_weight": 0.05},
+        headers=headers,
+    )
+    assert by_id.status_code == 200, by_id.text
+    assert by_id.json()["ts_code"] == "600519.SH"
+    assert float(by_id.json()["target_weight"]) == 0.05
+
+    listed = client.get(f"/api/portfolios/{portfolio_id}/stocks", headers=headers).json()["stocks"]
+    assert [s["ts_code"] for s in listed] == ["600519.SH"]

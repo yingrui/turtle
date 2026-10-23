@@ -10,6 +10,12 @@ Two shapes arrive here, both signed with the shared secret and both applied thro
   object's own properties, limited to the fields the Action actually touched, so a weight/status
   change lands without the ontology having to know this app's column layout.
 
+An Action can also target this app's **ordinary REST path** instead (the ontology's `Holding`
+object carries `portfolio_id`), in which case no webhook-specific handler runs at all.
+
+Neither shape indexes anything in the ontology: re-indexing is an explicit call, so the graph is
+refreshed when someone asks for it.
+
 Neither shape creates or deletes rows the ledger owns; add/remove stay explicit instructions.
 """
 
@@ -26,7 +32,6 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models.portfolio import Portfolio
-from app.services import openkms_sync
 from app.services.portfolio_service import STATUSES, PortfolioService
 
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
@@ -147,7 +152,6 @@ async def openkms_portfolio_changes(request: Request, db: Session = Depends(get_
             outcome = _apply_action_event(db, payload)
         except (ValueError, FileNotFoundError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
-        openkms_sync.request_reindex()
         return outcome
 
     changes = payload.get("changes")
@@ -157,10 +161,6 @@ async def openkms_portfolio_changes(request: Request, db: Session = Depends(get_
     svc = PortfolioService(db)
     results = [_apply_change(svc, change if isinstance(change, dict) else {}) for change in changes]
     applied = sum(1 for r in results if r["ok"])
-    if applied:
-        # Holders changed, so the ontology's mirror of them is stale: refresh it. Off the request
-        # thread, and best-effort — the write already happened.
-        openkms_sync.request_reindex()
     return {
         "applied": applied,
         "failed": sum(1 for r in results if not r["ok"]),

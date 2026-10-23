@@ -140,6 +140,10 @@ class PortfolioService:
     def _get_row(self, name: str) -> Portfolio:
         row = self.db.scalar(select(Portfolio).where(Portfolio.name == name))
         if not row:
+            # Also accept the id: the ontology refers to a portfolio by id, and an Action webhook
+            # targets this app's own REST path — no need for a name lookup on the caller's side.
+            row = self.db.get(Portfolio, name)
+        if not row:
             raise FileNotFoundError(f"Portfolio {name} not found")
         return row
 

@@ -11,7 +11,6 @@ from app.database import SessionLocal
 from app.models.job import Job
 from app.models.portfolio import PortfolioTransaction
 from app.models.simulation import SimulationDaily, SimulationRun
-from app.services import openkms_sync
 from app.services.portfolio_service import PortfolioService
 from app.services.screening_service import ScreeningService
 from app.core.engine.InvestmentLogger import InvestmentLogger
@@ -187,6 +186,3 @@ class JobService:
                 )
         run.finished_at = datetime.utcnow()
         db.commit()
-        # The ontology reads objects from its graph, so the new run only becomes visible after a
-        # re-index. Best-effort: a failed callback must not fail a run that already finished.
-        openkms_sync.request_reindex()
