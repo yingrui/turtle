@@ -14,10 +14,10 @@ Schema is applied by Alembic (`backend/alembic/versions/`). ORM models live in `
 | `portfolio_risk_controls` | 1:1 risk parameters per portfolio |
 | `portfolio_policies` | Ordered backtest policies with parameters (`params` JSON) |
 | `portfolio_cash_flows` | Cash in/out per portfolio |
-| `simulation_runs` | Backtest metadata — portfolio name/id, policy id, config snapshot |
+| `simulation_runs` | Backtest metadata — portfolio name/id, policy id, config snapshot, and the run's stored summary (return, CAGR, max drawdown, win/loss, trade count, window) |
 | `simulation_daily` | Per-day equity curve for a run |
 
-Migrations: `001_initial.py`, `003_portfolios.py`, `004_portfolio_normalization.py`.
+Migrations: `001_initial.py`, `003_portfolios.py`, `004_portfolio_normalization.py`, `005_simulation_summary.py`.
 
 ## `tushare` schema (market data)
 

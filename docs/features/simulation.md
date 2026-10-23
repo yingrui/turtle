@@ -14,7 +14,12 @@ Backtests run a portfolio config + trading policy over historical data in `tusha
 
 When a simulation completes:
 
-- `simulation_runs` — run metadata (now also linked to `portfolio_id`) and config snapshot
+- `simulation_runs` — run metadata (now also linked to `portfolio_id`) and config snapshot, plus
+  the run's **summary**: `window_start`/`window_end`, `initial_total`, `final_total`,
+  `return_rate_pct` (100-based), `cagr`, `years`, `max_drawdown_pct`, `win_count`, `loss_count`,
+  `holding_count`, `trade_count`. It is computed once by `summarize_run` when the run finishes, so
+  a reader does not have to replay the daily log; older rows are filled by
+  `scripts/backfill_simulation_summaries.py` (`--force` recomputes)
 - `simulation_daily` — daily returns, balance, benefit
 - `portfolio_transactions` — buy/sell rows tagged with `simulation_run_id` (daily holding snapshots are no longer stored; positions are replayable from the ledger)
 

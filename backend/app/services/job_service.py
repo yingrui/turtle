@@ -1,4 +1,6 @@
 import json
+
+import pandas as pd
 import threading
 import uuid
 from datetime import date, datetime
@@ -15,6 +17,7 @@ from app.services.portfolio_service import PortfolioService
 from app.services.screening_service import ScreeningService
 from app.core.engine.InvestmentLogger import InvestmentLogger
 from app.core.simulation.runner import run_simulation
+from app.core.util.simulation_analysis import summarize_run
 
 
 def _decimal_or_none(value) -> Decimal | None:
@@ -156,6 +159,7 @@ class JobService:
             )
         # Trades land in the shared ledger, tagged with the run. Daily holding snapshots from
         # the simulator are skipped: positions are replayable from buys/sells.
+        stored_trades: list[dict] = []
         if run.portfolio_id:
             for _, row in logger.get_trade_log().iterrows():
                 if str(row.get("status")) not in ("buy", "win", "loss"):
@@ -168,6 +172,18 @@ class JobService:
                 price = _decimal_or_none(row.get("buy_price")) if side == "buy" else _decimal_or_none(row.get("sell_price"))
                 if price is None:
                     continue
+                if side == "sell":
+                    realized = _decimal_or_none(row.get("benefit"))
+                else:
+                    realized = None
+                stored_trades.append(
+                    {
+                        "ts_code": str(row["ts_code"]),
+                        "side": side,
+                        "shares": int(row["hold_shares"]),
+                        "benefit": float(realized) if realized is not None else 0.0,
+                    }
+                )
                 db.add(
                     PortfolioTransaction(
                         id=str(uuid.uuid4()),
@@ -184,5 +200,10 @@ class JobService:
                         source="simulation",
                     )
                 )
+        # The summary is stored, not recomputed per read: the ontology mirrors this row, and a
+        # reader should not have to replay the daily log to learn how the run did.
+        summary = summarize_run(run.policy_id, logger.get_daily_log(), pd.DataFrame(stored_trades))
+        for field, value in summary.items():
+            setattr(run, field, value)
         run.finished_at = datetime.utcnow()
         db.commit()

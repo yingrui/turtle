@@ -83,3 +83,50 @@ def load_simulation_logs_from_disk(portfolio_name: str, total_policies: int, fol
         df_benefit = pd.merge(df_benefit, get_stock_benefit(pid, df_trade_list[pid]), on="ts_code", how="outer")
 
     return df_list, df_trade_list, df_benefit
+
+
+def max_drawdown_pct(totals) -> float:
+    """Worst peak-to-trough decline of the equity series, as a negative percentage."""
+    peak = None
+    worst = 0.0
+    for value in totals:
+        total = float(value)
+        peak = total if peak is None else max(peak, total)
+        if peak:
+            worst = min(worst, (total / peak - 1) * 100)
+    return round_down(worst)
+
+
+def summarize_run(policy_id: int, daily_df: pd.DataFrame, trades_df: pd.DataFrame) -> dict:
+    """The stored summary of one run. Pure, so the migration backfill and the live path agree.
+
+    ``daily_df`` needs ``date`` and ``total``; ``trades_df`` needs ``ts_code``/``side``/``shares``/
+    ``benefit`` (sell rows only carry a realised benefit).
+    """
+    if daily_df is None or daily_df.empty:
+        return {}
+    summary = calculate_cagr(policy_id, daily_df)
+    totals = [float(v) for v in daily_df.total.values]
+    sells = trades_df[trades_df["side"] == "sell"] if not trades_df.empty else trades_df
+    wins = int((sells["benefit"] > 0).sum()) if not sells.empty else 0
+    losses = int((sells["benefit"] <= 0).sum()) if not sells.empty else 0
+    # Net open positions after replaying the run's trades.
+    positions: dict[str, int] = {}
+    if not trades_df.empty:
+        for row in trades_df.itertuples():
+            delta = int(row.shares) * (1 if row.side == "buy" else -1)
+            positions[row.ts_code] = positions.get(row.ts_code, 0) + delta
+    return {
+        "window_start": _row_date(summary["start_date"]),
+        "window_end": _row_date(summary["end_date"]),
+        "initial_total": summary["initial_total"],
+        "final_total": summary["total"],
+        "return_rate_pct": summary["return_rate_pct"],
+        "cagr": summary["cagr"],
+        "years": summary["years"],
+        "max_drawdown_pct": max_drawdown_pct(totals),
+        "win_count": wins,
+        "loss_count": losses,
+        "holding_count": sum(1 for shares in positions.values() if shares > 0),
+        "trade_count": int(len(trades_df)),
+    }
