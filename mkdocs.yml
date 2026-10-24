@@ -69,3 +69,4 @@ nav:
   - Developer:
       - Setup: developer/setup.md
       - Design system: design-system.md
+      - Scorecard model: developer/scorecard.md
