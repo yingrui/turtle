@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -5,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
 from app.models.user import User
+from app.services.portfolio_lifecycle_service import events_on, members_on
 from app.services.portfolio_service import PortfolioService
 
 router = APIRouter(prefix="/api/portfolios", tags=["portfolios"], dependencies=[Depends(get_current_user)])
@@ -168,6 +171,68 @@ def get_portfolio_watchlist(
         return svc.list_portfolio_watchlist_with_quotes(name)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/{name}/members")
+def portfolio_members(
+    name: str,
+    day: str = Query(..., description="Trade date, YYYY-MM-DD — the portfolio's membership that day"),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """Which stocks were in the portfolio that day (a range query over membership intervals)."""
+    portfolio_id = PortfolioService(db).get_portfolio_id(name)
+    rows = members_on(db, portfolio_id, date.fromisoformat(day))
+    return {
+        "portfolio": name,
+        "trade_date": day,
+        "members": [
+            {
+                "ts_code": row.ts_code,
+                "status": row.status,
+                "episode": row.episode,
+                "joined_at": row.joined_at,
+                "left_at": row.left_at,
+            }
+            for row in rows
+        ],
+    }
+
+
+@router.get("/{name}/events")
+def portfolio_events(
+    name: str,
+    day: str | None = Query(None, description="Only this trade date"),
+    limit: int = Query(200, ge=1, le=2000),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """The daily decisions: what changed, why, at what rank, under which model."""
+    portfolio_id = PortfolioService(db).get_portfolio_id(name)
+    rows = events_on(db, portfolio_id, date.fromisoformat(day) if day else None, limit=limit)
+    return {
+        "portfolio": name,
+        "events": [
+            {
+                "trade_date": row.trade_date,
+                "ts_code": row.ts_code,
+                "event": row.event,
+                "from_status": row.from_status,
+                "to_status": row.to_status,
+                "episode": row.episode,
+                "score": None if row.score is None else float(row.score),
+                "rank": row.rank,
+                "reason": row.reason,
+                "rule": row.rule,
+                "rule_params": row.rule_params,
+                "model_name": row.model_name,
+                "model_version": row.model_version,
+                "dataset_version": row.dataset_version,
+                "source": row.source,
+            }
+            for row in rows
+        ],
+    }
 
 
 @router.get("/{name}")

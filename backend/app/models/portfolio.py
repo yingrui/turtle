@@ -54,8 +54,16 @@ class PortfolioStock(Base):
         String(36), ForeignKey("portfolios.id", ondelete="CASCADE"), index=True
     )
     ts_code: Mapped[str] = mapped_column(String(16), nullable=False)
-    # watching | holding | closed
+    # watching (in the portfolio, not held) | holding | closed (sold, still tracked) |
+    # dropped (removed from the portfolio — soft delete, the row is kept for history)
     status: Mapped[str] = mapped_column(String(16), default="watching")
+    # Membership intervals: "which stocks were in the portfolio on day X" is then a range query
+    # instead of a replay of the event log. `episode` counts re-entries of the same stock.
+    joined_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    left_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    episode: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    dropped_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
+    last_seen_in_pool: Mapped[date | None] = mapped_column(Date, nullable=True)
     hold_shares: Mapped[int] = mapped_column(Integer, default=0)
     avg_cost: Mapped[Decimal] = mapped_column(Numeric(18, 4), default=0)
     total_cost: Mapped[Decimal] = mapped_column(Numeric(18, 4), default=0)
@@ -172,3 +180,44 @@ class PortfolioCashFlow(Base):
     kind: Mapped[str] = mapped_column(String(16), default="deposit")
     note: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
+
+
+class PortfolioStockEvent(Base):
+    """Append-only record of every change to a portfolio's stocks.
+
+    Two jobs, both of which the current-state table cannot do: it makes a day's decisions
+    replayable/explainable ("why did this stock enter the pool, at what rank, under which model"),
+    and its unique key is the **idempotency key** of the daily selection job — a restart mid-run
+    must not record the same transition twice.
+    """
+
+    __tablename__ = "portfolio_stock_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    portfolio_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("portfolios.id", ondelete="CASCADE"), index=True
+    )
+    ts_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    trade_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    # added | resurrected | bought | sold | dropped | status_changed
+    event: Mapped[str] = mapped_column(String(24), nullable=False)
+    from_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    to_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    episode: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    score: Mapped[Decimal | None] = mapped_column(Numeric(18, 6), nullable=True)
+    rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    rule: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    rule_params: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    model_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    model_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dataset_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source: Mapped[str] = mapped_column(String(16), default="simulation")
+    created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint(
+            "portfolio_id", "trade_date", "ts_code", "event", name="uq_portfolio_stock_event"
+        ),
+        Index("ix_portfolio_stock_events_portfolio_date", "portfolio_id", "trade_date"),
+    )

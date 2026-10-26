@@ -20,6 +20,8 @@ dependencies = [
     "tushare",
     "pyyaml",
     "pandas",
+    # numpy stays <2 here (the engine depends on it), so pyarrow must be a numpy-1.x build.
+    "pyarrow>=15,<17",
     "statsmodels",
     "multiprocess",
     "matplotlib",

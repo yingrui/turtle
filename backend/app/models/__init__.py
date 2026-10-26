@@ -6,6 +6,7 @@ from app.models.portfolio import (
     PortfolioPolicy,
     PortfolioRiskControl,
     PortfolioStock,
+    PortfolioStockEvent,
     PortfolioTransaction,
 )
 from app.models.simulation import SimulationDaily, SimulationRun
@@ -20,6 +21,7 @@ __all__ = [
     "PortfolioPolicy",
     "PortfolioRiskControl",
     "PortfolioStock",
+    "PortfolioStockEvent",
     "PortfolioTransaction",
     "SimulationDaily",
     "SimulationRun",

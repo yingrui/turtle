@@ -1,6 +1,6 @@
 # 组合生命周期与每日选股
 
-设计稿。**尚未实现。**
+**已实现**（`backend/app/services/portfolio_lifecycle_service.py`、`scripts/daily_selection.py`）。
 
 目标：每天按模型对全市场打分，用最后的 Top-50 维护组合里的**候选池**（观察状态），再由交易规则决定买/卖；用户要能查到**过去任意一天组合里有哪些股票**。
 
@@ -121,6 +121,21 @@ WHERE portfolio_id = :pf
 | 历史查询（某天组合里有哪些票） | turtle 的表；需要 agent 查询时把表注册成 dataset |
 | 训练期指标（AUC / IC / excess） | 线下脚本，不进每日 pipeline |
 | 训练集版本与文件 | openKMS 的 Datasets（文件型数据集） |
+
+## 已实现的部分
+
+| 内容 | 位置 |
+|---|---|
+| `portfolio_stocks` 的 `joined_at` / `left_at` / `episode` / `dropped_at` / `last_seen_in_pool` | 迁移 `009` |
+| `portfolio_stock_events`（append-only，唯一键 = (portfolio, trade_date, ts_code, event)） | 迁移 `009` |
+| 观察池 + 买卖规则 + 弃用规则，写状态与事件同事务 | `app/services/portfolio_lifecycle_service.py` |
+| `GET /api/portfolios/{name}/members?day=` · `GET /api/portfolios/{name}/events?day=` | `app/api/portfolios.py` |
+| 每日选股脚本（模型打分 → 规则 → 决策），带因子新鲜度闸门 | `scripts/daily_selection.py` |
+| 训练切片导出（parquet）并发布成 openKMS 文件数据集版本 | `scripts/export_training_set.py` |
+| 训练集样本构造 | `scripts/scorecard.py`（`load_dataset`） |
+
+实测：`python -m scripts.daily_selection --portfolio main --date 2026-09-30` 为 `main` 写入 10 条
+`added` + 10 条 `bought`（排名 1–10 进入池并触发买入规则），`/members?day=2026-09-30` 返回这 10 只。
 
 ## 后续（不在本期，但要留位置）
 

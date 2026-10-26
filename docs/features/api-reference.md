@@ -84,6 +84,13 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 |--------|------|-------------|
 | POST | `/` | Run screen (returns job or results) |
 
+## Portfolio lifecycle — `/api/portfolios/{name}/…`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/{name}/members?day=YYYY-MM-DD` | Which stocks were **in the portfolio that day** — a range query over `joined_at`/`left_at`, not a replay. Returns `{ts_code, status, episode, joined_at, left_at}` |
+| GET | `/{name}/events?day=&limit=` | The daily decisions: `event` (added/resurrected/bought/sold/dropped), ranks, scores, `reason`, `rule`, `rule_params`, and the model/dataset versions that produced them |
+
 ## Factors — `/api/factors`
 
 | Method | Path | Description |

@@ -121,20 +121,35 @@ def load_dataset(
     codes = factors or _factor_codes(db)
     price_end = end + timedelta(days=horizon * 3 + 10)
 
-    values = pd.read_sql(
-        text(
-            "SELECT v.trade_date, v.ts_code, f.code, v.value "
-            "FROM factor_values v JOIN factor_definitions f ON f.id = v.factor_id "
-            "WHERE v.trade_date BETWEEN :start AND :end AND f.code = ANY(:codes)"
-        ),
-        db.connection(),
-        params={"start": start, "end": end, "codes": codes},
-    )
-    if values.empty:
+    # One query per factor, pivoted on its own: reading every factor's rows at once and pivoting the
+    # lot ran a 1 GiB pod out of memory on a single month.
+    def _factor_frame(code: str) -> pd.DataFrame | None:
+        rows = pd.read_sql(
+            text(
+                "SELECT v.trade_date, v.ts_code, v.value "
+                "FROM factor_values v JOIN factor_definitions f ON f.id = v.factor_id "
+                "WHERE v.trade_date BETWEEN :start AND :end AND f.code = :code"
+            ),
+            db.connection(),
+            params={"start": start, "end": end, "code": code},
+        )
+        if rows.empty:
+            return None
+        return rows.rename(columns={"value": code})
+
+    wide: pd.DataFrame | None = None
+    present: list[str] = []
+    for code in codes:
+        frame = _factor_frame(code)
+        if frame is None:
+            continue
+        present.append(code)
+        wide = frame if wide is None else wide.merge(
+            frame, on=["trade_date", "ts_code"], how="outer"
+        )
+    if wide is None:
         raise SystemExit("no factor values in that window — compute some factors first")
-    wide = values.pivot_table(
-        index=["trade_date", "ts_code"], columns="code", values="value"
-    ).reset_index()
+    codes = present
 
     prices = pd.read_sql(
         text(
@@ -148,13 +163,13 @@ def load_dataset(
         raise SystemExit("no market data in that window")
     frame = wide.merge(forward_returns(prices, horizon), on=["trade_date", "ts_code"], how="inner")
     frame = frame.dropna(subset=["fwd_ret"])
+    present = [code for code in codes if code in frame.columns]
     skip = excluded_codes(db, exclude_st)
     if skip:
         frame = frame[~frame["ts_code"].isin(skip)]
     if frame.empty:
         raise SystemExit("no rows with both factors and a forward return")
 
-    present = [code for code in codes if code in frame.columns]
     ranks = frame.groupby("trade_date")[present].rank(pct=True)
     ranks = ranks.fillna(NEUTRAL_RANK)
     dates = sorted(frame["trade_date"].unique())
