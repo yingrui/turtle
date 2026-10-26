@@ -11,9 +11,6 @@ COPY backend/pyproject.toml /app/backend/pyproject.toml
 
 # Deps already in the base image; this only registers the local package.
 RUN pip install --no-cache-dir --no-deps -e .
-# pyarrow arrived after the current base image was built (parquet training sets). It belongs in
-# Dockerfile.backend-base once that is rebuilt; installing it here keeps the image honest meanwhile.
-RUN pip install --no-cache-dir "pyarrow>=15,<17"
 
 EXPOSE 8200
 

@@ -11,6 +11,10 @@ RUN apt-get update \
 # Install project deps only (stub package so setuptools/pip -e works).
 COPY backend/pyproject.toml /app/backend/pyproject.toml
 WORKDIR /app/backend
+# The project already standardises on this mirror for uv; pip needs telling separately. Without it
+# the base build crawls files.pythonhosted.org at ~20 kB/s and can fail a large wheel mid-download.
+ARG PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+ENV PIP_INDEX_URL=${PIP_INDEX_URL}
 RUN mkdir -p app \
     && printf '"""stub for base image dep install"""\n' > app/__init__.py \
     && pip install --no-cache-dir -e . \

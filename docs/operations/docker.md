@@ -20,6 +20,12 @@ Full stack: `docker/docker-compose.yml` — Postgres, backend, frontend (nginx).
 | Tag | Role |
 |---|---|
 | `turtle-backend-base` / `turtle-frontend-base` | Dependencies only |
+
+**The backend base is the only source of Python deps** — its app layer installs with `--no-deps`, so a
+new library in `backend/pyproject.toml` needs `./docker/build-base.sh` (or the app image will start
+without it). The base pulls wheels through `PIP_INDEX_URL` (default: the same mirror `pyproject.toml`
+uses for uv); without it a large wheel crawls `files.pythonhosted.org` at ~20 kB/s and can fail a hash
+check mid-download. Override with `--build-arg PIP_INDEX_URL=<mirror>`.
 | `turtle-backend` / `turtle-frontend` | **Dev / test** — reload (`uvicorn --reload` / Vite) + `POST /-/reload` |
 | `turtle-backend-prod` / `turtle-frontend-prod` | **Production** — no watcher; nginx SPA |
 
