@@ -59,6 +59,7 @@ nav:
       - Screening & analysis: features/screening-and-analysis.md
       - Stock picking: features/stock-pick.md
       - Factors: features/factors.md
+      - 组合生命周期与每日选股: features/portfolio-lifecycle.md
       - Auth: features/auth.md
       - Configuration: features/configuration.md
       - Data models: features/data-models.md

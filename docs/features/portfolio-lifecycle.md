@@ -1,0 +1,131 @@
+# 组合生命周期与每日选股
+
+设计稿。**尚未实现。**
+
+目标：每天按模型对全市场打分，用最后的 Top-50 维护组合里的**候选池**（观察状态），再由交易规则决定买/卖；用户要能查到**过去任意一天组合里有哪些股票**。
+
+这份稿子只定义 turtle 侧的结构与语义；模型训练、AUC/IC 分析是**线下脚本**（见 [Scorecard](../developer/scorecard.md)），不在这条链路里。数据侧的版本化方案见 openKMS 的 `datasets-files` 设计稿。
+
+## 状态：四个词，两个维度
+
+| 状态 | 含义 | 有持仓 | 在组合里 |
+|---|---|---|---|
+| `watching` | 在池中，未持有 | ✗ | ✓ |
+| `holding` | 持有中 | ✓ | ✓ |
+| `closed` | 卖出过（回合结束），票仍留在组合里 | ✗ | ✓ |
+| `dropped` | 已移出组合（软删除，行保留） | ✗ | ✗ |
+
+- **`closed` 与 `dropped` 不同**：`closed` 是"卖掉了"，这只票还在组合的视野里；`dropped` 是"不在组合里了"。
+- **重新进池 = 复活，不是插入**：`portfolio_stocks` 上有 `UNIQUE(portfolio_id, ts_code)`，一只票第二次进入只能是 `dropped/closed → watching` 的状态变更，不能新增一行。
+- 因此同一只票在一个组合里会有**多个回合（episode）**：建仓 → 卖出 → 再建仓。回合号是持有天数、单次收益、胜率的分组键，必须有。
+
+## 每日流程
+
+```
+1. 数据新鲜度闸门：目标日的因子 last_date 必须 = 目标日，否则当天不跑（明确失败，不静默降级）
+2. 打分：用当日的因子值 + 当日生效的模型版本 → 全市场分数与排名
+3. Top-50 → 更新候选池（只改 watching 资格，不动持仓）
+4. 交易规则：对 holding 判定卖出；对 watching 判定买入
+5. 写回：状态变更 + 事件 + 成交（成交走已有的 Action/台账路径）
+```
+
+三条边界：
+
+- **排名只决定"谁有资格"**，不决定买卖。掉出 Top-50 的持仓**不自动卖**，等卖出规则触发。
+- **Top-50 差异小是正常的**：排名稳定的日子里，第 3 步只会复活/新增少量票；这本身不是问题，也说明不需要每日大换手。
+- **`dropped` 不由排名产生**：掉出 Top-50 不等于移出组合。移出只能由显式规则或人工操作触发（例如连续 N 天不在池且无持仓、或人工清理）。
+
+## 表结构
+
+### 1. `portfolio_stocks` 增列
+
+```sql
+ALTER TABLE portfolio_stocks
+  ADD COLUMN joined_at  date,         -- 本回合进入组合的日期
+  ADD COLUMN left_at    date,         -- 本回合移出组合的日期（dropped 时写入）
+  ADD COLUMN episode    integer default 1,   -- 第几个回合
+  ADD COLUMN dropped_at timestamptz;  -- 软删除时间（status='dropped' 时写入）
+```
+
+`status` 取值扩为 `watching | holding | closed | dropped`。
+
+### 2. `portfolio_stock_events`（新表，append-only）
+
+```sql
+CREATE TABLE portfolio_stock_events (
+  id            uuid PRIMARY KEY,
+  portfolio_id  uuid NOT NULL,
+  ts_code       varchar(16) NOT NULL,
+  trade_date    date NOT NULL,
+  event         varchar(24) NOT NULL,   -- added | resurrected | status_changed | removed
+  from_status   varchar(16),
+  to_status     varchar(16),
+  episode       integer NOT NULL,
+  score         numeric(18,6),          -- 当日评分（人工操作时为空）
+  rank          integer,                -- 当日全市场排名
+  reason        varchar(255),           -- 例如 "in_top_50" / "ma_cross" / "manual"
+  rule          varchar(64),            -- 触发的规则名
+  rule_params   jsonb,                  -- 规则参数快照
+  model_name    varchar(128),           -- 当日生效的模型
+  model_version integer,
+  dataset_version integer,              -- 训练该模型所用的数据版本
+  source        varchar(16) NOT NULL,   -- simulation | manual
+  created_at    timestamptz default now(),
+  UNIQUE (portfolio_id, trade_date, ts_code, event)   -- 幂等
+);
+```
+
+`UNIQUE(...)` 是**每日任务的幂等键**：job 是进程内线程，重启会重跑，同一天重跑不能产生第二条事件。
+
+**状态与事件必须同事务写入**，并且事件是唯一写入口：任何地方都不应直接 `UPDATE status`，否则事件与状态会分叉，历史就不可信了。
+
+### 3. 为什么还要"某天有哪些票"的快速查询
+
+事件表能回答"为什么"，但回答"那一天组合里有哪些票"需要按日 replay。既然**只需要成员资格、不需要恢复状态机**，最直接的是**区间查询**：
+
+```sql
+-- 2026-11-02 这天，组合 main 里有哪些股票（含状态）
+SELECT ts_code, status, episode, joined_at, left_at
+FROM portfolio_stocks
+WHERE portfolio_id = :pf
+  AND joined_at <= :day
+  AND (left_at IS NULL OR left_at > :day);
+```
+
+一行索引扫描，与事件表无关。事件表负责审计与归因，`joined_at/left_at/episode` 负责成员资格。
+
+若之后要按历史价格算当天市值，再加一层"当日持仓快照"（`positions_daily`：组合×日期×代码×数量×收盘价×市值），并作为 dataset 暴露给 openKMS；这一层是查询加速，不改变上面的写入语义。
+
+## 与模型/数据版本的关系
+
+事件表记录 `(model_name, model_version, dataset_version)`，于是：
+
+- "2026-11-02 为什么买 600519" 可以答到：第 7 版模型、用第 3 版训练集、当天排名第 12、触发 `ma_cross`；
+- 排序依据（分数/排名）**按日落库**，模型的输入（因子值）本来就在 `factor_values` 里按日可查；
+- 每日生效的模型版本必须**按日固定**，不能先查 alias 再跑（alias 中途变更会让同一天的两次运行结果不同）。
+
+## 幂等与失败处理
+
+| 场景 | 处理 |
+|---|---|
+| 同一天重跑 | `(portfolio, trade_date)` 幂等键；已存在则跳过或以"覆盖本次结果"的方式重算（事件唯一键保证不重复） |
+| 部分成交失败 | 保留失败明细，下一次运行前先做对账（目标状态 vs 台账实际持仓），补单而非重下单 |
+| 数据新鲜度不足 | 当天标记为 skipped，并在任务结果里写明原因，不用旧因子打分 |
+
+## 与 openKMS 的边界
+
+| 内容 | 归属 |
+|---|---|
+| 每日决策记录（事件、分数、原因、版本） | **turtle**（应用自己的账） |
+| 当前持仓/观察池（`Holding` 对象） | openKMS 只镜像当前状态 |
+| 历史查询（某天组合里有哪些票） | turtle 的表；需要 agent 查询时把表注册成 dataset |
+| 训练期指标（AUC / IC / excess） | 线下脚本，不进每日 pipeline |
+| 训练集版本与文件 | openKMS 的 Datasets（文件型数据集） |
+
+## 后续（不在本期，但要留位置）
+
+- **可交易性闸门**：停牌、次日开盘一字板（买不到）、上市不足 N 日、成交额/换手率下限；
+- **资金约束**：A 股一手 100 股、单票上限、行业上限、现金缓冲（当前 `target_weight` 引擎不读）；
+- **成本模型**：佣金 + 印花税（仅卖出），每日重排的换手率会显著吞掉 alpha；
+- **企业行动**：分红、送转、拆股会改变股数与成本价，按"目标股数"覆盖写会造出不存在的卖出；
+- **调度**：以 `trade_calendar` 为准，收盘后计算、次日开盘执行。
