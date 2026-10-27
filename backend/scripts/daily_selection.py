@@ -31,22 +31,50 @@ from app.services.portfolio_lifecycle_service import (
     SelectionRules,
     apply_daily_selection,
 )
+from scripts.mlflow_tracking import MODEL_NAME
 from scripts.scorecard import NEUTRAL_RANK, excluded_codes, score_frame
 
 REPORTS = Path(__file__).resolve().parents[2] / "reports"
+MODELS = REPORTS / "models"
 
 
-def load_model(path: str | None, run_id: str | None) -> tuple[dict, Path]:
+def model_for_day(day: date, policy: str = "expanding") -> Path:
+    """The model trained for that month, from `scripts/train_monthly`'s index.
+
+    A date resolves to the model whose *training window* ends before it — never to "the newest model on
+    disk", which would quietly score an old day with a model that saw the future.
+    """
+    index_path = MODELS / policy / "index.json"
+    if not index_path.exists():
+        raise SystemExit(
+            "no monthly models: run `python -m scripts.train_monthly --from 2026-02 --to 2026-10`"
+        )
+    if not index_path.exists():
+        raise SystemExit(f"no such model policy: {index_path}")
+    index = json.loads(index_path.read_text())
+    month = f"{day.year:04d}-{day.month:02d}"
+    usable = [
+        (m, entry)
+        for m, entry in index.items()
+        if not entry.get("skipped") and m <= month and entry.get("model_path")
+    ]
+    if not usable:
+        raise SystemExit(f"no model trained for {month} or earlier: {sorted(index)}")
+    chosen_month, entry = max(usable)
+    if chosen_month != month:
+        print(f"note: no model for {month}; using the {chosen_month} model")
+    return Path(entry["model_path"])
+
+
+def load_model(
+    path: str | None, day: date, month: str | None = None, policy: str = "expanding"
+) -> tuple[dict, Path]:
     if path:
         model_path = Path(path)
-    elif run_id:
-        model_path = REPORTS / "runs" / run_id / "model.json"
+    elif month:
+        model_path = MODELS / policy / f"{month}.json"
     else:
-        candidates = sorted((REPORTS / "runs").glob("*/model.json")) if (REPORTS / "runs").exists() else []
-        if candidates:
-            model_path = candidates[-1]
-        else:
-            model_path = REPORTS / "scorecard_5d_relative.json"
+        model_path = model_for_day(day, policy)
     if not model_path.exists():
         raise SystemExit(f"no model at {model_path}: train one or pass --model")
     return json.loads(model_path.read_text()), model_path
@@ -91,22 +119,100 @@ def freshness(db, codes: list[str], day: date) -> list[str]:
     return stale
 
 
+def trading_days(db, month: str) -> list[date]:
+    return [
+        row[0]
+        for row in db.execute(
+            text(
+                "SELECT DISTINCT trade_date FROM factor_values "
+                "WHERE trade_date >= :start AND trade_date <= :end ORDER BY trade_date"
+            ),
+            {"start": date.fromisoformat(f"{month}-01"), "end": date(int(month[:4]), int(month[5:7]), 28)},
+        ).all()
+    ]
+
+
+def run_month(args) -> None:
+    """Apply the month's model to every trading day in it — the walk-forward simulation."""
+    db = SessionLocal()
+    try:
+        portfolio = db.scalar(select(Portfolio).where(Portfolio.name == args.portfolio))
+        if portfolio is None:
+            raise SystemExit(f"no portfolio named {args.portfolio}")
+        days = trading_days(db, args.month)
+        if not days:
+            raise SystemExit(f"no factor values in {args.month}")
+        totals = {"added": 0, "resurrected": 0, "bought": 0, "sold": 0, "dropped": 0}
+        for day in days:
+            model, model_path = load_model(args.model, day, args.month, args.policy)
+            codes = [factor["code"] for factor in model["factors"]]
+            stale = freshness(db, codes, day)
+            if stale:
+                print(f"{day}: skipped, factors not fresh ({', '.join(stale[:3])} …)")
+                continue
+            ranked = load_scores(db, codes, day)
+            ranked["score"] = score_frame(model, ranked.drop(columns=["trade_date"]))
+            ranked = ranked.sort_values("score", ascending=False).reset_index(drop=True)
+            ranked["rank"] = range(1, len(ranked) + 1)
+            rules = SelectionRules(
+                top_n=args.top_n or int(model.get("metrics", {}).get("top_n") or 50),
+                buy_rank_limit=args.buy_rank_limit,
+                sell_rank_limit=args.sell_rank_limit,
+                max_holding_days=args.max_holding_days,
+                drop_after_absent_days=args.drop_after_absent_days,
+            )
+            try:
+                result = apply_daily_selection(
+                    db,
+                    portfolio_id=portfolio.id,
+                    trade_date=day,
+                    rankings=[(r.ts_code, float(r.score), int(r.rank)) for r in ranked.itertuples()],
+                    rules=rules,
+                    model={
+                        "name": MODEL_NAME,
+                        "version": model.get("mlflow_version"),
+                        "dataset_version": (model.get("dataset") or {}).get("version"),
+                    },
+                )
+            except LifecycleError as exc:
+                print(f"{day}: {exc}")
+                continue
+            for key in totals:
+                totals[key] += len(getattr(result, key))
+            print(
+                f"{day}  {model_path.stem}  +{len(result.added)} added · "
+                f"{len(result.bought)} bought · {len(result.sold)} sold · {len(result.dropped)} dropped"
+            )
+        print("\ntotals:", totals)
+    finally:
+        db.close()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--portfolio", required=True)
     parser.add_argument("--date", type=date.fromisoformat, required=True)
     parser.add_argument("--model", default=None, help="model json path")
-    parser.add_argument("--run", default=None, help="run id under reports/runs/")
+    parser.add_argument("--month", default=None, help="use the model of that month")
+    parser.add_argument(
+        "--policy", default="expanding",
+        help="which model directory under reports/models (expanding | trailing90 | …)",
+    )
     parser.add_argument("--top-n", type=int, default=None, help="pool size (default: model top_n or 50)")
     parser.add_argument("--buy-rank-limit", type=int, default=None)
     parser.add_argument("--sell-rank-limit", type=int, default=None)
     parser.add_argument("--max-holding-days", type=int, default=None)
     parser.add_argument("--drop-after-absent-days", type=int, default=30)
     parser.add_argument("--ignore-stale", action="store_true", help="score even if factors are stale")
+    parser.add_argument("--all-days", action="store_true", help="with --month: apply every trading day")
     parser.add_argument("--dry-run", action="store_true", help="print the decisions, write nothing")
     args = parser.parse_args()
 
-    model, model_path = load_model(args.model, args.run)
+    if args.all_days and args.month:
+        run_month(args)
+        return
+
+    model, model_path = load_model(args.model, args.date, args.month, args.policy)
     codes = [factor["code"] for factor in model["factors"]]
 
     db = SessionLocal()

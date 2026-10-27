@@ -131,6 +131,8 @@ WHERE portfolio_id = :pf
 | 观察池 + 买卖规则 + 弃用规则，写状态与事件同事务 | `app/services/portfolio_lifecycle_service.py` |
 | `GET /api/portfolios/{name}/members?day=` · `GET /api/portfolios/{name}/events?day=` | `app/api/portfolios.py` |
 | 每日选股脚本（模型打分 → 规则 → 决策），带因子新鲜度闸门 | `scripts/daily_selection.py` |
+| 每月一个模型：`--date` 按月份解析对应模型，`--all-days --month` 回放整月 | `scripts/daily_selection.py` + `reports/models/<policy>/index.json` |
+| 月度训练与 MLflow 记录 | `scripts/train_monthly.py`、`scripts/mlflow_tracking.py` |
 | 训练切片导出（parquet）并发布成 openKMS 文件数据集版本 | `scripts/export_training_set.py` |
 | 训练集样本构造 | `scripts/scorecard.py`（`load_dataset`） |
 
