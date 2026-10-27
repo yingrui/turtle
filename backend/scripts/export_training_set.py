@@ -15,7 +15,7 @@ which is what a nightly-ish job would do once the slice is verified.
 Where the data goes is the openKMS Catalog (`OPENKMS_API_BASE` + `OPENKMS_API_KEY`, or the skill's
 config), because the dataset needs an identity the training run can record in MLflow:
 
-    dataset=training-set-5d  version=3  file=2026-09.parquet  sha256=…
+    dataset=scorecard-training-5d  version=1  file=2026-09.parquet  sha256=…
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ from sqlalchemy import text
 
 from scripts.scorecard import load_dataset
 
-DEFAULT_DATASET_NAME = "training-set-5d"
+DEFAULT_DATASET_NAME = "scorecard-training-5d"
 SKILL_CONFIG = Path.home() / ".pi" / "agent" / "skills" / "openkms" / "config.yml"
 
 
