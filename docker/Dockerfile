@@ -9,6 +9,11 @@ COPY backend/alembic.ini /app/backend/alembic.ini
 COPY backend/scripts /app/backend/scripts
 COPY backend/pyproject.toml /app/backend/pyproject.toml
 
+# Monthly scorecard models. They are build artefacts today (a PVC or an object-store fetch is the
+# longer-term answer), so the image carries whatever `reports/models` holds at build time.
+COPY reports/models /app/reports/models
+ENV STOCK_MODELS_DIR=/app/reports/models
+
 # Deps already in the base image; this only registers the local package.
 RUN pip install --no-cache-dir --no-deps -e .
 

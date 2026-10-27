@@ -248,7 +248,8 @@ def train_month(db, month: str, args) -> dict:
 
     return {
         "month": month,
-        "model_path": str(path),
+        # Relative to the policy directory: an absolute path is only valid on the machine that trained.
+        "model_path": path.name,
         "train_window": model["train_window"],
         "train_rows": len(train_data),
         "train_days": len(train_data.dates),

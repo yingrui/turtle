@@ -43,31 +43,13 @@ MODELS = REPORTS / "models"
 
 
 def model_for_day(day: date, policy: str = "expanding") -> Path:
-    """The model trained for that month, from `scripts/train_monthly`'s index.
+    """The model trained for that month (or the latest earlier one) — resolved next to the index."""
+    from app.core.factor.score import ModelUnavailable, model_path_for
 
-    A date resolves to the model whose *training window* ends before it — never to "the newest model on
-    disk", which would quietly score an old day with a model that saw the future.
-    """
-    index_path = MODELS / policy / "index.json"
-    if not index_path.exists():
-        raise SystemExit(
-            "no monthly models: run `python -m scripts.train_monthly --from 2026-02 --to 2026-10`"
-        )
-    if not index_path.exists():
-        raise SystemExit(f"no such model policy: {index_path}")
-    index = json.loads(index_path.read_text())
-    month = f"{day.year:04d}-{day.month:02d}"
-    usable = [
-        (m, entry)
-        for m, entry in index.items()
-        if not entry.get("skipped") and m <= month and entry.get("model_path")
-    ]
-    if not usable:
-        raise SystemExit(f"no model trained for {month} or earlier: {sorted(index)}")
-    chosen_month, entry = max(usable)
-    if chosen_month != month:
-        print(f"note: no model for {month}; using the {chosen_month} model")
-    return Path(entry["model_path"])
+    try:
+        return model_path_for(day, policy, MODELS)
+    except ModelUnavailable as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 def load_model(

@@ -66,7 +66,7 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 |--------|------|-------------|
 | GET | `/` | List jobs |
 | GET | `/{job_id}` | Job detail |
-| POST | `/` | Create job (`portfolio_screen`, `simulation`, `factor_compute`) |
+| POST | `/` | Create job (`portfolio_screen`, `simulation`, `factor_compute`). `simulation` accepts `mode: "signal" \| "model"`; a model run also takes `model_policy`, `top_n`, `sell_rank_limit`, `max_holding_days`, `cash_buffer`, `initial_cash` |
 
 `data_sync` / `calendar_sync` are **rejected** (400) — use external ETL.
 
@@ -108,6 +108,8 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 | GET | `/` | List simulation runs |
 | GET | `/compare` | Compare runs |
 | GET | `/{run_id}/summary` | Run summary |
+| GET | `/{run_id}/holdings?day=` | The run's book at that day's close (positions, weight, model rank/score) — model runs only |
+| GET | `/{run_id}/holding-dates` | Every day the run recorded a book |
 | GET | `/{run_id}/daily` | Daily equity series |
 | GET | `/{run_id}/trades` | Trade list |
 | GET | `/{run_id}/benefit` | Benefit chart data |

@@ -25,6 +25,44 @@ When a simulation completes:
 
 Logs may also be written under `STOCK_LOGS_DIR`.
 
+## Model-driven runs (`mode="model"`)
+
+A run can be driven by a scorecard instead of the configured trade policies. It ranks the **whole
+market** each day, keeps a top-N book, and records the book at every close — so "what did it hold on
+2026-05-14" is a lookup inside the run, not a fact about the live portfolio.
+
+```http
+POST /api/jobs
+{"type": "simulation", "mode": "model", "portfolio": "top50-sim",
+ "start_date": "2026-02-02", "end_date": "2026-10-09",
+ "top_n": 50, "sell_rank_limit": 100, "cash_buffer": 0.05}
+```
+
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `model_policy` | `expanding` | which model directory under `reports/models/` |
+| `top_n` | 50 | the day's pool; names are bought equal-weight |
+| `sell_rank_limit` | 2 × `top_n` | sell when the rank falls past this (leaving the pool does **not** sell) |
+| `max_holding_days` | — | optional time stop |
+| `cash_buffer` | 0.05 | share of equity kept in cash |
+| `initial_cash` | 1,000,000 | starting capital of the run |
+
+Rules are recorded in the run's `config_snapshot` and the run is stored with `mode='model'`. Each day
+writes: `simulation_daily` (equity), `portfolio_transactions` (fills, tagged with the run), and
+`simulation_holdings` (positions at the close, with the model's rank and score).
+
+```http
+GET /api/simulations/{run_id}/holdings?day=2026-05-14   # the book that day
+GET /api/simulations/{run_id}/holding-dates             # which days have one
+```
+
+The run never touches `portfolio_stocks`: a backtest and the live portfolio are different books.
+Models are read from `STOCK_MODELS_DIR` (default `reports/models`, baked into the image at build).
+
+Measured over 2026-02-02 … 2026-10-09 with the current monthly models: 163 trading days, 6,224 fills,
+final equity 845,759 (−15.4%), max drawdown −25.1%. Turnover is the dominant cost — see the note in
+[Portfolio lifecycle](portfolio-lifecycle.md).
+
 ## API
 
 List and query runs via `/api/simulations/*`. See [API reference](api-reference.md#simulations-apisimulations).

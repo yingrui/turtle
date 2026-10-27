@@ -84,6 +84,61 @@ class JobService:
                 )
                 job.result = json.dumps({"count": len(rows), "stocks": rows[:500]})
                 log_fn(f"Screened {len(rows)} stocks")
+            elif job.type == "simulation" and payload.get("mode") == "model":
+                from app.core.simulation.model_runner import ModelRunConfig, run_model_simulation, summarise
+
+                config = ModelRunConfig(
+                    policy=payload.get("model_policy", "expanding"),
+                    top_n=int(payload.get("top_n", 50)),
+                    sell_rank_limit=payload.get("sell_rank_limit"),
+                    max_holding_days=payload.get("max_holding_days"),
+                    cash_buffer=float(payload.get("cash_buffer", 0.05)),
+                )
+                start_date = date.fromisoformat(payload["start_date"])
+                end_date = date.fromisoformat(payload.get("end_date", date.today().isoformat()))
+                portfolio_svc = PortfolioService(db)
+                portfolio_name = payload["portfolio"]
+                portfolio_id = portfolio_svc.get_portfolio_id(portfolio_name)
+                initial_cash = float(payload.get("initial_cash") or 1_000_000)
+                run = SimulationRun(
+                    id=str(uuid.uuid4()),
+                    job_id=job.id,
+                    portfolio_id=portfolio_id,
+                    portfolio_name=portfolio_name,
+                    policy_id=0,
+                    mode="model",
+                    config_snapshot=json.dumps(
+                        {"kind": "model", "portfolio": portfolio_name, **config.as_dict(),
+                         "initial_cash": initial_cash,
+                         "start_date": start_date.isoformat(), "end_date": end_date.isoformat()}
+                    ),
+                )
+                db.add(run)
+                db.commit()
+                log_fn(f"model run {run.id}: {start_date} … {end_date}, {config.top_n} names")
+
+                def report(day, equity, cash, names):
+                    log_fn(f"{day}: equity {equity:,.0f} · cash {cash:,.0f} · {names} names")
+
+                result = run_model_simulation(
+                    db, run=run, start=start_date, end=end_date,
+                    initial_cash=initial_cash, config=config, on_day=report,
+                )
+                summary = summarise(db, run.id)
+                for field_name, value in summary.items():
+                    setattr(run, field_name, value)
+                run.finished_at = datetime.utcnow()
+                db.commit()
+                job.result = json.dumps({
+                    "run_id": run.id,
+                    "mode": "model",
+                    "days": result.days,
+                    "trades": result.trades,
+                    "holdings_rows": result.holdings_rows,
+                    "final_equity": round(result.final_equity, 2),
+                    "skipped_days": result.skipped_days[:10],
+                })
+                log_fn(f"done: {result.days} days, {result.trades} fills, final {result.final_equity:,.0f}")
             elif job.type == "simulation":
                 portfolio_svc = PortfolioService(db)
                 config_name = payload["portfolio"]

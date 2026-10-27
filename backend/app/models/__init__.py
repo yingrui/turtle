@@ -9,7 +9,7 @@ from app.models.portfolio import (
     PortfolioStockEvent,
     PortfolioTransaction,
 )
-from app.models.simulation import SimulationDaily, SimulationRun
+from app.models.simulation import SimulationDaily, SimulationHolding, SimulationRun
 from app.models.user import User
 
 __all__ = [
@@ -24,6 +24,7 @@ __all__ = [
     "PortfolioStockEvent",
     "PortfolioTransaction",
     "SimulationDaily",
+    "SimulationHolding",
     "SimulationRun",
     "User",
 ]

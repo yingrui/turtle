@@ -20,6 +20,15 @@ class CreateJobRequest(BaseModel):
     as_of_date: str | None = None
     ignore_st: bool | None = None
     trend_filter: str | None = None
+    # A simulation can be driven by the trade policies ("signal", default) or by a scorecard's daily
+    # ranking ("model"). These carry the model-run parameters.
+    mode: str | None = None
+    model_policy: str | None = None
+    top_n: int | None = None
+    sell_rank_limit: int | None = None
+    max_holding_days: int | None = None
+    cash_buffer: float | None = None
+    initial_cash: float | None = None
 
 
 def _job_to_dict(job) -> dict:
