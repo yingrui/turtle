@@ -26,11 +26,15 @@ from sqlalchemy import select, text
 
 from app.database import SessionLocal
 from app.models import FactorDefinition, Portfolio
+from sqlalchemy import select as sa_select
+
+from app.models import PortfolioStock, PortfolioTransaction
 from app.services.portfolio_lifecycle_service import (
     LifecycleError,
     SelectionRules,
     apply_daily_selection,
 )
+from app.services.portfolio_service import PortfolioService
 from scripts.mlflow_tracking import MODEL_NAME
 from scripts.scorecard import NEUTRAL_RANK, excluded_codes, score_frame
 
@@ -71,9 +75,11 @@ def load_model(
 ) -> tuple[dict, Path]:
     if path:
         model_path = Path(path)
-    elif month:
+    elif month and (MODELS / policy / f"{month}.json").exists():
         model_path = MODELS / policy / f"{month}.json"
     else:
+        # A month with no model keeps using the most recent earlier one. That is the explicit
+        # fallback: never a later model (it would have seen the future), never "newest on disk".
         model_path = model_for_day(day, policy)
     if not model_path.exists():
         raise SystemExit(f"no model at {model_path}: train one or pass --model")
@@ -119,6 +125,107 @@ def freshness(db, codes: list[str], day: date) -> list[str]:
     return stale
 
 
+COMMISSION_RATE = 0.0003
+COMMISSION_MIN = 5.0
+STAMP_DUTY_RATE = 0.001   # sell side only, A-share
+LOT = 100
+
+
+def closes_on(db, day: date) -> dict[str, float]:
+    rows = db.execute(
+        text("SELECT ts_code, close FROM tushare.stock_trade_daily WHERE trade_date = :day"),
+        {"day": day},
+    ).all()
+    return {row[0]: float(row[1]) for row in rows}
+
+
+def position_value(db, portfolio_id: str, closes: dict[str, float]) -> tuple[float, int]:
+    """Market value of the holdings that have a price today, and how many names are held."""
+    stocks = db.scalars(
+        sa_select(PortfolioStock).where(
+            PortfolioStock.portfolio_id == portfolio_id, PortfolioStock.hold_shares > 0
+        )
+    ).all()
+    value = sum(stock.hold_shares * closes.get(stock.ts_code, float(stock.avg_cost or 0)) for stock in stocks)
+    return value, len(stocks)
+
+
+def execute_decisions(db, *, portfolio, day: date, result, top_n: int) -> dict:
+    """Turn the day's decisions into paper fills: equal weight across the pool, real lots and costs.
+
+    Decisions and fills stay separate on purpose — the lifecycle says *what* to do, this says *how
+    much*. A buy that cannot afford one lot is skipped and said so; nothing is faked at a smaller size.
+    """
+    closes = closes_on(db, day)
+    service = PortfolioService(db)
+    cash = float(portfolio.balance or 0)
+    held_value, held_names = position_value(db, portfolio.id, closes)
+    equity = cash + held_value
+    target_per_name = equity / top_n if top_n else 0.0
+
+    bought, sold, skipped = [], [], []
+    for code in result.sold:
+        stock = db.scalar(
+            sa_select(PortfolioStock).where(
+                PortfolioStock.portfolio_id == portfolio.id, PortfolioStock.ts_code == code
+            )
+        )
+        if stock is None or not stock.hold_shares:
+            continue
+        price = closes.get(code)
+        if not price:
+            skipped.append(f"{code}: no close on {day}")
+            continue
+        shares = int(stock.hold_shares)
+        amount = price * shares
+        fee = max(COMMISSION_MIN, amount * COMMISSION_RATE)
+        tax = amount * STAMP_DUTY_RATE
+        service.record_transaction_for(
+            portfolio.id,
+            {
+                "side": "sell", "ts_code": code, "trade_date": day, "shares": shares,
+                "price": price, "amount": amount, "fee": round(fee, 2), "tax": round(tax, 2),
+                "reason": "daily_selection", "source": "simulation",
+            },
+        )
+        cash += amount - fee - tax
+        sold.append((code, shares, round(price, 2), round(amount - fee - tax, 2)))
+
+    for code in result.bought:
+        price = closes.get(code)
+        if not price:
+            skipped.append(f"{code}: no close on {day}")
+            continue
+        shares = int(target_per_name // (price * LOT)) * LOT
+        if shares <= 0:
+            skipped.append(f"{code}: one lot costs {price * LOT:,.0f} > budget {target_per_name:,.0f}")
+            continue
+        amount = price * shares
+        fee = max(COMMISSION_MIN, amount * COMMISSION_RATE)
+        if amount + fee > cash:
+            skipped.append(f"{code}: needs {amount + fee:,.0f}, cash {cash:,.0f}")
+            continue
+        service.record_transaction_for(
+            portfolio.id,
+            {
+                "side": "buy", "ts_code": code, "trade_date": day, "shares": shares,
+                "price": price, "amount": amount, "fee": round(fee, 2),
+                "reason": "daily_selection", "source": "simulation",
+            },
+        )
+        cash -= amount + fee
+        bought.append((code, shares, round(price, 2), round(amount + fee, 2)))
+
+    portfolio.balance = cash
+    db.commit()
+    held_value, held_names = position_value(db, portfolio.id, closes)
+    return {
+        "bought": bought, "sold": sold, "skipped": skipped,
+        "cash": round(cash, 2), "equity": round(cash + held_value, 2), "names": held_names,
+        "day_pnl": round(cash + held_value - float(portfolio.initial_investment or 0), 2),
+    }
+
+
 def trading_days(db, month: str) -> list[date]:
     return [
         row[0]
@@ -142,7 +249,7 @@ def run_month(args) -> None:
         days = trading_days(db, args.month)
         if not days:
             raise SystemExit(f"no factor values in {args.month}")
-        totals = {"added": 0, "resurrected": 0, "bought": 0, "sold": 0, "dropped": 0}
+        totals = {"added": 0, "resurrected": 0, "bought": 0, "sold": 0, "dropped": 0, "fills": 0}
         for day in days:
             model, model_path = load_model(args.model, day, args.month, args.policy)
             codes = [factor["code"] for factor in model["factors"]]
@@ -173,16 +280,30 @@ def run_month(args) -> None:
                         "version": model.get("mlflow_version"),
                         "dataset_version": (model.get("dataset") or {}).get("version"),
                     },
+                    commit=not args.dry_run,
                 )
+                if args.dry_run:
+                    db.rollback()
             except LifecycleError as exc:
                 print(f"{day}: {exc}")
                 continue
-            for key in totals:
+            for key in ("added", "resurrected", "bought", "sold", "dropped"):
                 totals[key] += len(getattr(result, key))
-            print(
+            line = (
                 f"{day}  {model_path.stem}  +{len(result.added)} added · "
                 f"{len(result.bought)} bought · {len(result.sold)} sold · {len(result.dropped)} dropped"
             )
+            if args.execute and not args.dry_run:
+                execution = execute_decisions(db, portfolio=portfolio, day=day, result=result, top_n=rules.top_n)
+                totals["fills"] += len(execution["bought"]) + len(execution["sold"])
+                line += (
+                    f" → filled {len(execution['bought'])}/{len(execution['sold'])} · "
+                    f"cash {execution['cash']:,.0f} · equity {execution['equity']:,.0f} "
+                    f"({execution['day_pnl']:+,.0f}) · {execution['names']} names"
+                )
+                for note in execution["skipped"][:2]:
+                    line += f"\n      skipped {note}"
+            print(line, flush=True)
         print("\ntotals:", totals)
     finally:
         db.close()
@@ -191,7 +312,10 @@ def run_month(args) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--portfolio", required=True)
-    parser.add_argument("--date", type=date.fromisoformat, required=True)
+    parser.add_argument(
+        "--date", type=date.fromisoformat, default=None,
+        help="one day; omit it with --month to replay the month",
+    )
     parser.add_argument("--model", default=None, help="model json path")
     parser.add_argument("--month", default=None, help="use the model of that month")
     parser.add_argument(
@@ -205,12 +329,20 @@ def main() -> None:
     parser.add_argument("--drop-after-absent-days", type=int, default=30)
     parser.add_argument("--ignore-stale", action="store_true", help="score even if factors are stale")
     parser.add_argument("--all-days", action="store_true", help="with --month: apply every trading day")
+    parser.add_argument(
+        "--execute", action="store_true",
+        help="also place paper fills (equal weight across the pool, 100-share lots, fees + stamp duty)",
+    )
     parser.add_argument("--dry-run", action="store_true", help="print the decisions, write nothing")
     args = parser.parse_args()
 
-    if args.all_days and args.month:
+    if args.all_days:
+        if not args.month:
+            raise SystemExit("--all-days needs --month YYYY-MM")
         run_month(args)
         return
+    if args.date is None:
+        raise SystemExit("give --date YYYY-MM-DD (or --month with --all-days)")
 
     model, model_path = load_model(args.model, args.date, args.month, args.policy)
     codes = [factor["code"] for factor in model["factors"]]

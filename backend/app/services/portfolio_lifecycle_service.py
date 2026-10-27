@@ -144,6 +144,7 @@ def apply_daily_selection(
     rules: SelectionRules | None = None,
     model: dict | None = None,
     force: bool = False,
+    commit: bool = True,
 ) -> SelectionResult:
     """Apply one day's ranking. `rankings` is `[(ts_code, score, rank)]`, best first.
 
@@ -338,7 +339,11 @@ def apply_daily_selection(
                     model=model,
                 )
 
-    db.commit()
+    if commit:
+        db.commit()
+    else:
+        # A dry run: the caller rolls back. Committing here would make `--dry-run` a misnomer.
+        db.flush()
     return result
 
 
