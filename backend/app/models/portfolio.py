@@ -32,6 +32,9 @@ class Portfolio(Base):
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     initial_investment: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=0)
     balance: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=0)
+    #: When set, this portfolio's stock pool is read from that run (fixed or dynamic), not from
+    #: `portfolio_stocks`. Null keeps the hand-edited list as the pool.
+    active_run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(), server_default=func.now(), onupdate=func.now()

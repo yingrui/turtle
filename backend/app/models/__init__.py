@@ -12,6 +12,7 @@ from app.models.portfolio import (
 from app.models.simulation import (
     SimulationDaily,
     SimulationHolding,
+    SimulationPool,
     SimulationRun,
     SimulationTrade,
 )
@@ -30,6 +31,7 @@ __all__ = [
     "PortfolioTransaction",
     "SimulationDaily",
     "SimulationHolding",
+    "SimulationPool",
     "SimulationTrade",
     "SimulationRun",
     "User",

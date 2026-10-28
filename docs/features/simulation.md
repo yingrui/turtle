@@ -56,7 +56,10 @@ GET /api/simulations/{run_id}/holdings?day=2026-05-14   # the book that day
 GET /api/simulations/{run_id}/holding-dates             # which days have one
 ```
 
-The run never touches `portfolio_stocks`: a backtest and the live portfolio are different books.
+The run never touches `portfolio_stocks`: a backtest and the live portfolio are different books. A
+portfolio can **point at** a run (`portfolios.active_run_id`), and then its stock pool comes from that
+run — `fixed` (the configured watchlist) or `dynamic` (the model's top-N, recorded per day in
+`simulation_pool`). See [Portfolio lifecycle](portfolio-lifecycle.md).
 Models are read from `STOCK_MODELS_DIR` (default `reports/models`, baked into the image at build).
 
 Measured over 2026-02-02 … 2026-10-09 with the current monthly models: 163 trading days, 6,224 fills,

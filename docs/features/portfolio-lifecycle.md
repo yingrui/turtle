@@ -139,6 +139,27 @@ WHERE portfolio_id = :pf
 实测：`python -m scripts.daily_selection --portfolio main --date 2026-09-30` 为 `main` 写入 10 条
 `added` + 10 条 `bought`（排名 1–10 进入池并触发买入规则），`/members?day=2026-09-30` 返回这 10 只。
 
+## 股票池：固定 vs 动态
+
+组合的股票池现在有两个来源，由 `portfolios.active_run_id` 决定：
+
+| `active_run_id` | 池来源 | 含义 |
+|---|---|---|
+| 空 | `portfolio_stocks` | 手工维护的自选列表（旧行为） |
+| 指向某次 run | 该 run 的池 | `pool_mode=fixed` 用 run 配置里的自选列表；`pool_mode=dynamic` 用**当天模型选出的 top-N** |
+
+- 信号回测（`mode=signal`）的池是**固定**的，就是配置里的 `follow_stocks`，所以不逐日存行；
+- 模型回测（`mode=model`）的池是**动态**的，每天写入 `simulation_pool`（代码、排名、分数、当天是否真的持有）。
+
+```http
+POST /api/portfolios/{name}/active-run   {"run_id": "…"}   # 绑定（null 解绑，回到手工列表）
+GET  /api/portfolios/{name}/pool?day=2026-05-14            # 组合的股票池（按日）
+GET  /api/simulations/{run}/pool?day=…                     # 某次 run 的股票池
+GET  /api/simulations/{run}/pool-dates                     # 它有池的日期（动态池才有）
+```
+
+前端在组合页新增 **股票池** 标签页：选择池来源（手工列表 / 某次 run）、看当前池，动态池还能按日期回看。
+
 ## 首次回放：`top50-sim`（2026-02 → 2026-10）
 
 新建组合 `top50-sim`，启动资金 100 万、初始为空；每月用"该月之前的数据训练"的模型，没有模型的月份

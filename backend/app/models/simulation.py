@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -22,6 +22,8 @@ class SimulationRun(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     #: signal = the configured trade policies; model = a scorecard's daily ranking drives the book.
     mode: Mapped[str] = mapped_column(String(16), default="signal", server_default="signal")
+    #: fixed = an explicit stock list; dynamic = the model's top-N changes every day.
+    pool_mode: Mapped[str] = mapped_column(String(16), default="fixed", server_default="fixed")
 
     # Summary of the run, computed once when it finishes (`summarize_run`) and backfilled for
     # older rows. The ontology mirrors these onto the `Simulation` object, so a reader does not
@@ -112,3 +114,26 @@ class SimulationTrade(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
 
     __table_args__ = (Index("ix_simulation_trades_run_date", "run_id", "trade_date"),)
+
+
+class SimulationPool(Base):
+    """The set a run was allowed to hold, per day.
+
+    In `fixed` mode it is the configured watchlist (the same rows every day); in `dynamic` mode it is
+    that day's top-N with its rank and score. Recorded per day because a dynamic pool has no history
+    in today's state.
+    """
+
+    __tablename__ = "simulation_pool"
+
+    run_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("simulation_runs.id", ondelete="CASCADE"), primary_key=True
+    )
+    trade_date: Mapped[date] = mapped_column(Date, primary_key=True)
+    ts_code: Mapped[str] = mapped_column(String(16), primary_key=True)
+    rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    score: Mapped[Decimal | None] = mapped_column(Numeric(18, 6), nullable=True)
+    #: Whether the run actually held it that day (a pool member need not be bought).
+    held: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+
+    __table_args__ = (Index("ix_simulation_pool_run_date", "run_id", "trade_date"),)

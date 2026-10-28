@@ -20,6 +20,7 @@ The run never touches `portfolio_stocks`: the live portfolio and a backtest are 
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
@@ -29,8 +30,13 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.core.factor.score import ModelUnavailable, load_model_for, rank_cross_section, score_frame
-from app.models.simulation import SimulationTrade
-from app.models.simulation import SimulationDaily, SimulationHolding, SimulationRun
+from app.models.simulation import (
+    SimulationDaily,
+    SimulationHolding,
+    SimulationPool,
+    SimulationRun,
+    SimulationTrade,
+)
 
 LOT = 100
 COMMISSION_RATE = 0.0003
@@ -180,6 +186,7 @@ def run_model_simulation(
             result.trades += 1
             db.add(
                 SimulationTrade(
+                    id=str(uuid.uuid4()),
                     run_id=run.id,
                     ts_code=code,
                     trade_date=day,
@@ -219,6 +226,7 @@ def run_model_simulation(
             result.trades += 1
             db.add(
                 SimulationTrade(
+                    id=str(uuid.uuid4()),
                     run_id=run.id,
                     ts_code=code,
                     trade_date=day,
@@ -231,7 +239,20 @@ def run_model_simulation(
                 )
             )
 
-        # 3) the book at the close, recorded so any date can be inspected later
+        # 3) the pool for that day: what the run was allowed to hold, held or not
+        for row in ranked.head(config.top_n).itertuples():
+            db.add(
+                SimulationPool(
+                    run_id=run.id,
+                    trade_date=day,
+                    ts_code=row.ts_code,
+                    rank=int(row.rank),
+                    score=Decimal(str(round(float(row.score), 6))),
+                    held=row.ts_code in positions,
+                )
+            )
+
+        # 4) the book at the close, recorded so any date can be inspected later
         priced = {code: closes.get(code, position.cost) for code, position in positions.items()}
         equity = cash + sum(position.shares * priced[code] for code, position in positions.items())
         for code, position in positions.items():
@@ -301,6 +322,23 @@ def summarise(db: Session, run_id: str) -> dict:
             select(func.count()).select_from(SimulationTrade).where(SimulationTrade.run_id == run_id)
         ),
     }
+
+
+def pool_on(db: Session, run_id: str, day: date) -> list[SimulationPool]:
+    return list(
+        db.execute(
+            select(SimulationPool)
+            .where(SimulationPool.run_id == run_id, SimulationPool.trade_date == day)
+            .order_by(SimulationPool.rank)
+        ).scalars().all()
+    )
+
+
+def pool_dates(db: Session, run_id: str) -> list[date]:
+    return [row[0] for row in db.execute(
+        select(SimulationPool.trade_date).where(SimulationPool.run_id == run_id)
+        .distinct().order_by(SimulationPool.trade_date)
+    ).all()]
 
 
 def holdings_on(db: Session, run_id: str, day: date) -> list[SimulationHolding]:

@@ -38,6 +38,70 @@ def simulation_summary(run_id: str, db: Session = Depends(get_db), _: User = Dep
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.get("/{run_id}/pool")
+def simulation_pool(
+    run_id: str,
+    day: str | None = Query(None, description="Trade date, YYYY-MM-DD (default: the run's last day)"),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """The run's stock pool that day — entries it was allowed to hold, held or not.
+
+    `dynamic` runs read the recorded pool; `fixed` runs have one forever (the configured watchlist), so
+    it comes from the run's config snapshot instead of thousands of identical rows.
+    """
+    import json
+
+    from app.core.simulation.model_runner import pool_dates, pool_on
+
+    run = db.get(SimulationRun, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    config = json.loads(run.config_snapshot or "{}")
+    if run.pool_mode == "fixed":
+        codes = config.get("follow_stocks") or []
+        return {
+            "run_id": run_id,
+            "pool_mode": "fixed",
+            "trade_date": day,
+            "pool": [{"ts_code": code, "rank": None, "score": None, "held": None} for code in codes],
+            "count": len(codes),
+        }
+
+    target = date.fromisoformat(day) if day else (pool_dates(db, run_id) or [None])[-1]
+    if target is None:
+        return {"run_id": run_id, "pool_mode": "dynamic", "trade_date": None, "pool": [], "count": 0}
+    rows = pool_on(db, run_id, target)
+    return {
+        "run_id": run_id,
+        "pool_mode": "dynamic",
+        "trade_date": target.isoformat(),
+        "pool": [
+            {
+                "ts_code": row.ts_code,
+                "rank": row.rank,
+                "score": None if row.score is None else float(row.score),
+                "held": row.held,
+            }
+            for row in rows
+        ],
+        "count": len(rows),
+    }
+
+
+@router.get("/{run_id}/pool-dates")
+def simulation_pool_dates(run_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """Days the run recorded a pool for (dynamic runs only; a fixed pool has no dates)."""
+    from app.core.simulation.model_runner import pool_dates
+
+    run = db.get(SimulationRun, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if run.pool_mode == "fixed":
+        return {"run_id": run_id, "pool_mode": "fixed", "dates": []}
+    return {"run_id": run_id, "pool_mode": "dynamic", "dates": pool_dates(db, run_id)}
+
+
 @router.get("/{run_id}/holdings")
 def simulation_holdings(
     run_id: str,

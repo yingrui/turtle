@@ -7,6 +7,9 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
 from app.models.user import User
+from app.models.portfolio import PortfolioStock
+from app.models.portfolio import Portfolio
+from sqlalchemy import select as sa_select
 from app.services.portfolio_lifecycle_service import events_on, members_on
 from app.services.portfolio_service import PortfolioService
 
@@ -171,6 +174,112 @@ def get_portfolio_watchlist(
         return svc.list_portfolio_watchlist_with_quotes(name)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/{name}/active-run")
+def set_active_run(
+    name: str,
+    body: dict,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """Point the portfolio's stock pool at a run (`{"run_id": null}` returns to the hand-edited list)."""
+    from app.models.simulation import SimulationRun
+
+    portfolio_id = PortfolioService(db).get_portfolio_id(name)
+    portfolio = db.get(Portfolio, portfolio_id)
+    run_id = (body or {}).get("run_id")
+    if run_id:
+        run = db.get(SimulationRun, run_id)
+        if not run:
+            raise HTTPException(status_code=404, detail="Run not found")
+        if run.portfolio_id and run.portfolio_id != portfolio_id:
+            raise HTTPException(status_code=400, detail="That run belongs to another portfolio")
+    portfolio.active_run_id = run_id or None
+    db.commit()
+    return {"portfolio": name, "active_run_id": portfolio.active_run_id}
+
+
+@router.get("/{name}/pool")
+def portfolio_pool(
+    name: str,
+    day: str | None = Query(None, description="Trade date (default: the run's last recorded day)"),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """The portfolio's stock pool: from the active run when one is set, else the hand-edited list.
+
+    This is what makes "the portfolio's stocks come from the simulation" concrete: with an active
+    run, the pool is the run's, for whatever day is asked; without one, it is the watchlist.
+    """
+    import json
+
+    from app.core.simulation.model_runner import pool_dates, pool_on
+    from app.models.simulation import SimulationRun, SimulationTrade
+
+    portfolio_id = PortfolioService(db).get_portfolio_id(name)
+    portfolio = db.get(Portfolio, portfolio_id)
+
+    if portfolio.active_run_id:
+        run = db.get(SimulationRun, portfolio.active_run_id)
+        if run is not None:
+            config = json.loads(run.config_snapshot or "{}")
+            if run.pool_mode == "fixed":
+                codes = config.get("follow_stocks") or []
+                return {
+                    "portfolio": name,
+                    "source": "run",
+                    "run_id": run.id,
+                    "pool_mode": "fixed",
+                    "mode": run.mode,
+                    "trade_date": day,
+                    "pool": [{"ts_code": c, "rank": None, "score": None, "held": None} for c in codes],
+                    "count": len(codes),
+                }
+            target = date.fromisoformat(day) if day else (pool_dates(db, run.id) or [None])[-1]
+            rows = pool_on(db, run.id, target) if target else []
+            return {
+                "portfolio": name,
+                "source": "run",
+                "run_id": run.id,
+                "pool_mode": "dynamic",
+                "mode": run.mode,
+                "trade_date": target.isoformat() if target else None,
+                "pool": [
+                    {
+                        "ts_code": row.ts_code,
+                        "rank": row.rank,
+                        "score": None if row.score is None else float(row.score),
+                        "held": row.held,
+                    }
+                    for row in rows
+                ],
+                "count": len(rows),
+            }
+
+    stocks = db.scalars(
+        sa_select(PortfolioStock)
+        .where(PortfolioStock.portfolio_id == portfolio_id, PortfolioStock.status != "dropped")
+        .order_by(PortfolioStock.ts_code)
+    ).all()
+    return {
+        "portfolio": name,
+        "source": "portfolio",
+        "run_id": None,
+        "pool_mode": "fixed",
+        "mode": None,
+        "trade_date": None,
+        "pool": [
+            {
+                "ts_code": s.ts_code,
+                "rank": None,
+                "score": None,
+                "held": s.status == "holding",
+            }
+            for s in stocks
+        ],
+        "count": len(stocks),
+    }
 
 
 @router.get("/{name}/members")

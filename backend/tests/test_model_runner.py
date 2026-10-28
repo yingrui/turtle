@@ -70,3 +70,55 @@ def test_scoring_ignores_a_factor_the_model_knows_but_the_panel_lacks():
     scores = score_frame(model, ranks)
     assert scores[0] == pytest.approx(0.1 - 1.0)
     assert scores[1] == pytest.approx(0.1 + 1.0)
+
+
+def test_the_pool_is_recorded_per_day_and_readable_by_date():
+    """A dynamic pool has no history in today's state — it is written with the run, day by day."""
+    import uuid as _uuid
+
+    from app.core.simulation.model_runner import pool_dates, pool_on
+    from app.database import SessionLocal
+    from app.models import Portfolio
+    from app.models.simulation import SimulationPool, SimulationRun
+
+    db = SessionLocal()
+    try:
+        portfolio = Portfolio(id=str(_uuid.uuid4()), name=f"pool-{_uuid.uuid4().hex[:6]}", balance=0)
+        run = SimulationRun(
+            id=str(_uuid.uuid4()),
+            portfolio_name=portfolio.name,
+            policy_id=0,
+            mode="model",
+            pool_mode="dynamic",
+            config_snapshot="{}",
+        )
+        db.add_all([portfolio, run])
+        db.commit()
+        for day, codes in ((date(2026, 5, 14), ["A", "B"]), (date(2026, 5, 15), ["C"])):
+            for rank, code in enumerate(codes, start=1):
+                db.add(
+                    SimulationPool(
+                        run_id=run.id, trade_date=day, ts_code=code, rank=rank, score=0.5,
+                        held=rank == 1,
+                    )
+                )
+        db.commit()
+
+        assert pool_dates(db, run.id) == [date(2026, 5, 14), date(2026, 5, 15)]
+        first = pool_on(db, run.id, date(2026, 5, 14))
+        assert [row.ts_code for row in first] == ["A", "B"]
+        assert first[0].held is True and first[1].held is False
+
+        db.delete(db.get(SimulationRun, run.id))
+        db.delete(db.get(Portfolio, portfolio.id))
+        db.commit()
+    finally:
+        db.close()
+
+
+def test_a_fixed_pool_needs_no_rows():
+    """A fixed pool is the configured list: storing it per day would duplicate it thousands of times."""
+    from app.models.simulation import SimulationRun
+
+    # The model's default, not the DB's: a run that never sets it is a fixed-pool run.
+    assert SimulationRun.__table__.c.pool_mode.server_default.arg == "fixed"
