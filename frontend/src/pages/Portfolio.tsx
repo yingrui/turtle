@@ -84,8 +84,15 @@ type TradeDraft = {
 export function Portfolio() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [portfolios, setPortfolios] = useState<string[]>([]);
-  const [name, setName] = useState(searchParams.get('portfolio') ?? '');
+  // The selected portfolio lives in one place (the context, which also persists it). A second local
+  // copy plus two "sync" effects is what made the header and the page fight: each wrote the other's
+  // value, so two names alternated on screen.
+  const {
+    portfolios,
+    portfolio: name,
+    setPortfolio: setName,
+    reload: reloadPortfolios,
+  } = usePortfolioContext();
   const [yaml, setYaml] = useState('');
   const [summary, setSummary] = useState<PortfolioConfig | null>(null);
   const [stocks, setStocks] = useState<PortfolioStock[]>([]);
@@ -98,7 +105,6 @@ export function Portfolio() {
   const [poolDay, setPoolDay] = useState<string | null>(null);
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [draft, setDraft] = useState<TradeDraft | null>(null);
-  const { portfolio: ctxPortfolio, setPortfolio: setCtxPortfolio } = usePortfolioContext();
   const [tab, setTabState] = useState<'overview' | 'holdings' | 'pool' | 'trades' | 'risk' | 'advanced'>(
     (searchParams.get('tab') as 'overview' | 'holdings' | 'trades' | 'risk' | 'advanced') ?? 'overview',
   );
@@ -117,6 +123,14 @@ export function Portfolio() {
     setSearchParams(params, { replace: true });
   }
 
+  function choosePortfolio(next: string) {
+    setName(next);
+    setBookDate(null);
+    const params = new URLSearchParams(searchParams);
+    params.set('portfolio', next);
+    setSearchParams(params, { replace: true });
+  }
+
   function setStatus(next: 'watching' | 'holding' | 'closed') {
     setStatusFilter(next);
     const params = new URLSearchParams(searchParams);
@@ -130,24 +144,19 @@ export function Portfolio() {
   const [saving, setSaving] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
 
-  const loadList = useCallback(async () => {
-    const d = await apiFetch<{ portfolios: string[] }>('/api/portfolios');
-    setPortfolios(d.portfolios);
-    const fromUrl = searchParams.get('portfolio');
-    const next =
-      fromUrl && d.portfolios.includes(fromUrl)
-        ? fromUrl
-        : d.portfolios.includes(name)
-          ? name
-          : d.portfolios[0] ?? '';
-    setName(next);
-  }, [name, searchParams]);
-
   useEffect(() => {
-    loadList()
+    reloadPortfolios()
       .catch(() => toast.error(t('portfolio.loadError')))
       .finally(() => setLoadingList(false));
-  }, [loadList, t]);
+  }, [reloadPortfolios, t]);
+
+  // A `?portfolio=` in the URL is an *instruction* to the context, not a second source of truth: it
+  // is applied once, and only when it names a portfolio that exists.
+  useEffect(() => {
+    const fromUrl = searchParams.get('portfolio');
+    if (fromUrl && fromUrl !== name && portfolios.includes(fromUrl)) setName(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, portfolios, name]);
 
   const loadPositions = useCallback(async () => {
     if (!name) return;
@@ -223,16 +232,6 @@ export function Portfolio() {
       toast.error(err instanceof Error ? err.message : t('portfolio.poolError'));
     }
   }
-
-  useEffect(() => {
-    if (ctxPortfolio && ctxPortfolio !== name) setName(ctxPortfolio);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ctxPortfolio]);
-
-  useEffect(() => {
-    if (name && name !== ctxPortfolio) setCtxPortfolio(name);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name]);
 
   useEffect(() => {
     if (!name) {
@@ -579,7 +578,11 @@ export function Portfolio() {
         <>
           <div className="form-row" style={{ maxWidth: 280, marginBottom: 'var(--space-4)' }}>
             <label htmlFor="portfolio-config-select">{t('portfolio.select')}</label>
-            <select id="portfolio-config-select" value={name} onChange={(e) => setName(e.target.value)}>
+            <select
+              id="portfolio-config-select"
+              value={name}
+              onChange={(e) => choosePortfolio(e.target.value)}
+            >
               {portfolios.map((p) => (
                 <option key={p} value={p}>{p}</option>
               ))}
