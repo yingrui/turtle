@@ -119,3 +119,15 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         raise HTTPException(status_code=401, detail="User not found")
     request.state.openkms = None
     return user
+
+
+def require_admin(user: User = Depends(get_current_user)) -> User:
+    """Operator-only endpoints.
+
+    With OpenKMS in front (`STOCK_AUTH_MODE=none`) access is already gated by the host's permissions
+    and turtle has no user base of its own, so the admin flag is only enforced when turtle runs its
+    own local accounts.
+    """
+    if settings.stock_auth_mode != "none" and not user.is_admin:
+        raise HTTPException(status_code=403, detail="Administrator only")
+    return user

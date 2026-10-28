@@ -143,6 +143,25 @@ kubectl -n mlops-hub exec deploy/postgres -- psql -U <superuser> -d postgres -c 
   raise `max_connections` — that last one restarts the shared server, so it is the option of last
   resort.
 
+### Releasing idle connections from the app
+
+**Settings → Database connections** (`GET /api/admin/db-connections`, `POST /api/admin/db-connections/release`)
+shows how many connections this app holds and what it may release, with one button to do it.
+
+The action is deliberately narrow:
+
+| Rule | Why |
+|---|---|
+| Only `turtle-app` / `turtle-market` | those are this app's pools; MLflow and Keycloak share the server |
+| Only `state = 'idle'` | `active` is mid-query, `idle in transaction` is an open transaction — ending either loses work |
+| Only idle ≥ 60 s (`min_idle_seconds`) | a connection returned a moment ago may be about to be reused |
+| Never the connection serving the request | `pg_backend_pid()` is excluded |
+| Then `engine.dispose()` on both pools | the half owned by a `--reload` supervisor is the one nobody remembers |
+
+Two honest limits: a non-superuser only sees **its own** backends in `pg_stat_activity`, so "in use"
+means "visible to this app", not the server's total; and terminating the app's own idle pooled
+connection is normal — the pool reopens one on the next request.
+
 ## Update / tear down
 
 ```bash

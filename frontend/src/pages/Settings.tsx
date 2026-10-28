@@ -12,17 +12,52 @@ type DataStatus = {
 
 type Health = { status?: string; version?: string; [key: string]: unknown };
 
+type DbApp = { application_name: string; state: string; count: number; oldest_idle_seconds: number | null };
+
+type DbConnections = {
+  max_connections: number;
+  superuser_reserved: number;
+  in_use: number;
+  by_app: DbApp[];
+  this_app: { connections: number; idle: number; releasable: number };
+  min_idle_seconds: number;
+};
+
 export function Settings() {
   const { t, i18n } = useTranslation();
   const [theme, setTheme] = useState<Theme>(readTheme);
   const [language, setLanguage] = useState(i18n.resolvedLanguage ?? 'zh-CN');
   const [data, setData] = useState<DataStatus | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
+  const [dbInfo, setDbInfo] = useState<DbConnections | null>(null);
+  const [releasing, setReleasing] = useState(false);
 
   useEffect(() => {
     apiFetch<DataStatus>('/api/data/status').then(setData).catch(() => setData(null));
     apiFetch<Health>('/api/health').then(setHealth).catch(() => setHealth(null));
+    loadDb().catch(() => setDbInfo(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadDb() {
+    setDbInfo(await apiFetch<DbConnections>('/api/admin/db-connections'));
+  }
+
+  async function releaseIdleConnections() {
+    setReleasing(true);
+    try {
+      const result = await apiFetch<{ terminated: number; after: DbConnections }>(
+        '/api/admin/db-connections/release',
+        { method: 'POST' },
+      );
+      setDbInfo(result.after);
+      toast.success(t('settings.dbReleased', { count: result.terminated }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('settings.dbReleaseFailed'));
+    } finally {
+      setReleasing(false);
+    }
+  }
 
   function changeTheme(next: Theme) {
     setTheme(next);
@@ -65,6 +100,46 @@ export function Settings() {
           </select>
         </div>
 
+      </section>
+
+      <section className="settings-section">
+        <h2 className="settings-section-title">{t('settings.dbTitle')}</h2>
+        <p className="settings-section-desc">{t('settings.dbDesc')}</p>
+        {dbInfo ? (
+          <>
+            <div className="settings-readonly">
+              <div>
+                <span>{t('settings.dbInUse')}</span>
+                <strong>
+                  {dbInfo.in_use} / {dbInfo.max_connections}
+                </strong>
+              </div>
+              <div>
+                <span>{t('settings.dbThisApp')}</span>
+                <strong>
+                  {dbInfo.this_app.connections} ({dbInfo.this_app.idle} idle)
+                </strong>
+              </div>
+              <div>
+                <span>{t('settings.dbReleasable')}</span>
+                <strong>{dbInfo.this_app.releasable}</strong>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={releasing || dbInfo.this_app.releasable === 0}
+              onClick={releaseIdleConnections}
+            >
+              {releasing ? t('settings.dbReleasing') : t('settings.dbRelease')}
+            </button>
+            <p className="settings-section-desc" style={{ marginTop: 'var(--space-2)' }}>
+              {t('settings.dbHint', { seconds: dbInfo.min_idle_seconds })}
+            </p>
+          </>
+        ) : (
+          <p className="settings-section-desc">{t('settings.dbUnavailable')}</p>
+        )}
       </section>
 
       <section className="settings-section">
