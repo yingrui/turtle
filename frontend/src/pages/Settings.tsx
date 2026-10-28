@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
-import { usePortfolioContext } from '../contexts/PortfolioContext';
 import { applyTheme, readTheme, type Theme } from '../utils/theme';
 import './Settings.scss';
 
@@ -15,7 +14,6 @@ type Health = { status?: string; version?: string; [key: string]: unknown };
 
 export function Settings() {
   const { t, i18n } = useTranslation();
-  const { portfolios, portfolio, setPortfolio } = usePortfolioContext();
   const [theme, setTheme] = useState<Theme>(readTheme);
   const [language, setLanguage] = useState(i18n.resolvedLanguage ?? 'zh-CN');
   const [data, setData] = useState<DataStatus | null>(null);
@@ -67,22 +65,6 @@ export function Settings() {
           </select>
         </div>
 
-        <div className="settings-field">
-          <label htmlFor="settings-portfolio">{t('settings.defaultPortfolio')}</label>
-          <select
-            id="settings-portfolio"
-            value={portfolio}
-            onChange={(e) => setPortfolio(e.target.value)}
-            disabled={portfolios.length === 0}
-          >
-            {portfolios.length === 0 && <option value="">—</option>}
-            {portfolios.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
       </section>
 
       <section className="settings-section">

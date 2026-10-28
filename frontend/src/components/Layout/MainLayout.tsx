@@ -16,7 +16,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { PortfolioProvider } from '../../contexts/PortfolioContext';
 import { AppBrand } from '../AppBrand';
 import { DataFreshnessChip } from './DataFreshnessChip';
-import { PortfolioSwitcher } from './PortfolioSwitcher';
 import { HealthIndicator } from './HealthIndicator';
 import { UserMenu } from './UserMenu';
 import { applyTheme, readTheme, type Theme } from '../../utils/theme';
@@ -90,7 +89,6 @@ function Header() {
     <header className="app-header">
       <div className="app-header-context">
         <DataFreshnessChip />
-        <PortfolioSwitcher />
       </div>
       <div className="app-header-toolbar">
         <HealthIndicator />

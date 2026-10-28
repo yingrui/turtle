@@ -12,12 +12,11 @@ const resources = {
       settings: {
         subtitle: 'Preferences, data sources and diagnostics for this workspace.',
         preferencesTitle: 'Preferences',
-        preferencesDesc: 'Language, theme and the portfolio the rest of the app follows.',
+        preferencesDesc: 'Language and theme. The portfolio is chosen on the Portfolio page.',
         language: 'Language',
         theme: 'Theme',
         themeLight: 'Light',
         themeDark: 'Dark',
-        defaultPortfolio: 'Active portfolio',
         dataTitle: 'Data & sources',
         dataDesc: 'Market data is written by an external ETL; this app only reads it.',
         asOf: 'As of',
@@ -245,6 +244,7 @@ const resources = {
         legacy: 'legacy',
       },
       portfolio: {
+        select: 'Portfolio',
         configPageTitle: 'Portfolio configuration',
         configPageDesc: 'Edit risk control, policies, and other advanced settings. Manage stocks on the Watchlist page.',
         noPortfolioForConfig: 'No portfolios yet. Create one on the Watchlist page first.',
@@ -517,12 +517,11 @@ const resources = {
       settings: {
         subtitle: '工作区偏好、数据来源与诊断信息。',
         preferencesTitle: '偏好',
-        preferencesDesc: '语言、主题，以及全站跟随的组合。',
+        preferencesDesc: '语言与主题。投资组合在「组合配置」页选择。',
         language: '语言',
         theme: '主题',
         themeLight: '浅色',
         themeDark: '深色',
-        defaultPortfolio: '当前组合',
         dataTitle: '数据与来源',
         dataDesc: '行情由外部 ETL 写入，本系统只读。',
         asOf: '数据截至',
@@ -747,6 +746,7 @@ const resources = {
         legacy: '遗留',
       },
       portfolio: {
+        select: '选择组合',
         configPageTitle: '投资组合配置',
         configPageDesc: '编辑风控、策略等高级设置。自选股票请在「自选」页管理。',
         noPortfolioForConfig: '尚无投资组合，请先在「自选」页创建。',
