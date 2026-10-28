@@ -29,7 +29,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.core.factor.score import ModelUnavailable, load_model_for, rank_cross_section, score_frame
-from app.models.portfolio import PortfolioTransaction
+from app.models.simulation import SimulationTrade
 from app.models.simulation import SimulationDaily, SimulationHolding, SimulationRun
 
 LOT = 100
@@ -179,9 +179,8 @@ def run_model_simulation(
             cash += amount - fee - tax
             result.trades += 1
             db.add(
-                PortfolioTransaction(
-                    portfolio_id=run.portfolio_id,
-                    simulation_run_id=run.id,
+                SimulationTrade(
+                    run_id=run.id,
                     ts_code=code,
                     trade_date=day,
                     side="sell",
@@ -192,7 +191,6 @@ def run_model_simulation(
                     tax=Decimal(str(round(tax, 2))),
                     realized_pnl=Decimal(str(round((price - position.cost) * position.shares, 2))),
                     reason="rank_below_sell_limit" if too_far else "max_holding_days",
-                    source="simulation",
                 )
             )
             del positions[code]
@@ -220,9 +218,8 @@ def run_model_simulation(
             positions[code] = _Position(shares=shares, cost=price, opened=day, last_rank=int(row.rank), last_score=float(row.score))
             result.trades += 1
             db.add(
-                PortfolioTransaction(
-                    portfolio_id=run.portfolio_id,
-                    simulation_run_id=run.id,
+                SimulationTrade(
+                    run_id=run.id,
                     ts_code=code,
                     trade_date=day,
                     side="buy",
@@ -231,7 +228,6 @@ def run_model_simulation(
                     amount=Decimal(str(round(amount, 2))),
                     fee=Decimal(str(round(fee, 2))),
                     reason="in_top_n",
-                    source="simulation",
                 )
             )
 
@@ -302,9 +298,7 @@ def summarise(db: Session, run_id: str) -> dict:
         "max_drawdown_pct": round(worst * 100, 2),
         "years": 1,
         "trade_count": db.scalar(
-            select(func.count()).select_from(PortfolioTransaction).where(
-                PortfolioTransaction.simulation_run_id == run_id
-            )
+            select(func.count()).select_from(SimulationTrade).where(SimulationTrade.run_id == run_id)
         ),
     }
 

@@ -17,7 +17,7 @@ from sqlalchemy import select
 
 from app.core.util.simulation_analysis import summarize_run
 from app.database import SessionLocal
-from app.models.portfolio import PortfolioTransaction
+from app.models.simulation import SimulationTrade
 from app.models.simulation import SimulationDaily, SimulationRun
 
 
@@ -33,9 +33,7 @@ def _daily_frame(db, run_id: str) -> pd.DataFrame:
 
 
 def _trade_frame(db, run_id: str) -> pd.DataFrame:
-    rows = db.scalars(
-        select(PortfolioTransaction).where(PortfolioTransaction.simulation_run_id == run_id)
-    ).all()
+    rows = db.scalars(select(SimulationTrade).where(SimulationTrade.run_id == run_id)).all()
     return pd.DataFrame(
         [
             {

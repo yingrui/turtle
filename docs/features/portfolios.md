@@ -99,3 +99,24 @@ See [API reference — Portfolios](api-reference.md#portfolios-apiportfolios).
 
 Simulation and screening services load the composed config via
 `PortfolioService(db).get_portfolio(name)` before running the engine in `app/core/`.
+
+## 两本账：组合自己的，和回测的
+
+`portfolio_transactions` 只记**组合自己的**买卖（人工、导入、纸面）。回测的成交**不在这里**，它们在
+`simulation_trades`，属于那一次 run。
+
+这条边界以前是靠在 `portfolio_transactions` 上加一个可空的 `simulation_run_id` 实现的，结果是：
+
+- 组合的成交记录页面把**所有回测的成交**都列了出来（用户报告的问题）；
+- `rebuild_stock_from_transactions` 在重放账本时会**把回测成交算进真实持仓**——任何忘记加过滤的读者
+  都会读错账。
+
+一个"每个查询都要记得过滤"的标签不是边界。迁移 `011` 把回测成交搬到 `simulation_trades` 并从组合
+账本删掉了这一列，于是：
+
+| 要看什么 | 去哪 |
+|---|---|
+| 组合自己的成交 | `GET /api/portfolios/{name}/transactions` |
+| 某次回测的成交 | `GET /api/simulations/{run_id}/trades` |
+| 某次回测某天持有什么 | `GET /api/simulations/{run_id}/holdings?day=` |
+

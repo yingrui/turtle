@@ -11,8 +11,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import SessionLocal
 from app.models.job import Job
-from app.models.portfolio import PortfolioTransaction
-from app.models.simulation import SimulationDaily, SimulationRun
+from app.models.simulation import SimulationDaily, SimulationRun, SimulationTrade
 from app.services.portfolio_service import PortfolioService
 from app.services.factor_service import FactorError, FactorService
 from app.services.screening_service import ScreeningService
@@ -273,10 +272,9 @@ class JobService:
                     }
                 )
                 db.add(
-                    PortfolioTransaction(
+                    SimulationTrade(
                         id=str(uuid.uuid4()),
-                        portfolio_id=run.portfolio_id,
-                        simulation_run_id=run_id,
+                        run_id=run_id,
                         ts_code=str(row["ts_code"]),
                         trade_date=trade_date,
                         side=side,
@@ -285,7 +283,6 @@ class JobService:
                         amount=(price * shares).quantize(Decimal("0.01")),
                         realized_pnl=_decimal_or_none(row.get("benefit")) if side == "sell" else None,
                         reason=str(row.get("reason") or ""),
-                        source="simulation",
                     )
                 )
         # The summary is stored, not recomputed per read: the ontology mirrors this row, and a

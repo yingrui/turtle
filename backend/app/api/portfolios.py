@@ -394,7 +394,6 @@ def portfolio_equity(
 def list_portfolio_transactions(
     name: str,
     ts_code: str | None = Query(None),
-    simulation_run_id: str | None = Query(None),
     limit: int = Query(200, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
@@ -404,7 +403,7 @@ def list_portfolio_transactions(
     try:
         return {
             "transactions": svc.list_transactions(
-                name, ts_code=ts_code, simulation_run_id=simulation_run_id, limit=limit, offset=offset
+                name, ts_code=ts_code, limit=limit, offset=offset
             )
         }
     except FileNotFoundError as exc:

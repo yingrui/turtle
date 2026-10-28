@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models.simulation import SimulationDaily, SimulationRun
-from app.models.portfolio import PortfolioTransaction
+from app.models.simulation import SimulationTrade
 from app.core.util import chart_data
 from app.core.util.json_utils import dataframe_to_records
 from app.core.util.simulation_analysis import calculate_cagr, get_stock_benefit, load_simulation_logs_from_disk
@@ -83,11 +83,11 @@ class SimulationService:
         )
 
     def get_trades_from_db(self, db: Session, run_id: str) -> pd.DataFrame:
-        """Trades of a run, read from the shared ledger (`portfolio_transactions`)."""
+        """Trades of a run — the run's own `simulation_trades`, not the portfolio ledger."""
         rows = db.scalars(
-            select(PortfolioTransaction)
-            .where(PortfolioTransaction.simulation_run_id == run_id)
-            .order_by(PortfolioTransaction.trade_date, PortfolioTransaction.created_at)
+            select(SimulationTrade)
+            .where(SimulationTrade.run_id == run_id)
+            .order_by(SimulationTrade.trade_date, SimulationTrade.created_at)
         ).all()
         return pd.DataFrame(
             [

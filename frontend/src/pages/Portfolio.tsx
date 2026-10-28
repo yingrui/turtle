@@ -47,7 +47,6 @@ type PortfolioTransaction = {
   realized_pnl: number | null;
   trade_date: string;
   source: string;
-  simulation_run_id: string | null;
 };
 
 type TradeDraft = {
@@ -354,18 +353,6 @@ export function Portfolio() {
       key: 'source',
       label: t('portfolio.colSource'),
       render: (row) => sourceLabel[row.source] ?? row.source,
-    },
-    {
-      key: 'run',
-      label: t('portfolio.colRun'),
-      render: (row) =>
-        row.simulation_run_id ? (
-          <Link to={`/simulation/results?run_id=${encodeURIComponent(row.simulation_run_id)}`}>
-            {row.simulation_run_id.slice(0, 8)}
-          </Link>
-        ) : (
-          '—'
-        ),
     },
   ];
 

@@ -163,7 +163,8 @@ def test_transactions_are_recorded_and_filterable(portfolio, auth_token):
     assert only_pf[0]["side"] == "sell"  # newest first
 
 
-def test_simulation_rows_do_not_touch_live_holdings(portfolio, auth_token, db_session):
+def test_the_portfolio_ledger_cannot_hold_a_run_fill(portfolio, auth_token, db_session):
+    """A run's fills live in `simulation_trades`; the portfolio ledger has nowhere to put one."""
     from datetime import date
 
     from app.models.portfolio import PortfolioTransaction
@@ -171,14 +172,17 @@ def test_simulation_rows_do_not_touch_live_holdings(portfolio, auth_token, db_se
 
     headers = _auth_headers(auth_token)
     _buy(portfolio, headers, "600519.SH", 100, 10)
+    portfolio_id = PortfolioService(db_session).get_portfolio_id(portfolio)
 
-    svc = PortfolioService(db_session)
-    portfolio_id = svc.get_portfolio_id(portfolio)
+    assert not hasattr(PortfolioTransaction, "simulation_run_id")
+    transaction = client.get(f"/api/portfolios/{portfolio}/transactions", headers=headers).json()
+    assert len(transaction["transactions"]) == 1                       # the one real buy
+    assert transaction["transactions"][0]["source"] == "manual"
+
     db_session.add(
         PortfolioTransaction(
             id=str(uuid.uuid4()),
             portfolio_id=portfolio_id,
-            simulation_run_id=None,
             ts_code="600519.SH",
             trade_date=date(2026, 5, 6),
             side="buy",
@@ -194,11 +198,11 @@ def test_simulation_rows_do_not_touch_live_holdings(portfolio, auth_token, db_se
     assert stock["hold_shares"] == 100  # unaffected by direct ledger inserts
 
 
-def test_backtest_trades_are_linked_to_the_run(portfolio, auth_token, db_session):
+def test_backtest_trades_live_with_the_run_not_the_portfolio(portfolio, auth_token, db_session):
+    """The portfolio's trade page must not show backtest fills — that was the reported bug."""
     from datetime import date
 
-    from app.models.portfolio import PortfolioTransaction
-    from app.models.simulation import SimulationRun
+    from app.models.simulation import SimulationRun, SimulationTrade
     from app.services.portfolio_service import PortfolioService
 
     headers = _auth_headers(auth_token)
@@ -216,10 +220,9 @@ def test_backtest_trades_are_linked_to_the_run(portfolio, auth_token, db_session
         )
     )
     db_session.add(
-        PortfolioTransaction(
+        SimulationTrade(
             id=str(uuid.uuid4()),
-            portfolio_id=portfolio_id,
-            simulation_run_id=run_id,
+            run_id=run_id,
             ts_code="600519.SH",
             trade_date=date(2026, 5, 6),
             side="sell",
@@ -227,17 +230,17 @@ def test_backtest_trades_are_linked_to_the_run(portfolio, auth_token, db_session
             price=12,
             amount=1200,
             realized_pnl=200,
-            source="simulation",
+            reason="sell",
         )
     )
     db_session.commit()
 
-    by_run = client.get(
-        f"/api/portfolios/{portfolio}/transactions", headers=headers, params={"simulation_run_id": run_id}
-    ).json()["transactions"]
-    assert len(by_run) == 1
-    assert by_run[0]["source"] == "simulation"
-    assert by_run[0]["realized_pnl"] == 200.0
+    # The portfolio's own ledger knows nothing about it…
+    own = client.get(f"/api/portfolios/{portfolio}/transactions", headers=headers).json()["transactions"]
+    assert own == []
+    # …while the run's trades endpoint has it.
+    by_run = client.get(f"/api/simulations/{run_id}/trades", headers=headers).json()["trades"]
+    assert len(by_run) == 1 and by_run[0]["benefit"] == 200.0
 
 
 def test_remove_stock_blocked_when_holding(portfolio, auth_token):

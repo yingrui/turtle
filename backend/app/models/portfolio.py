@@ -87,16 +87,17 @@ class PortfolioStock(Base):
 
 
 class PortfolioTransaction(Base):
-    """Buy/sell ledger. ``simulation_run_id`` set ⇒ the trade belongs to that backtest run."""
+    """The portfolio's own buy/sell ledger.
+
+    Backtest fills are **not** here: they belong to their run (`simulation_trades`). A tag that every
+    reader has to remember to filter is how a backtest ended up on the portfolio's trade page.
+    """
 
     __tablename__ = "portfolio_transactions"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     portfolio_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("portfolios.id", ondelete="CASCADE"), index=True
-    )
-    simulation_run_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("simulation_runs.id", ondelete="CASCADE"), nullable=True, index=True
     )
     ts_code: Mapped[str] = mapped_column(String(16), nullable=False)
     trade_date: Mapped[date] = mapped_column(Date, nullable=False)

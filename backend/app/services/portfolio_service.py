@@ -298,7 +298,6 @@ class PortfolioService:
         return {
             "id": row.id,
             "portfolio_id": row.portfolio_id,
-            "simulation_run_id": row.simulation_run_id,
             "ts_code": row.ts_code,
             "trade_date": row.trade_date.isoformat() if row.trade_date else None,
             "side": row.side,
@@ -716,7 +715,6 @@ class PortfolioService:
         txn = PortfolioTransaction(
             id=str(uuid.uuid4()),
             portfolio_id=portfolio_id,
-            simulation_run_id=payload.get("simulation_run_id"),
             ts_code=code,
             trade_date=trade_date,
             side=side,
@@ -741,7 +739,6 @@ class PortfolioService:
         self,
         name: str,
         ts_code: str | None = None,
-        simulation_run_id: str | None = None,
         limit: int = 200,
         offset: int = 0,
     ) -> list[dict]:
@@ -753,8 +750,6 @@ class PortfolioService:
         )
         if ts_code:
             stmt = stmt.where(PortfolioTransaction.ts_code == ts_code.strip().upper())
-        if simulation_run_id:
-            stmt = stmt.where(PortfolioTransaction.simulation_run_id == simulation_run_id)
         stmt = stmt.limit(limit).offset(offset)
         return [self.transaction_to_dict(t) for t in self.db.scalars(stmt).all()]
 

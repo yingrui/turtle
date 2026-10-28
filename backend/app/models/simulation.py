@@ -54,8 +54,8 @@ class SimulationDaily(Base):
     total: Mapped[Decimal] = mapped_column(Numeric(18, 2))
 
 
-# Per-trade rows moved to `portfolio_transactions` (tagged with `simulation_run_id`); the
-# legacy `simulation_trades` table is dropped in migration 004.
+# Per-trade rows live in `simulation_trades` (migration 011): a run's fills belong to the run, not to
+# the portfolio's ledger.
 
 
 class SimulationHolding(Base):
@@ -83,3 +83,32 @@ class SimulationHolding(Base):
     __table_args__ = (
         Index("ix_simulation_holdings_run_date", "run_id", "trade_date"),
     )
+
+
+class SimulationTrade(Base):
+    """One fill belonging to a run.
+
+    Kept apart from `portfolio_transactions` on purpose: the portfolio's ledger and a backtest's
+    ledger are different books, and a nullable `run_id` on one table let every reader pick the wrong
+    one by forgetting a filter.
+    """
+
+    __tablename__ = "simulation_trades"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    run_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("simulation_runs.id", ondelete="CASCADE"), nullable=False
+    )
+    ts_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    trade_date: Mapped[date] = mapped_column(Date, nullable=False)
+    side: Mapped[str] = mapped_column(String(4), nullable=False)
+    shares: Mapped[int] = mapped_column(Integer, nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=0)
+    fee: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=0)
+    tax: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=0)
+    realized_pnl: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)
+    reason: Mapped[str] = mapped_column(String(255), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
+
+    __table_args__ = (Index("ix_simulation_trades_run_date", "run_id", "trade_date"),)
