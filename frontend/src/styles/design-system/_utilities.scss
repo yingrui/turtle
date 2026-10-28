@@ -168,3 +168,49 @@
   min-height: 3.5rem;
 }
 
+
+// --- Layout + text helpers ------------------------------------------------
+// These exist because the same three inline styles kept appearing in TSX: a muted hint line, a
+// narrow form field, and a block that needs breathing room above it. An inline `style` cannot be
+// themed, cannot be overridden by a media query, and does not show up in the stylesheet at all.
+
+// A secondary line under a field or table ("as of", counts, hints).
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-sm {
+  font-size: var(--text-sm);
+}
+
+// The recurring "small muted note" combination.
+.text-hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+// A form field that should not stretch: `<div className="form-row field-narrow">`.
+.field-narrow {
+  max-width: 180px;
+}
+
+.field-medium {
+  max-width: 220px;
+}
+
+.field-wide {
+  max-width: 280px;
+}
+
+// Vertical rhythm without an inline margin.
+.stack-sm > * + * {
+  margin-top: var(--space-2);
+}
+
+.stack > * + * {
+  margin-top: var(--space-3);
+}
+
+.stack-lg > * + * {
+  margin-top: var(--space-4);
+}

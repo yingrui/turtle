@@ -30,6 +30,44 @@ To add a shared component from openKMS later, copy the file pair and register it
 
 - **`frontend/src/index.scss`** — loads `design-system/_css-variables`, `_global`, `_utilities`
 
+## Guardrails — `npm run check:styles`
+
+The conventions below are enforced, not just documented. `frontend/scripts/check-styles.py` fails on
+a rule when a file holds **more** hits than its frozen count in `scripts/styles-baseline.json`; the
+same idea as openKMS's `check-shared-styles.sh`, scoped to this app's rules.
+
+| Rule | What it catches | Use instead |
+|---|---|---|
+| `raw-hex-color` | `#0d9488` in a feature sheet | `var(--color-*)` |
+| `px-font-size` | `font-size: 12px` | `var(--text-*)` |
+| `px-spacing` | `padding: 4px` … | `var(--space-*)` (4px grid) |
+| `px-breakpoint` | `@media (max-width: 900px)` where a token exists | `@include max-width(ds.$bp-*)` |
+| `raw-z-index` | `z-index: 100` | `var(--z-*)` |
+| `important` | `!important` | structure, not force |
+| `inline-style` | `style={{ … }}` in TSX | the component's SCSS, or a utility below |
+| `debug-leftover` | `console.log` / `debugger` | — (never tolerated, not even in the baseline) |
+
+```bash
+npm run check:styles                      # fail above the baseline
+npm run check:styles -- --list            # print every hit (for fixing)
+npm run check:styles -- --update-baseline # freeze the tree after removing some
+```
+
+**The ratchet only goes down.** Removing violations and re-running `--update-baseline` lowers the
+number; adding one fails the check with the file and rule. `npm run check` runs typecheck →
+`check:styles` → tests → build, so the guardrail runs before a build can pass.
+
+### Utilities added for the recurring cases
+
+Three inline styles kept reappearing in TSX; they are classes now (`_utilities.scss`):
+
+| Class | Replaces |
+|---|---|
+| `.text-hint` | `style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}` |
+| `.text-muted` / `.text-sm` | the two halves of the above, when only one is needed |
+| `.field-narrow` / `.field-medium` / `.field-wide` | `style={{ maxWidth: 180 \| 220 \| 280 }}` on a `.form-row` |
+| `.stack` / `.stack-sm` / `.stack-lg` | `style={{ marginTop: 'var(--space-3 \| 2 \| 4)' }}` between stacked blocks |
+
 ## Conventions
 
 1. **Colors** — `var(--color-*)`; avoid raw hex in feature SCSS

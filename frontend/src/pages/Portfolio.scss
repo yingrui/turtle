@@ -1,3 +1,6 @@
+@use '../styles/design-system/tokens' as ds;
+@use '../styles/design-system/mixins' as *;
+
 .portfolio-page {
   .portfolio-breadcrumb {
     margin: 0 0 var(--space-3);
@@ -33,7 +36,7 @@
     gap: var(--space-4);
     margin-bottom: var(--space-5);
 
-    @media (min-width: 768px) {
+    @include min-width(ds.$bp-md-min) {
       grid-template-columns: 1fr 1fr;
     }
   }
@@ -309,7 +312,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: 4px var(--space-3);
+  padding: var(--space-1) var(--space-3);
   border: none;
   border-radius: 999px;
   background: transparent;

@@ -133,7 +133,7 @@ export function Settings() {
             >
               {releasing ? t('settings.dbReleasing') : t('settings.dbRelease')}
             </button>
-            <p className="settings-section-desc" style={{ marginTop: 'var(--space-2)' }}>
+            <p className="settings-section-desc stack-sm">
               {t('settings.dbHint', { seconds: dbInfo.min_idle_seconds })}
             </p>
           </>

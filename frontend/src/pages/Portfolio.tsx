@@ -578,7 +578,7 @@ export function Portfolio() {
         <>
           {/* The portfolio is chosen here, where it means something: other pages read the same value
               from the context but do not need a control of their own. */}
-          <div className="form-row" style={{ maxWidth: 280, marginBottom: 'var(--space-4)' }}>
+          <div className="form-row field-wide" style={{ marginBottom: 'var(--space-4)' }}>
             <label htmlFor="portfolio-config-select">{t('portfolio.select')}</label>
             <select
               id="portfolio-config-select"
@@ -811,7 +811,7 @@ export function Portfolio() {
                   </div>
                   {pool && (
                     <>
-                      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+                      <p className="text-hint">
                         {t('portfolio.poolMeta', {
                           source: pool.source === 'run' ? t('portfolio.poolSourceRun') : t('portfolio.poolSourceList'),
                           mode: pool.pool_mode,
