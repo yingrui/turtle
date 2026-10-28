@@ -109,6 +109,40 @@ Verify the sync without opening the browser: the header of the hosted SPA shows 
 so a green dot after a sync confirms both that `frontend/src` landed in the Pod and that it
 can still reach the backend Service.
 
+## Database connections are a shared budget
+
+The deployment's PostgreSQL (`mlops-hub/postgres-service`, `max_connections = 100`) is shared with
+**MLflow** (20 idle), **Keycloak** (5) and **openKMS** (9). Turtle has to fit in what is left, and the
+dev image makes that harder than it looks: `uvicorn --reload` imports the app in the **supervisor and
+the worker**, so every engine pool exists twice.
+
+That is what exhausted the server once — one replica held 63 idle connections (`turtle-app` 42 +
+`turtle-market` 21) and every new request failed with
+`remaining connection slots are reserved for non-replication superuser connections`.
+
+Rules that keep it out of trouble:
+
+| Pool | Size | Where |
+|---|---|---|
+| app (`turtle-app`) | `pool_size=5`, `max_overflow=5`, `pool_timeout=10` | `app/database.py` |
+| market reads (`turtle-market`) | `3` + `2` | `app/core/configurer.py` |
+
+- Keep them small: a request needs one connection, and `pool_timeout` fails a request loudly instead
+  of hanging until the OS gives up.
+- `application_name` makes the two pools identifiable in `pg_stat_activity`; use it before guessing
+  which process is holding connections.
+- To recover from exhaustion without restarting anything:
+
+```bash
+kubectl -n mlops-hub exec deploy/postgres -- psql -U <superuser> -d postgres -c "
+  select count(pg_terminate_backend(pid)) from pg_stat_activity
+  where datname = 'stock' and state = 'idle' and application_name like 'turtle%'"
+```
+
+- If turtle ever needs more (more job threads, another replica), give it its own database server or
+  raise `max_connections` — that last one restarts the shared server, so it is the option of last
+  resort.
+
 ## Update / tear down
 
 ```bash

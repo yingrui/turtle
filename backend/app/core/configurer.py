@@ -22,7 +22,13 @@ def _engine():
     short queries.
     """
     url = _db_url()
-    kwargs = {"pool_size": 5, "max_overflow": 5, "pool_pre_ping": True, "pool_recycle": 1800}
+    kwargs = {
+        "pool_size": 3,
+        "max_overflow": 2,
+        "pool_pre_ping": True,
+        "pool_recycle": 1800,
+        "pool_timeout": 10,
+    }
     if url.startswith("postgresql"):
         # Makes these connections identifiable in pg_stat_activity.
         kwargs["connect_args"] = {"application_name": "turtle-market"}
