@@ -123,14 +123,6 @@ export function Portfolio() {
     setSearchParams(params, { replace: true });
   }
 
-  function choosePortfolio(next: string) {
-    setName(next);
-    setBookDate(null);
-    const params = new URLSearchParams(searchParams);
-    params.set('portfolio', next);
-    setSearchParams(params, { replace: true });
-  }
-
   function setStatus(next: 'watching' | 'holding' | 'closed') {
     setStatusFilter(next);
     const params = new URLSearchParams(searchParams);
@@ -576,19 +568,8 @@ export function Portfolio() {
         </div>
       ) : (
         <>
-          <div className="form-row" style={{ maxWidth: 280, marginBottom: 'var(--space-4)' }}>
-            <label htmlFor="portfolio-config-select">{t('portfolio.select')}</label>
-            <select
-              id="portfolio-config-select"
-              value={name}
-              onChange={(e) => choosePortfolio(e.target.value)}
-            >
-              {portfolios.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-
+          {/* Which portfolio is selected is one decision for the whole app, made in the header
+              switcher; a second selector here only gave the page another copy to disagree with. */}
           {name && summary && (
             <section className="portfolio-editor">
               <nav className="portfolio-tabs" role="tablist">
