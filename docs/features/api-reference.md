@@ -88,6 +88,10 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/{name}/stocks?day=` | The bound run's book that day (`source: "run"`, with `available_dates`), else the editable watchlist (`source: "portfolio"`) |
+| GET | `/{name}/transactions` | The bound run's fills (`source: "run"`), else the portfolio's own ledger |
+| GET | `/{name}/pool?day=` | The stock pool: run's pool when bound, else the watchlist |
+| POST | `/{name}/active-run` | Point the portfolio at a run (`{"run_id": "…"}`, `null` to unbind) |
 | GET | `/{name}/members?day=YYYY-MM-DD` | Which stocks were **in the portfolio that day** — a range query over `joined_at`/`left_at`, not a replay. Returns `{ts_code, status, episode, joined_at, left_at}` |
 | GET | `/{name}/events?day=&limit=` | The daily decisions: `event` (added/resurrected/bought/sold/dropped), ranks, scores, `reason`, `rule`, `rule_params`, and the model/dataset versions that produced them |
 

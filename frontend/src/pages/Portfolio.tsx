@@ -89,6 +89,9 @@ export function Portfolio() {
   const [yaml, setYaml] = useState('');
   const [summary, setSummary] = useState<PortfolioConfig | null>(null);
   const [stocks, setStocks] = useState<PortfolioStock[]>([]);
+  const [stocksSource, setStocksSource] = useState<'portfolio' | 'run'>('portfolio');
+  const [bookDate, setBookDate] = useState<string | null>(null);
+  const [bookDates, setBookDates] = useState<string[]>([]);
   const [trades, setTrades] = useState<PortfolioTransaction[]>([]);
   const [pool, setPool] = useState<PortfolioPool | null>(null);
   const [poolDates, setPoolDates] = useState<string[]>([]);
@@ -148,20 +151,29 @@ export function Portfolio() {
 
   const loadPositions = useCallback(async () => {
     if (!name) return;
+    const day = bookDate ? `?day=${encodeURIComponent(bookDate)}` : '';
     const [stockRows, tradeRows, riskRow] = await Promise.all([
-      apiFetch<{ stocks: PortfolioStock[] }>(`/api/portfolios/${encodeURIComponent(name)}/stocks`),
+      apiFetch<{
+        stocks: PortfolioStock[];
+        source?: 'portfolio' | 'run';
+        trade_date?: string | null;
+        available_dates?: string[];
+      }>(`/api/portfolios/${encodeURIComponent(name)}/stocks${day}`),
       apiFetch<{ transactions: PortfolioTransaction[] }>(
         `/api/portfolios/${encodeURIComponent(name)}/transactions?limit=50`,
       ),
       apiFetch<Record<string, number | boolean>>(`/api/portfolios/${encodeURIComponent(name)}/risk-control`),
     ]);
     setStocks(stockRows.stocks);
+    setStocksSource(stockRows.source === 'run' ? 'run' : 'portfolio');
+    setBookDates(stockRows.available_dates ?? []);
+    if (stockRows.source === 'run') setBookDate(stockRows.trade_date ?? null);
     setTrades(tradeRows.transactions);
     setRisk(riskRow);
     setRiskDraft(
       Object.fromEntries(Object.entries(riskRow).map(([key, value]) => [key, String(value)])),
     );
-  }, [name]);
+  }, [name, bookDate]);
 
   const loadPool = useCallback(
     async (day?: string | null) => {
@@ -183,6 +195,10 @@ export function Portfolio() {
     },
     [name],
   );
+
+  useEffect(() => {
+    setBookDate(null);
+  }, [name]);
 
   useEffect(() => {
     if (!name) return;
@@ -722,6 +738,23 @@ export function Portfolio() {
                 <>
               <h2 className="portfolio-panel-title">{t('portfolio.holdingsTitle')}</h2>
               <p className="portfolio-panel-desc">{t('portfolio.holdingsDesc')}</p>
+              {stocksSource === 'run' && (
+                <div className="form-row" style={{ maxWidth: 220 }}>
+                  <label>{t('portfolio.poolDate')}</label>
+                  <select
+                    value={bookDate ?? ''}
+                    onChange={(e) => {
+                      setBookDate(e.target.value);
+                      loadPositions().catch(() => toast.error(t('portfolio.loadError')));
+                    }}
+                  >
+                    {bookDates.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {stocksSource === 'run' ? null : (
               <div className="portfolio-segments" role="group" aria-label={t('portfolio.colStatus')}>
                 {(['watching', 'holding', 'closed'] as const).map((key) => (
                   <button
@@ -737,9 +770,10 @@ export function Portfolio() {
                   </button>
                 ))}
               </div>
+              )}
               <DataTable
                 columns={holdingColumns}
-                rows={stocks.filter((row) => row.status === statusFilter)}
+                rows={stocksSource === 'run' ? stocks : stocks.filter((row) => row.status === statusFilter)}
                 onRowClick={(row) => setDetail(row)}
                 rowKey={(row) => row.ts_code}
                 empty={

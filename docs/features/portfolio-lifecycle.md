@@ -158,7 +158,13 @@ GET  /api/simulations/{run}/pool?day=…                     # 某次 run 的股
 GET  /api/simulations/{run}/pool-dates                     # 它有池的日期（动态池才有）
 ```
 
-前端在组合页新增 **股票池** 标签页：选择池来源（手工列表 / 某次 run）、看当前池，动态池还能按日期回看。
+**持仓与成交同样跟随绑定的 run**：`GET /portfolios/{name}/stocks`（可带 `?day=`）与
+`/transactions` 在绑定了 run 时返回该 run 的持仓与成交（响应带 `source: "run"` 与 `available_dates`），
+解绑后回到 `portfolio_stocks` / 组合自己的账本（`source: "portfolio"`）。所以"组合的持仓/成交"和
+"回测的账本"是同一份事实，不再两处各说一套。
+
+前端在组合页新增 **股票池** 标签页：选择池来源（手工列表 / 某次 run）、看当前池，动态池还能按日期回看；
+持仓标签在 run 模式下带日期选择器与"来自 run"的提示，成交标签直接显示该 run 的成交。
 
 ## 首次回放：`top50-sim`（2026-02 → 2026-10）
 

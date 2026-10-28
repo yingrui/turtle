@@ -176,6 +176,90 @@ def get_portfolio_watchlist(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+def _run_trade_view(
+    db: Session, portfolio_id: str, *, ts_code: str | None, limit: int, offset: int
+) -> dict | None:
+    """A bound run's fills, shaped like ledger rows (a backtest's trades are not the portfolio's)."""
+    from app.models.simulation import SimulationRun, SimulationTrade
+
+    portfolio = db.get(Portfolio, portfolio_id)
+    if not portfolio or not portfolio.active_run_id:
+        return None
+    run = db.get(SimulationRun, portfolio.active_run_id)
+    if run is None:
+        return None
+    query = (
+        sa_select(SimulationTrade)
+        .where(SimulationTrade.run_id == run.id)
+        .order_by(SimulationTrade.trade_date.desc(), SimulationTrade.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    if ts_code:
+        query = query.where(SimulationTrade.ts_code == ts_code.strip().upper())
+    rows = db.scalars(query).all()
+    return {
+        "source": "run",
+        "run_id": run.id,
+        "transactions": [
+            {
+                "id": row.id,
+                "ts_code": row.ts_code,
+                "side": row.side,
+                "shares": row.shares,
+                "price": float(row.price),
+                "amount": float(row.amount or 0),
+                "realized_pnl": None if row.realized_pnl is None else float(row.realized_pnl),
+                "trade_date": row.trade_date.isoformat(),
+                "source": "simulation",
+                "reason": row.reason,
+            }
+            for row in rows
+        ],
+    }
+
+
+def _run_stock_view(db: Session, portfolio_id: str, day: str | None) -> dict | None:
+    """A bound run's holdings, shaped like `portfolio_stocks` rows so the page needs no special case."""
+    from app.core.simulation.model_runner import holding_dates, holdings_on
+    from app.models.simulation import SimulationRun
+
+    portfolio = db.get(Portfolio, portfolio_id)
+    if not portfolio or not portfolio.active_run_id:
+        return None
+    run = db.get(SimulationRun, portfolio.active_run_id)
+    if run is None:
+        return None
+    dates = holding_dates(db, run.id)
+    if not dates:
+        return {"source": "run", "run_id": run.id, "trade_date": None, "stocks": []}
+    target = date.fromisoformat(day) if day else dates[-1]
+    rows = holdings_on(db, run.id, target)
+    return {
+        "source": "run",
+        "run_id": run.id,
+        "pool_mode": run.pool_mode,
+        "trade_date": target.isoformat(),
+        "available_dates": dates,
+        "stocks": [
+            {
+                "ts_code": row.ts_code,
+                "status": "holding",
+                "hold_shares": row.shares,
+                "avg_cost": float(row.price),
+                "total_cost": round(float(row.price) * row.shares, 2),
+                "market_value": float(row.market_value),
+                "weight": None if row.weight is None else float(row.weight),
+                "rank": row.rank,
+                "score": None if row.score is None else float(row.score),
+                "realized_pnl": 0.0,
+                "note": "",
+            }
+            for row in rows
+        ],
+    }
+
+
 @router.post("/{name}/active-run")
 def set_active_run(
     name: str,
@@ -408,13 +492,21 @@ def delete_portfolio(name: str, db: Session = Depends(get_db), _: User = Depends
 
 @router.get("/{name}/stocks")
 def list_portfolio_stocks(
-    name: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)
+    name: str,
+    day: str | None = Query(None, description="With a run bound: the book at that day's close"),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
 ):
+    """The portfolio's stocks: the run's book when one is bound, else the editable watchlist."""
     svc = PortfolioService(db)
     try:
-        return {"stocks": svc.list_stocks(name)}
+        portfolio_id = svc.get_portfolio_id(name)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    run_view = _run_stock_view(db, portfolio_id, day)
+    if run_view is not None:
+        return run_view
+    return {"source": "portfolio", "stocks": svc.list_stocks(name)}
 
 
 @router.post("/{name}/stocks")
@@ -508,15 +600,19 @@ def list_portfolio_transactions(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
+    """The portfolio's trades: the bound run's fills, or its own ledger when no run is bound."""
     svc = PortfolioService(db)
     try:
-        return {
-            "transactions": svc.list_transactions(
-                name, ts_code=ts_code, limit=limit, offset=offset
-            )
-        }
+        portfolio_id = svc.get_portfolio_id(name)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    run_view = _run_trade_view(db, portfolio_id, ts_code=ts_code, limit=limit, offset=offset)
+    if run_view is not None:
+        return run_view
+    return {
+        "source": "portfolio",
+        "transactions": svc.list_transactions(name, ts_code=ts_code, limit=limit, offset=offset),
+    }
 
 
 @router.post("/{name}/transactions")

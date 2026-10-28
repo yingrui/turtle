@@ -122,3 +122,62 @@ def test_a_fixed_pool_needs_no_rows():
 
     # The model's default, not the DB's: a run that never sets it is a fixed-pool run.
     assert SimulationRun.__table__.c.pool_mode.server_default.arg == "fixed"
+
+
+def test_a_bound_run_supplies_the_portfolios_stocks_and_trades():
+    """`/stocks` and `/transactions` follow the bound run instead of the editable book."""
+    import uuid as _uuid
+    from decimal import Decimal
+
+    from app.database import SessionLocal
+    from app.models import Portfolio
+    from app.models.simulation import SimulationHolding, SimulationRun, SimulationTrade
+
+    db = SessionLocal()
+    try:
+        portfolio = Portfolio(
+            id=str(_uuid.uuid4()), name=f"bound-{_uuid.uuid4().hex[:6]}", balance=Decimal("0")
+        )
+        run = SimulationRun(
+            id=str(_uuid.uuid4()), portfolio_name=portfolio.name, portfolio_id=portfolio.id,
+            policy_id=0, mode="model", pool_mode="dynamic", config_snapshot="{}",
+        )
+        portfolio.active_run_id = run.id
+        db.add_all([portfolio, run])
+        db.commit()
+        db.add_all(
+            [
+                SimulationHolding(
+                    run_id=run.id, trade_date=date(2026, 5, 14), ts_code="600519.SH", shares=100,
+                    price=Decimal("10"), market_value=Decimal("1000"), weight=Decimal("0.5"),
+                    rank=3, score=Decimal("0.4"),
+                ),
+                SimulationTrade(
+                    id=str(_uuid.uuid4()), run_id=run.id, ts_code="600519.SH",
+                    trade_date=date(2026, 5, 14), side="buy", shares=100, price=Decimal("10"),
+                    amount=Decimal("1000"), reason="in_top_n",
+                ),
+            ]
+        )
+        db.commit()
+
+        from app.api.portfolios import _run_stock_view, _run_trade_view
+
+        stocks = _run_stock_view(db, portfolio.id, None)
+        assert stocks["source"] == "run" and stocks["trade_date"] == "2026-05-14"
+        assert stocks["stocks"][0]["ts_code"] == "600519.SH"
+        assert stocks["stocks"][0]["status"] == "holding"
+
+        trades = _run_trade_view(db, portfolio.id, ts_code=None, limit=10, offset=0)
+        assert trades["source"] == "run" and trades["transactions"][0]["side"] == "buy"
+
+        # Unbinding returns the portfolio to its own (empty) book.
+        portfolio.active_run_id = None
+        db.commit()
+        assert _run_stock_view(db, portfolio.id, None) is None
+
+        db.delete(db.get(SimulationRun, run.id))
+        db.delete(db.get(Portfolio, portfolio.id))
+        db.commit()
+    finally:
+        db.close()
