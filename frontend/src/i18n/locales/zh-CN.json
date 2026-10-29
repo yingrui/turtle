@@ -47,7 +47,8 @@
     "stocks": "股票分析",
     "forecast": "预测分析",
     "jobs": "任务",
-    "settings": "设置"
+    "settings": "设置",
+    "indexes": "指数"
   },
   "home": {
     "dashboardTitle": "工作台",
@@ -526,5 +527,18 @@
   },
   "common": {
     "confirm": "确认"
+  },
+  "indexes": {
+    "subtitle": "有日线的指数序列，宽基排在前面。可作为回测的参照。",
+    "colName": "名称",
+    "colCode": "代码",
+    "colClose": "收盘",
+    "colPct": "涨跌幅",
+    "meta": "{{category}} · {{bars}} 根日线",
+    "loading": "加载中…",
+    "empty": "暂无指数数据。",
+    "noData": "该区间没有数据。",
+    "pick": "选择一个指数查看图表。",
+    "loadFailed": "指数数据加载失败"
   }
 }

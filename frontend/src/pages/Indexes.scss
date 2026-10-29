@@ -1,0 +1,25 @@
+@use '../styles/design-system/local-tokens' as lt;
+@use '../styles/design-system/mixins' as *;
+
+// Index browser: a compact list beside a chart. The list is narrow because the chart is the point.
+.indexes-layout {
+  display: grid;
+  gap: var(--space-4);
+  align-items: start;
+
+  @include min-width(lt.$bp-wide-min) {
+    grid-template-columns: minmax(320px, 420px) 1fr;
+  }
+}
+
+.indexes-list {
+  min-width: 0;
+}
+
+.indexes-chart {
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+}

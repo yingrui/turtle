@@ -5,6 +5,7 @@ import {
   Filter,
   FlaskConical,
   Play,
+  BarChart3,
   CandlestickChart,
   Briefcase,
   Moon,
@@ -29,6 +30,7 @@ const navGroups = [
       { to: '/screening', icon: Filter, key: 'screening', end: true },
       { to: '/factor', icon: FlaskConical, key: 'factor', end: false },
       { to: '/market', icon: CandlestickChart, key: 'quote', end: true },
+      { to: '/indexes', icon: BarChart3, key: 'indexes', end: true },
     ],
   },
   {

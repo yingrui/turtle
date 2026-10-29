@@ -8,6 +8,7 @@ import { DataCollection } from './pages/DataCollection';
 import { Portfolio } from './pages/Portfolio';
 import { Screening } from './pages/Screening';
 import { FactorList } from './pages/FactorList';
+import { Indexes } from './pages/Indexes';
 import { FactorDetail } from './pages/FactorDetail';
 import { Simulation } from './pages/Simulation';
 import { SimulationLayout } from './pages/SimulationLayout';
@@ -43,6 +44,7 @@ export function App() {
           <Route path="results" element={<SimulationResults />} />
         </Route>
         <Route path="/market" element={<StockList />} />
+        <Route path="/indexes" element={<Indexes />} />
         <Route path="/stocks/list" element={<Navigate to="/market" replace />} />
         <Route path="/stocks/:tsCode" element={<StockDetail />} />
         <Route path="/stocks" element={<Navigate to="/market" replace />} />

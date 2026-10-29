@@ -47,7 +47,8 @@
     "stocks": "Stock Analysis",
     "forecast": "Forecast",
     "jobs": "Jobs",
-    "settings": "Settings"
+    "settings": "Settings",
+    "indexes": "Indexes"
   },
   "home": {
     "dashboardTitle": "Dashboard",
@@ -526,5 +527,18 @@
   },
   "common": {
     "confirm": "Confirm"
+  },
+  "indexes": {
+    "subtitle": "Index series with daily bars — the broad benchmarks first. Useful as a reference for a backtest.",
+    "colName": "Name",
+    "colCode": "Code",
+    "colClose": "Close",
+    "colPct": "Change",
+    "meta": "{{category}} · {{bars}} bars",
+    "loading": "Loading…",
+    "empty": "No index data.",
+    "noData": "No bars in this range.",
+    "pick": "Pick an index to see its chart.",
+    "loadFailed": "Could not load index data"
   }
 }

@@ -12,6 +12,7 @@ Sidebar is grouped by task: **研究** (工作台/选股/因子/行情) · **组
 |---------|-----|-----------|
 | Workbench (今日待办) | [Design system](design-system.md) | `/` |
 | Market quotes (universe) | [Stock universe](features/stock-universe.md) | `/market`, `/stocks/:tsCode` |
+| Indexes | [Indexes](features/indexes.md) | `/indexes` |
 | Stock picking (选股) | [Screening & factors](features/screening-and-analysis.md) | `/screening` |
 | Factor library (因子) | [Factors](features/factors.md) | `/factor`, `/factor/:code` |
 | Portfolios & watchlist | [Portfolios](features/portfolios.md) | `/portfolio?tab=holdings&status=…` (`/watchlist` redirects) |
