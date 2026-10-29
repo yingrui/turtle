@@ -120,6 +120,35 @@ class IcWeightsRankingProvider:
         ]
 
 
+class ScoreTableRankingProvider:
+    """Ranks by a table of precomputed scores: `{date: {ts_code: score}}`.
+
+    Used for rankings that come from an offline analysis rather than a model (experiment 2's IC
+    weights, experiment 3's regime scores). The table is a fact about the past; scoring is a lookup.
+    """
+
+    def __init__(self, path: str) -> None:
+        import json
+        from pathlib import Path
+
+        payload = json.loads(Path(path).read_text())
+        self.dates: dict[str, dict[str, float]] = payload["dates"]
+        self._ordered = sorted(self.dates)
+
+    def rankings(self, db, day: date) -> list[Ranked]:
+        import bisect
+
+        index = bisect.bisect_right(self._ordered, day.isoformat()) - 1
+        if index < 0:
+            return []
+        scores = self.dates[self._ordered[index]]
+        ordered = sorted(scores.items(), key=lambda pair: pair[1], reverse=True)
+        return [
+            Ranked(ts_code=str(code), score=float(value), rank=position + 1)
+            for position, (code, value) in enumerate(ordered)
+        ]
+
+
 class StaticRankingProvider:
     """A fixed order per day — the "fixed pool" case, and the seam a test uses."""
 
@@ -139,5 +168,6 @@ __all__ = [
     "ModelRankingProvider",
     "Ranked",
     "RankingProvider",
+    "ScoreTableRankingProvider",
     "StaticRankingProvider",
 ]

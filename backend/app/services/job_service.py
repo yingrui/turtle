@@ -121,7 +121,11 @@ class JobService:
                 portfolio_name = payload["portfolio"]
                 # A ranking source other than the scorecard: an IC-weight table written offline.
                 provider = None
-                if payload.get("ranking_source") == "ic_weights":
+                if payload.get("ranking_source") == "score_table":
+                    from app.core.simulation.ranking import ScoreTableRankingProvider
+
+                    provider = ScoreTableRankingProvider(payload["ranking_weights"])
+                elif payload.get("ranking_source") == "ic_weights":
                     from app.core.simulation.ranking import IcWeightsRankingProvider
 
                     provider = IcWeightsRankingProvider(
@@ -157,10 +161,28 @@ class JobService:
                 def report(day, equity, cash, names):
                     log_fn(f"{day}: equity {equity:,.0f} · cash {cash:,.0f} · {names} names")
 
-                result = run_model_simulation(
-                    db, run=run, start=start_date, end=end_date,
-                    initial_cash=initial_cash, config=config, provider=provider, on_day=report,
-                )
+                if payload.get("buy_rule") == "policy":
+                    from app.core.simulation.policy_runner import PolicyRunConfig, run_policy_simulation
+
+                    summary_result = run_policy_simulation(
+                        db, run=run, start=start_date, end=end_date,
+                        initial_cash=initial_cash,
+                        config=PolicyRunConfig(top_n=config.top_n, cash_buffer=config.cash_buffer),
+                        provider=provider
+                        or __import__("app.core.simulation.ranking", fromlist=["ModelRankingProvider"])
+                        .ModelRankingProvider(policy=config.policy),
+                        on_day=report,
+                    )
+                    result = type("R", (), {
+                        "days": summary_result["days"], "trades": summary_result["trades"],
+                        "holdings_rows": 0, "final_equity": summary_result["final_equity"],
+                        "skipped_days": [],
+                    })
+                else:
+                    result = run_model_simulation(
+                        db, run=run, start=start_date, end=end_date,
+                        initial_cash=initial_cash, config=config, provider=provider, on_day=report,
+                    )
                 summary = summarise(db, run.id)
                 for field_name, value in summary.items():
                     setattr(run, field_name, value)

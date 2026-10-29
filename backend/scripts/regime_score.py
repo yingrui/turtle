@@ -78,6 +78,10 @@ def main() -> None:
     parser.add_argument("--ma-window", type=int, default=60, dest="ma_window")
     parser.add_argument("--top-n", type=int, default=50, dest="top_n")
     parser.add_argument("--out", default=None)
+    parser.add_argument(
+        "--export-scores", default=None, dest="export_scores",
+        help="write per-date scores as JSON, for the policy-driven simulation",
+    )
     args = parser.parse_args()
 
     db = SessionLocal()
@@ -114,6 +118,25 @@ def main() -> None:
         combined = pd.concat(tables, names=["variant"]).reset_index(level=0)
         combined.to_csv(args.out, index=False)
         print(f"written {args.out}")
+
+    if args.export_scores:
+        import json
+        from pathlib import Path
+
+        scored = frame.assign(score=variants["regime-aware"].to_numpy()).dropna(subset=["score"])
+        payload = {
+            "source": "regime",
+            "note": "沪深300 > MA60 → 动量取正号；否则取负号（mom_20d, MACD, ma_dev_20）",
+            "horizon": args.horizon,
+            "benchmark": args.benchmark,
+            "ma_window": args.ma_window,
+            "dates": {
+                day: {code: round(float(value), 6) for code, value in part.set_index("ts_code")["score"].items()}
+                for day, part in scored.groupby("trade_date")
+            },
+        }
+        Path(args.export_scores).write_text(json.dumps(payload, ensure_ascii=False))
+        print(f"scores written to {args.export_scores} ({len(payload['dates'])} dates)")
 
     detail = tables["regime-aware"]
     print("\nregime-aware, per month:")
