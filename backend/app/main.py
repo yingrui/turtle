@@ -10,6 +10,7 @@ from app.api import (
     auth,
     data,
     factors,
+    indexes,
     jobs,
     portfolios,
     screening,
@@ -60,6 +61,7 @@ app.include_router(data.router)
 app.include_router(portfolios.router)
 app.include_router(screening.router)
 app.include_router(factors.router)
+app.include_router(indexes.router)
 app.include_router(jobs.router)
 app.include_router(simulations.router)
 app.include_router(stocks.router)

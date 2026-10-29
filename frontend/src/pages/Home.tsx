@@ -34,6 +34,19 @@ function pctClass(v: number | null | undefined) {
   return '';
 }
 
+type IndexItem = {
+  ts_code: string;
+  name: string;
+  close: number | null;
+  pct_chg: number | null;
+  latest_date: string | null;
+};
+
+function formatIndexPoints(v: number | null | undefined) {
+  if (v == null) return '—';
+  return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
 function formatPct(v: number | null | undefined) {
   if (v == null) return '—';
   return `${v > 0 ? '+' : ''}${v.toFixed(2)}%`;
@@ -47,17 +60,19 @@ export function Home() {
   const [industries, setIndustries] = useState<IndustryItem[]>([]);
   const [portfolio, setPortfolio] = useState<string | null>(null);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
+  const [indexes, setIndexes] = useState<IndexItem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        const [statusRes, metaRes, industryRes, portfoliosRes] = await Promise.all([
+        const [statusRes, metaRes, industryRes, portfoliosRes, indexesRes] = await Promise.all([
           apiFetch<DataStatus>('/api/data/status'),
           apiFetch<UniverseMeta>('/api/stocks/universe/meta'),
           apiFetch<{ items: IndustryItem[] }>('/api/stocks/universe/industry-summary?limit=12'),
           apiFetch<{ portfolios: string[] }>('/api/portfolios'),
+          apiFetch<{ indexes: IndexItem[] }>('/api/indexes').catch(() => ({ indexes: [] })),
         ]);
 
         if (cancelled) return;
@@ -65,6 +80,7 @@ export function Home() {
         setDataStatus(statusRes);
         setMeta(metaRes);
         setIndustries(industryRes.items ?? []);
+        setIndexes((indexesRes.indexes ?? []).slice(0, 6));
 
         const firstPortfolio = portfoliosRes.portfolios[0] ?? null;
         setPortfolio(firstPortfolio);
@@ -117,6 +133,20 @@ export function Home() {
               count: meta?.listed_count ?? 0,
             })}
           </p>
+
+          {indexes.length > 0 && (
+            <section className="home-indexes" aria-label={t('home.indexesTitle')}>
+              {indexes.map((item) => (
+                <div className="home-index" key={item.ts_code}>
+                  <span className="home-index__name">{item.name}</span>
+                  <span className="home-index__close">{formatIndexPoints(item.close)}</span>
+                  <span className={`home-index__pct ${pctClass(item.pct_chg)}`}>
+                    {formatPct(item.pct_chg)}
+                  </span>
+                </div>
+              ))}
+            </section>
+          )}
 
           <div className="home-grid">
             <section className="home-panel">

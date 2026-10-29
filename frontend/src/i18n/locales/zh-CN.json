@@ -77,7 +77,8 @@
     "marketLine": "行情日期 {{date}} · 共 {{count}} 只上市",
     "todoEmpty": "暂无需要处理的持仓。",
     "todoHeld": "已持有 {{days}} 天",
-    "todoTitle": "今日待办"
+    "todoTitle": "今日待办",
+    "indexesTitle": "指数"
   },
   "data": {
     "status": {
@@ -234,7 +235,10 @@
     "colBuy": "买入",
     "colSell": "卖出",
     "colBenefit": "盈亏",
-    "colReason": "原因"
+    "colReason": "原因",
+    "benchmark": "对比基准",
+    "noBenchmark": "不对比",
+    "excessVsBenchmark": "相对基准：{{value}} 点"
   },
   "watchlist": {
     "subtitle": "选择投资组合，查看该组合下的自选股票与最新行情。",

@@ -102,6 +102,49 @@ def simulation_pool_dates(run_id: str, db: Session = Depends(get_db), _: User = 
     return {"run_id": run_id, "pool_mode": "dynamic", "dates": pool_dates(db, run_id)}
 
 
+@router.get("/{run_id}/benchmark")
+def simulation_benchmark(
+    run_id: str,
+    ts_code: str = Query("000300.SH", description="Index to compare against"),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """The run's equity next to an index rebased to the same start — "did this beat the market?".
+
+    Both series are rebased to 100 on the run's first day, so the chart answers the question in one
+    look instead of asking the reader to divide two percentages.
+    """
+    from sqlalchemy import select
+
+    from app.models.simulation import SimulationDaily
+    from app.services.index_service import IndexService
+
+    run = db.get(SimulationRun, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    daily = db.scalars(
+        select(SimulationDaily)
+        .where(SimulationDaily.run_id == run_id)
+        .order_by(SimulationDaily.trade_date)
+    ).all()
+    if not daily:
+        raise HTTPException(status_code=404, detail="This run has no daily equity yet")
+    dates = [row.trade_date.isoformat() for row in daily]
+    first = float(daily[0].total or 0) or 1.0
+    equity = [round(float(row.total or 0) / first * 100, 4) for row in daily]
+    benchmark = IndexService().benchmark_series(db, ts_code, dates)
+    return {
+        "run_id": run_id,
+        "ts_code": ts_code,
+        "dates": dates,
+        "equity": equity,
+        "benchmark": benchmark,
+        "excess_pct": (
+            None if benchmark[-1] is None or equity[-1] is None else round(equity[-1] - benchmark[-1], 4)
+        ),
+    }
+
+
 @router.get("/{run_id}/holdings")
 def simulation_holdings(
     run_id: str,

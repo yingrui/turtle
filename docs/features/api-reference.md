@@ -95,6 +95,16 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 | GET | `/{name}/members?day=YYYY-MM-DD` | Which stocks were **in the portfolio that day** — a range query over `joined_at`/`left_at`, not a replay. Returns `{ts_code, status, episode, joined_at, left_at}` |
 | GET | `/{name}/events?day=&limit=` | The daily decisions: `event` (added/resurrected/bought/sold/dropped), ranks, scores, `reason`, `rule`, `rule_params`, and the model/dataset versions that produced them |
 
+## Indexes — `/api/indexes`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Indexes that **have daily bars** (76), the six broad benchmarks first, with latest `close` and `pct_chg` |
+| GET | `/{ts_code}/daily?start=&end=` | OHLC + `pct_chg`/`vol`/`amount` for one index (default: last year) |
+
+`GET /api/simulations/{run_id}/benchmark?ts_code=000300.SH` returns the run's equity and the index
+**rebased to 100 on the same first day**, plus `excess_pct` — the "did it beat the market" answer.
+
 ## Factors — `/api/factors`
 
 | Method | Path | Description |
@@ -112,6 +122,7 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 | GET | `/` | List simulation runs |
 | GET | `/compare` | Compare runs |
 | GET | `/{run_id}/summary` | Run summary |
+| GET | `/{run_id}/benchmark?ts_code=` | Equity vs an index, both rebased to 100 on the run's first day, with `excess_pct` |
 | GET | `/{run_id}/holdings?day=` | The run's book at that day's close (positions, weight, model rank/score) — model runs only |
 | GET | `/{run_id}/holding-dates` | Every day the run recorded a book |
 | GET | `/{run_id}/daily` | Daily equity series |

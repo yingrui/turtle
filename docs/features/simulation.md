@@ -62,6 +62,11 @@ run — `fixed` (the configured watchlist) or `dynamic` (the model's top-N, reco
 `simulation_pool`). See [Portfolio lifecycle](portfolio-lifecycle.md).
 Models are read from `STOCK_MODELS_DIR` (default `reports/models`, baked into the image at build).
 
+The results page overlays a benchmark: pick an index and the equity curve is drawn against it, both
+rebased to 100 on the run's first day (163 days of the `d1139ccc` run: strategy 84.6 vs 沪深300 93.7,
+i.e. **−9.1 points** — the comparison that says "this lost to the market", which a return percentage
+alone cannot).
+
 Measured over 2026-02-02 … 2026-10-09 with the current monthly models: 163 trading days, 6,224 fills,
 final equity 845,759 (−15.4%), max drawdown −25.1%. Turnover is the dominant cost — see the note in
 [Portfolio lifecycle](portfolio-lifecycle.md).

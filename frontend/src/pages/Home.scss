@@ -187,3 +187,36 @@
 .home-asof {
   font-size: var(--text-sm);
 }
+
+// Index strip: the market's own numbers, above the portfolio's.
+.home-indexes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.home-index {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+}
+
+.home-index__name {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.home-index__close {
+  font-size: var(--text-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.home-index__pct {
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}

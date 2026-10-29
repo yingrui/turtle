@@ -6,6 +6,8 @@ from app.core.tushare_schema import tushare_table as T
 
 _STATUS_TABLES = (
     ("stock_trade_daily", "trade_date", True),
+    ("index_daily", "trade_date", True),
+    ("index_basic", None, False),
     ("daily_basic", "trade_date", True),
     ("stock_adj_daily", "trade_date", True),
     ("stock_basic", None, False),

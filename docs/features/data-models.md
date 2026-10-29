@@ -30,6 +30,8 @@ Synced from Tushare via data collection jobs. Migration: `002_market_data.py`.
 | Table | Purpose |
 |-------|---------|
 | `tushare.trade_calendar` | Exchange calendar |
+| `tushare.index_basic` | Index metadata (~10.7k indexes); only a few carry daily bars |
+| `tushare.index_daily` | Index OHLC per session — broad benchmarks: 000001.SH, 000300.SH, 000905.SH, 000852.SH, 399001.SZ, 399006.SZ (2024-01 → now) |
 | `tushare.stock_basic` | Symbol metadata |
 | `tushare.stock_trade_daily` | Daily OHLCV (`ts_code`, `trade_date` PK) |
 | `tushare.stock_adj_daily` | Adjustment factors |

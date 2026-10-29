@@ -77,7 +77,8 @@
     "jobType": "Type",
     "jobStatus": "Status",
     "jobTime": "Created",
-    "statPortfolio": "Portfolio"
+    "statPortfolio": "Portfolio",
+    "indexesTitle": "Indexes"
   },
   "data": {
     "status": {
@@ -234,7 +235,10 @@
     "colBuy": "Buy",
     "colSell": "Sell",
     "colBenefit": "P&L",
-    "colReason": "Reason"
+    "colReason": "Reason",
+    "benchmark": "Benchmark",
+    "noBenchmark": "None",
+    "excessVsBenchmark": "vs benchmark: {{value}} pts"
   },
   "watchlist": {
     "subtitle": "Select a portfolio to view its watchlist stocks and latest quotes.",

@@ -25,6 +25,26 @@ type Summary = {
 
 type CompareRow = Summary & { id: string };
 
+type Benchmark = {
+  ts_code: string;
+  dates: string[];
+  equity: number[];
+  benchmark: (number | null)[];
+  excess_pct: number | null;
+};
+
+/** The run's equity and the index on one axis: both rebased to 100 on the first day. */
+function withBenchmark(
+  chart: { dates: string[]; series: { name: string; data: (number | null)[] }[] },
+  benchmark: Benchmark,
+): { dates: string[]; series: { name: string; data: (number | null)[] }[] } {
+  const indexName = benchmark.ts_code;
+  return {
+    dates: chart.dates,
+    series: [...chart.series, { name: indexName, data: benchmark.benchmark }],
+  };
+}
+
 type JobRow = {
   id: string;
   type: string;
@@ -48,6 +68,9 @@ export function SimulationResults() {
   const [benefit, setBenefit] = useState<Record<string, unknown>[]>([]);
   const [winLoss, setWinLoss] = useState<{ win: number; loss: number; holding: number } | null>(null);
   const [compare, setCompare] = useState<CompareRow[]>([]);
+  const [benchmarkCode, setBenchmarkCode] = useState('000300.SH');
+  const [benchmarks, setBenchmarks] = useState<{ ts_code: string; name: string }[]>([]);
+  const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
 
   useEffect(() => {
     apiFetch<{ jobs: JobRow[] }>('/api/jobs')
@@ -90,6 +113,22 @@ export function SimulationResults() {
       { replace: true },
     );
   }, [runs, selectedRunId, runIdParam, jobIdParam, setSearchParams]);
+
+  useEffect(() => {
+    apiFetch<{ indexes: { ts_code: string; name: string }[] }>('/api/indexes')
+      .then((d) => setBenchmarks((d.indexes ?? []).slice(0, 8)))
+      .catch(() => setBenchmarks([]));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedRunId || !benchmarkCode) {
+      setBenchmark(null);
+      return;
+    }
+    apiFetch<Benchmark>(`/api/simulations/${selectedRunId}/benchmark?ts_code=${encodeURIComponent(benchmarkCode)}`)
+      .then(setBenchmark)
+      .catch(() => setBenchmark(null));
+  }, [selectedRunId, benchmarkCode]);
 
   useEffect(() => {
     if (!selectedRunId) {
@@ -250,7 +289,32 @@ export function SimulationResults() {
         >
           {tab === 'chart' && chart && (
             <div className="chart-container">
-              <LineChart data={chart} title={run ? `Policy ${run.policy_id}` : undefined} />
+              <div className="toolbar mb-3">
+                <div className="form-row field-medium">
+                  <label htmlFor="benchmark-select">{t('results.benchmark')}</label>
+                  <select
+                    id="benchmark-select"
+                    value={benchmarkCode}
+                    onChange={(e) => setBenchmarkCode(e.target.value)}
+                  >
+                    <option value="">{t('results.noBenchmark')}</option>
+                    {benchmarks.map((item) => (
+                      <option key={item.ts_code} value={item.ts_code}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {benchmark && benchmark.excess_pct != null && (
+                  <span className={`text-sm ${benchmark.excess_pct >= 0 ? 'price-up' : 'price-down'}`}>
+                    {t('results.excessVsBenchmark', { value: benchmark.excess_pct.toFixed(2) })}
+                  </span>
+                )}
+              </div>
+              <LineChart
+                data={benchmark ? withBenchmark(chart, benchmark) : chart}
+                title={run ? `Policy ${run.policy_id}` : undefined}
+              />
             </div>
           )}
           {tab === 'trades' && (
