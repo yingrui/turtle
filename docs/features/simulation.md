@@ -61,6 +61,9 @@ GET /api/simulations/{run_id}/holdings?day=2026-05-14   # the book that day
 GET /api/simulations/{run_id}/holding-dates             # which days have one
 ```
 
+Ranking sources so far: `ModelRankingProvider` (monthly scorecard) and, from experiment 2, an
+IC-weighted score that needs no training at all (`scripts/ic_weighted.py`).
+
 **The runner trades a ranking, not a model.** `app/core/simulation/ranking.py` defines
 `RankingProvider.rankings(db, day) -> list[Ranked]`; `ModelRankingProvider` implements it with the
 monthly scorecard, and the runner only sees ordered rows. Changing the label, the features, the dataset
