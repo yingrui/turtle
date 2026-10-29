@@ -164,12 +164,12 @@ export function SimulationResults() {
 
   return (
     <>
-      <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' }}>
+      <p className="text-muted mb-4">
         {t('results.subtitle')}
       </p>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
-        <div className="form-row" style={{ minWidth: 280, maxWidth: 420, margin: 0 }}>
+      <div className="toolbar mb-4">
+        <div className="form-row field-xwide field-xwide--min">
           <label htmlFor="sim-job">{t('results.selectJob')}</label>
           <select id="sim-job" value={jobIdParam ?? ''} onChange={(e) => selectJob(e.target.value)}>
             <option value="">{t('results.allRecent')}</option>
@@ -181,7 +181,7 @@ export function SimulationResults() {
           </select>
         </div>
         {runs.length > 0 && (
-          <div className="form-row" style={{ minWidth: 280, maxWidth: 480, margin: 0 }}>
+          <div className="form-row field-xwide field-xwide--min">
             <label htmlFor="sim-run">{t('results.selectRun')}</label>
             <select id="sim-run" value={selectedRunId} onChange={(e) => selectRun(e.target.value)}>
               {runs.map((r) => (
@@ -194,18 +194,18 @@ export function SimulationResults() {
         )}
       </div>
 
-      {loadingRuns && <p style={{ color: 'var(--color-text-muted)' }}>{t('results.loading')}</p>}
+      {loadingRuns && <p className="text-muted">{t('results.loading')}</p>}
 
       {!loadingRuns && runs.length === 0 && (
-        <div style={{ padding: 'var(--space-4)', border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-md)' }}>
-          <p style={{ color: 'var(--color-text-muted)', margin: '0 0 var(--space-3)' }}>{t('results.empty')}</p>
+        <div className="empty-panel">
+          <p className="text-muted mb-3">{t('results.empty')}</p>
           <Link to="/simulation" className="btn btn-primary btn-sm">{t('simulation.tabRun')}</Link>
         </div>
       )}
 
       {compare.length > 1 && (
-        <div style={{ marginBottom: 'var(--space-6)' }}>
-          <h2 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-3)' }}>{t('results.compareTitle')}</h2>
+        <div className="mb-6">
+          <h2 className="panel-title">{t('results.compareTitle')}</h2>
           <table className="data-table">
             <thead>
               <tr>

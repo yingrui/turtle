@@ -1,3 +1,6 @@
+@use '../styles/design-system/local-tokens' as lt;
+@use '../styles/design-system/mixins' as *;
+
 .home-dashboard {
   .home-header {
     margin-bottom: var(--space-5);
@@ -39,7 +42,7 @@
     gap: var(--space-4);
     margin-bottom: var(--space-4);
 
-    @media (min-width: 960px) {
+    @include min-width(lt.$bp-home-split) {
       grid-template-columns: 1.2fr 1fr;
     }
   }
@@ -98,7 +101,7 @@
     display: grid;
     gap: var(--space-4);
 
-    @media (min-width: 480px) {
+    @include min-width(lt.$bp-phone-split) {
       grid-template-columns: 1fr 1fr;
     }
 

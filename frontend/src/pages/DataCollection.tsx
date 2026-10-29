@@ -31,7 +31,7 @@ export function DataCollection() {
   return (
     <div className="page-card">
       <h1 className="page-title">{t('nav.data')}</h1>
-      <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' }}>
+      <p className="text-muted mb-4">
         {t('data.status.description')}
       </p>
 
@@ -39,7 +39,7 @@ export function DataCollection() {
 
       {!loading && status && (
         <>
-          <p style={{ marginBottom: 'var(--space-4)' }}>
+          <p className="mb-4">
             {t('data.status.asOf')}: <strong>{status.as_of_date ?? '—'}</strong>
             {' · '}
             {t('data.status.source')}: {status.source}
@@ -63,11 +63,11 @@ export function DataCollection() {
             </tbody>
           </table>
           {!status.as_of_date && (
-            <p className="error-banner" style={{ marginTop: 'var(--space-4)' }}>
+            <p className="error-banner mt-4">
               {t('data.status.empty')}
             </p>
           )}
-          <p style={{ marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+          <p className="text-hint mt-4">
             {t('data.status.etlHint')}{' '}
             <Link to="/screening">{t('nav.screening')}</Link>
           </p>

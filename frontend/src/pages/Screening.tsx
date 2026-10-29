@@ -388,32 +388,24 @@ export function Screening() {
   return (
     <div className="page-card">
       <h1 className="page-title">{t('nav.screening')}</h1>
-      <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
+      <p className="note mb-3">
         {t('screening.subtitle')}
       </p>
 
       {dataStatus && (
-        <div
-          style={{
-            padding: 'var(--space-3)',
-            marginBottom: 'var(--space-4)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md)',
-            fontSize: 'var(--text-sm)',
-          }}
-        >
+        <div className="info-strip info-strip--mb">
           {t('data.status.asOf')}: <strong>{dataStatus.as_of_date ?? '—'}</strong>
           {dailyBasicDate ? (
             <span> · daily_basic: {dailyBasicDate}</span>
           ) : (
-            <span style={{ color: 'var(--color-danger)' }}> · {t('screening.noDailyBasic')}</span>
+            <span className="note-danger"> · {t('screening.noDailyBasic')}</span>
           )}
           {' · '}
           <Link to="/data">{t('data.status.viewDetails')}</Link>
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+      <div className="toolbar toolbar--tight mb-4">
         <button
           type="button"
           className={`btn${tab === 'fundamental' ? ' btn-primary' : ' btn-secondary'}`}
@@ -447,24 +439,24 @@ export function Screening() {
 
       {tab === 'fundamental' && (
         <>
-          <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <div className="form-row" style={{ maxWidth: 120 }}>
+          <div className="toolbar">
+            <div className="form-row field-xs">
               <label>{t('screening.peMax')}</label>
               <input type="number" value={peMax} onChange={(e) => setPeMax(e.target.value)} placeholder="20" />
             </div>
-            <div className="form-row" style={{ maxWidth: 120 }}>
+            <div className="form-row field-xs">
               <label>{t('screening.pbMax')}</label>
               <input type="number" value={pbMax} onChange={(e) => setPbMax(e.target.value)} placeholder="3" />
             </div>
-            <div className="form-row" style={{ maxWidth: 160 }}>
+            <div className="form-row field-narrow">
               <label>{t('screening.circMvMax')}</label>
               <input type="number" value={circMvMax} onChange={(e) => setCircMvMax(e.target.value)} placeholder="500000" />
             </div>
-            <div className="form-row" style={{ maxWidth: 160 }}>
+            <div className="form-row field-narrow">
               <label>{t('screening.industry')}</label>
               <input type="text" value={industry} onChange={(e) => setIndustry(e.target.value)} />
             </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <label className="check-inline">
               <input type="checkbox" checked={excludeSt} onChange={(e) => setExcludeSt(e.target.checked)} />
               {t('screening.excludeSt')}
             </label>
@@ -473,8 +465,8 @@ export function Screening() {
             </button>
           </div>
           {presets.length > 0 && (
-            <div style={{ marginTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-              <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>{t('screening.presets')}:</span>
+            <div className="toolbar-mt">
+              <span className="text-hint">{t('screening.presets')}:</span>
               {presets.map((p) => (
                 <button key={p.id} type="button" className="btn btn-sm btn-secondary" onClick={() => applyPreset(p)}>
                   {presetLabel(p)}
@@ -483,7 +475,7 @@ export function Screening() {
             </div>
           )}
           {pickAsOf && (
-            <p style={{ marginTop: 'var(--space-3)', fontSize: 'var(--text-sm)' }}>
+            <p className="text-sm mt-3">
               {t('screening.pickResult', { date: pickAsOf, shown: pickRows.length, total: pickTotal })}
             </p>
           )}
@@ -491,12 +483,12 @@ export function Screening() {
       )}
 
       {tab === 'technical' && (
-        <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div className="form-row" style={{ maxWidth: 200 }}>
+        <div className="toolbar">
+          <div className="form-row field-medium">
             <label>{t('screening.asOf')}</label>
             <input type="date" value={asOfDate} onChange={(e) => setAsOfDate(e.target.value)} />
           </div>
-          <div className="form-row" style={{ maxWidth: 200 }}>
+          <div className="form-row field-medium">
             <label>{t('screening.trend')}</label>
             <select value={trendFilter} onChange={(e) => setTrendFilter(e.target.value)}>
               <option value="">{t('screening.trendAll')}</option>
@@ -518,15 +510,7 @@ export function Screening() {
       {job?.error && <p className="error-banner">{job.error}</p>}
 
       {simJobId && simJob && (
-        <div
-          style={{
-            marginTop: 'var(--space-4)',
-            padding: 'var(--space-3)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md)',
-            fontSize: 'var(--text-sm)',
-          }}
-        >
+        <div className="info-strip info-strip--mt">
           {t('screening.backtestJob')}: <strong>{simJob.status}</strong>
           {simJob.status === 'completed' && (
             <>
@@ -536,13 +520,13 @@ export function Screening() {
               </Link>
             </>
           )}
-          {simJob.error && <p className="error-banner" style={{ marginTop: 'var(--space-2)' }}>{simJob.error}</p>}
+          {simJob.error && <p className="error-banner mt-2">{simJob.error}</p>}
         </div>
       )}
 
       {activeRows.length > 0 && (
-        <div style={{ marginTop: 'var(--space-4)' }}>
-          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-3)' }}>
+        <div className="panel-block">
+          <div className="toolbar toolbar--tight mb-3">
             {portfolios.length > 0 && (
               <>
                 <select value={bulkPortfolio} onChange={(e) => setBulkPortfolio(e.target.value)}>
@@ -582,25 +566,10 @@ export function Screening() {
       )}
 
       {backtestOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-          }}
-          onClick={() => setBacktestOpen(false)}
-        >
-          <div
-            className="page-card"
-            style={{ maxWidth: 420, width: '90%' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-3)' }}>{t('screening.backtestTitle')}</h2>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+        <div className="overlay" onClick={() => setBacktestOpen(false)}>
+          <div className="page-card dialog-card" onClick={(e) => e.stopPropagation()}>
+            <h2 className="panel-title">{t('screening.backtestTitle')}</h2>
+            <p className="text-hint">
               {t('screening.backtestHint', { count: selected.size || allCodes.length })}
             </p>
             <div className="form-row">
@@ -611,7 +580,7 @@ export function Screening() {
                 ))}
               </select>
             </div>
-            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+            <div className="toolbar">
               <div className="form-row">
                 <label>{t('screening.startDate')}</label>
                 <input type="date" value={btStart} onChange={(e) => setBtStart(e.target.value)} />
@@ -621,7 +590,7 @@ export function Screening() {
                 <input type="date" value={btEnd} onChange={(e) => setBtEnd(e.target.value)} />
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
+            <div className="toolbar toolbar--tight mt-4">
               <button type="button" className="btn btn-primary" onClick={runBacktest}>
                 {t('screening.runBacktest')}
               </button>

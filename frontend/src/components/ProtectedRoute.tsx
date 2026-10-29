@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, authMode } = useAuth();
   if (isLoading) {
-    return <div style={{ padding: 'var(--space-8)', textAlign: 'center' }}>Loading…</div>;
+    return <div className="loading-block">Loading…</div>;
   }
   // openKMS iframe / external host: no in-app login gate
   if (authMode === 'none') {

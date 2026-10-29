@@ -1,44 +1,8 @@
 {
  "_comment": "Frozen design-system debt. The check only ratchets down: fix a line and re-run with --update-baseline to lower it; never add.",
  "files": {
-  "src/components/Chart.tsx": {
-   "inline-style": 2
-  },
-  "src/components/ProtectedRoute.tsx": {
-   "inline-style": 1
-  },
-  "src/pages/DataCollection.tsx": {
-   "inline-style": 4
-  },
-  "src/pages/Home.scss": {
-   "px-breakpoint": 2
-  },
-  "src/pages/Login.tsx": {
-   "inline-style": 2
-  },
   "src/pages/Portfolio.tsx": {
-   "inline-style": 9
-  },
-  "src/pages/Register.tsx": {
-   "inline-style": 2
-  },
-  "src/pages/Screening.tsx": {
-   "inline-style": 26
-  },
-  "src/pages/Simulation.tsx": {
-   "inline-style": 6
-  },
-  "src/pages/SimulationResults.tsx": {
-   "inline-style": 9
-  },
-  "src/pages/StockDetail.tsx": {
-   "inline-style": 4
-  },
-  "src/pages/StockList.tsx": {
-   "inline-style": 5
-  },
-  "src/styles/design-system/_pagination.scss": {
-   "px-spacing": 4
+   "inline-style-dynamic": 5
   }
  }
 }

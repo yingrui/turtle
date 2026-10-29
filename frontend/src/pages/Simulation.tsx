@@ -95,7 +95,7 @@ export function Simulation() {
   return (
     <div className="simulation-layout">
       <div className="simulation-config">
-      <div className="form-row" style={{ maxWidth: 300 }}>
+      <div className="form-row field-wide">
         <label htmlFor="portfolio">Portfolio</label>
         <select id="portfolio" value={portfolio} onChange={(e) => setPortfolio(e.target.value)}>
           {portfolios.map((p) => (
@@ -103,19 +103,19 @@ export function Simulation() {
           ))}
         </select>
       </div>
-      <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
-        <div className="form-row" style={{ maxWidth: 200 }}>
+      <div className="toolbar">
+        <div className="form-row field-medium">
           <label htmlFor="start-date">Start date</label>
           <input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
         </div>
-        <div className="form-row" style={{ maxWidth: 200 }}>
+        <div className="form-row field-medium">
           <label htmlFor="end-date">End date</label>
           <input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </div>
       </div>
       {policyCount > 0 && (
         <div>
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
+          <p className="text-hint mb-2">
             Policies to run ({selectedPolicies.length}/{policyCount})
           </p>
           <div className="policy-checkboxes">
@@ -133,7 +133,7 @@ export function Simulation() {
       </button>
       {job && (
         <div>
-          <p style={{ marginTop: 'var(--space-4)' }}>
+          <p className="mt-4">
             Status: <strong>{job.status}</strong>
           </p>
           {job.status === 'completed' && job.id && (

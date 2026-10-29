@@ -578,7 +578,7 @@ export function Portfolio() {
         <>
           {/* The portfolio is chosen here, where it means something: other pages read the same value
               from the context but do not need a control of their own. */}
-          <div className="form-row field-wide" style={{ marginBottom: 'var(--space-4)' }}>
+          <div className="form-row field-wide mb-4">
             <label htmlFor="portfolio-config-select">{t('portfolio.select')}</label>
             <select
               id="portfolio-config-select"
@@ -744,7 +744,7 @@ export function Portfolio() {
               <h2 className="portfolio-panel-title">{t('portfolio.holdingsTitle')}</h2>
               <p className="portfolio-panel-desc">{t('portfolio.holdingsDesc')}</p>
               {stocksSource === 'run' && (
-                <div className="form-row" style={{ maxWidth: 220 }}>
+                <div className="form-row field-medium">
                   <label>{t('portfolio.poolDate')}</label>
                   <select
                     value={bookDate ?? ''}
@@ -794,7 +794,7 @@ export function Portfolio() {
                 <>
                   <h2 className="portfolio-panel-title">{t('portfolio.poolTitle')}</h2>
                   <p className="portfolio-panel-desc">{t('portfolio.poolDesc')}</p>
-                  <div className="form-row" style={{ maxWidth: 420 }}>
+                  <div className="form-row field-xwide">
                     <label>{t('portfolio.poolRun')}</label>
                     <select
                       value={pool?.run_id ?? ''}
@@ -820,7 +820,7 @@ export function Portfolio() {
                         })}
                       </p>
                       {pool.pool_mode === 'dynamic' && poolDates.length > 0 && (
-                        <div className="form-row" style={{ maxWidth: 200 }}>
+                        <div className="form-row field-medium">
                           <label>{t('portfolio.poolDate')}</label>
                           <select value={poolDay ?? ''} onChange={(e) => loadPool(e.target.value)}>
                             {poolDates.map((d) => (

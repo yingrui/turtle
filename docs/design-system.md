@@ -53,8 +53,13 @@ npm run check:styles -- --list            # print every hit (for fixing)
 npm run check:styles -- --update-baseline # freeze the tree after removing some
 ```
 
+A `style={{ … }}` whose value is computed at render time (`` width: `${pct}%` ``) cannot live in a
+stylesheet, so it is counted separately as `inline-style-dynamic` and is not treated as debt — the
+five left in `Portfolio.tsx` are the weight bar and the risk-position bar.
+
 **The ratchet only goes down.** Removing violations and re-running `--update-baseline` lowers the
-number; adding one fails the check with the file and rule. `npm run check` runs typecheck →
+number; adding one fails the check with the file and rule. It went from **128 hits / 23 files** to
+**5 hits / 1 file**, and everything left is a data-driven width. `npm run check` runs typecheck →
 `check:styles` → tests → build, so the guardrail runs before a build can pass.
 
 ## Guardrails — `npm run check:classes`

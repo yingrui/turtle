@@ -267,9 +267,13 @@
 // --- Spacing utilities ----------------------------------------------------
 // `margin-top: var(--space-N)` between blocks is the other half of the inline-style debt. Keeping
 // them named makes the rhythm visible in review instead of buried in a JSX attribute.
+.mt-0 { margin-top: 0; }
+
 .mt-2 { margin-top: var(--space-2); }
 .mt-3 { margin-top: var(--space-3); }
 .mt-4 { margin-top: var(--space-4); }
+
+.mb-4 { margin-bottom: var(--space-4); }
 
 .field-xwide {
   max-width: 420px;
@@ -294,4 +298,108 @@
   margin-bottom: var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+// --- Small layout helpers used by the picking/screening page -----------------
+// A muted sentence under the page title or a toolbar.
+.note {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.note-danger {
+  color: var(--color-danger);
+}
+
+// Toolbar that needs space above it.
+.toolbar-mt {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+
+// A panel inside a page (the backtest dialog body, chart wrappers).
+.panel-block {
+  margin-top: var(--space-4);
+}
+
+.panel-title {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-3);
+}
+
+// Bordered info strip (data-as-of line, job status line).
+.info-strip {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.info-strip--mt {
+  margin-top: var(--space-4);
+}
+
+.info-strip--mb {
+  margin-bottom: var(--space-4);
+}
+
+// A lightweight modal shell: the overlay + the card. `<Dialog>` is the long-term answer, but two
+// screens still hand-roll it, and this at least keeps the values in the stylesheet.
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay-backdrop, rgba(0, 0, 0, 0.4));
+}
+
+.dialog-card {
+  width: 90%;
+  max-width: 420px;
+}
+
+// Dashed container for "nothing here yet".
+.empty-panel {
+  padding: var(--space-4);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.mb-6 { margin-bottom: var(--space-6); }
+
+// A wide field that keeps a floor: select boxes with long option text should not collapse.
+.field-xwide--min {
+  min-width: 280px;
+}
+
+// A chart wrapper sized by class rather than by an inline `height`.
+.chart-md { height: 400px; }
+.chart-lg { height: 480px; }
+
+// Loading placeholder that centres itself.
+.loading-block {
+  padding: var(--space-8);
+  text-align: center;
+}
+
+// A form row that keeps its own width inside a flex toolbar (no extra margin under it).
+.field-inline {
+  margin-bottom: 0;
+}
+
+.field-inline--flex {
+  flex: 1;
+  min-width: 200px;
+  margin-bottom: 0;
+}
+
+// A full-width row inside a definition grid.
+.grid-span {
+  grid-column: 1 / -1;
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-1);
 }

@@ -177,8 +177,8 @@ export function StockDetail() {
       )}
 
       {f && (f.pe_ttm != null || f.pb != null || f.circ_mv != null || f.turnover_rate != null) && (
-        <dl className="stock-detail-stats" style={{ marginTop: 'var(--space-3)' }}>
-          <div style={{ gridColumn: '1 / -1', fontWeight: 600, marginBottom: 'var(--space-1)' }}>
+        <dl className="stock-detail-stats mt-3">
+          <div className="grid-span">
             {t('stockDetail.fundamentals')}
           </div>
           {f.pe_ttm != null && (
@@ -236,7 +236,7 @@ export function StockDetail() {
         </div>
       )}
       {tab === 'kline' && (!ohlcv || ohlcv.dates.length === 0) && (
-        <p style={{ color: 'var(--color-text-muted)' }}>{t('stockDetail.noChartData')}</p>
+        <p className="text-muted">{t('stockDetail.noChartData')}</p>
       )}
 
       {tab === 'factor' && <FactorPanel tsCode={tsCode} />}
@@ -245,7 +245,7 @@ export function StockDetail() {
 
       {tab === 'indicator' && (
         <>
-          <div className="form-row" style={{ maxWidth: 220, marginBottom: 'var(--space-4)' }}>
+          <div className="form-row field-medium mb-4">
             <label>{t('stockDetail.indicator.label')}</label>
             <select value={indicatorType} onChange={(e) => setIndicatorType(e.target.value)}>
               {INDICATOR_TYPES.map((c) => (

@@ -31,7 +31,7 @@ export function LineChart({ data, title }: { data: ChartData; title?: string }) 
       data: s.data,
     })),
   };
-  return <ReactECharts option={option} style={{ height: 400 }} />;
+  return <ReactECharts option={option} className="chart-md" />;
 }
 
 export function CandlestickChart({ data, title }: { data: OhlcvData; title?: string }) {
@@ -87,5 +87,5 @@ export function CandlestickChart({ data, title }: { data: OhlcvData; title?: str
       },
     ],
   };
-  return <ReactECharts option={option} style={{ height: 480 }} />;
+  return <ReactECharts option={option} className="chart-lg" />;
 }

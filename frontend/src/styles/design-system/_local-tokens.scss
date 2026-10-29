@@ -8,3 +8,7 @@ $space-half: 2px;
 
 //! A desktop-first breakpoint the shared scale does not have (openKMS jumps 768 → 960).
 $bp-wide-min: 900px;
+
+//! Mobile-first splits used by the home page: two columns on a phone, side panels on a desktop.
+$bp-phone-split: 480px;
+$bp-home-split: 960px;

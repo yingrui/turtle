@@ -34,6 +34,12 @@ BASELINE = Path(__file__).resolve().parent / "styles-baseline.json"
 #: `!important` is how a utility wins against a component's own rule; that is the point of one.
 IMPORTANT_ALLOWED = {"src/styles/design-system/_utilities.scss"}
 
+#: A component sheet's internal geometry (a 10px pagination gap) is not the page spacing rhythm;
+#: the grid is about pages and panels.
+SPACING_ALLOWED = {
+    "src/styles/design-system/_pagination.scss",
+}
+
 TOKEN_FILES = {
     "src/styles/design-system/_css-variables.scss",
     "src/styles/design-system/_tokens.scss",
@@ -93,14 +99,22 @@ def scan() -> dict[str, dict[str, list[str]]]:
                 continue
             if rule == "important" and rel in IMPORTANT_ALLOWED:
                 continue
+            if rule == "px-spacing" and rel in SPACING_ALLOWED:
+                continue
             for number, line in enumerate(path.read_text().splitlines(), start=1):
                 if pattern.search(line):
                     hits[rel][rule].append(f"{rel}:{number} {line.strip()}")
     for rule, (pattern, glob, _hint) in TSX_RULES.items():
         for path, rel in _files(glob):
             for number, line in enumerate(path.read_text().splitlines(), start=1):
-                if pattern.search(line):
-                    hits[rel][rule].append(f"{rel}:{number} {line.strip()[:120]}")
+                if not pattern.search(line):
+                    continue
+                # `style={{ width: `${pct}%` }}` is a value computed at render time — it cannot live
+                # in a stylesheet, so it is not the debt this rule is about.
+                if "${" in line:
+                    hits[rel]["inline-style-dynamic"].append(f"{rel}:{number} {line.strip()[:120]}")
+                    continue
+                hits[rel][rule].append(f"{rel}:{number} {line.strip()[:120]}")
     return hits
 
 

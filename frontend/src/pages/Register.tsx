@@ -34,7 +34,7 @@ export function Register() {
     <div className="auth-page">
       <div className="auth-card">
         <AppBrand size="auth" />
-        <h1 className="page-title" style={{ marginTop: 0 }}>
+        <h1 className="page-title mt-0">
           {t('auth.register')}
         </h1>
         <form onSubmit={onSubmit}>
@@ -57,7 +57,7 @@ export function Register() {
             {t('auth.register')}
           </button>
         </form>
-        <p style={{ marginTop: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
+        <p className="text-sm mt-4">
           <Link to="/login">{t('auth.login')}</Link>
         </p>
       </div>

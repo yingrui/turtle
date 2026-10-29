@@ -373,7 +373,7 @@ export function StockList() {
       )}
 
       <div className="stock-list-toolbar">
-        <div className="form-row" style={{ flex: 1, minWidth: 200, maxWidth: 280, marginBottom: 0 }}>
+        <div className="form-row field-wide field-inline--flex">
           <label>{t('quote.search')}</label>
           <input
             value={q}
@@ -381,7 +381,7 @@ export function StockList() {
             placeholder={t('quote.searchPlaceholder')}
           />
         </div>
-        <div className="form-row" style={{ maxWidth: 160, marginBottom: 0 }}>
+        <div className="form-row field-narrow field-inline">
           <label>{t('quote.industry')}</label>
           <select value={industry} onChange={(e) => setIndustry(e.target.value)}>
             <option value="">{t('quote.all')}</option>
@@ -390,7 +390,7 @@ export function StockList() {
             ))}
           </select>
         </div>
-        <div className="form-row" style={{ maxWidth: 120, marginBottom: 0 }}>
+        <div className="form-row field-xs field-inline">
           <label>{t('quote.status')}</label>
           <select value={listStatus} onChange={(e) => setListStatus(e.target.value)}>
             <option value="L">{t('quote.listed')}</option>
@@ -399,7 +399,7 @@ export function StockList() {
             <option value="all">{t('quote.all')}</option>
           </select>
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)' }}>
+        <label className="check-inline text-sm">
           <input type="checkbox" checked={excludeSt} onChange={(e) => setExcludeSt(e.target.checked)} />
           {t('quote.hideSt')}
         </label>
@@ -419,7 +419,7 @@ export function StockList() {
       </div>
 
       {total === 0 && !loading ? (
-        <p style={{ color: 'var(--color-text-muted)' }}>{t('quote.empty')}</p>
+        <p className="text-muted">{t('quote.empty')}</p>
       ) : (
         <>
           <DataTable
