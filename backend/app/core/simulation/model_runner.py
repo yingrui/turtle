@@ -29,7 +29,9 @@ import numpy as np
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
-from app.core.factor.score import ModelUnavailable, load_model_for, rank_cross_section, score_frame
+from app.core.factor.score import ModelUnavailable
+from app.core.tushare_schema import tushare_table
+from app.core.simulation.ranking import ModelRankingProvider, Ranked, RankingProvider
 from app.models.simulation import (
     SimulationDaily,
     SimulationHolding,
@@ -95,12 +97,17 @@ class ModelRunResult:
     skipped_days: list[str] = field(default_factory=list)
 
 
+def _as_date(value) -> date:
+    """PostgreSQL returns a `date`; a sqlite test database can hand back the string."""
+    return value if isinstance(value, date) else date.fromisoformat(str(value))
+
+
 def _trade_days(db: Session, start: date, end: date) -> list[date]:
     return [
-        row[0]
+        _as_date(row[0])
         for row in db.execute(
             text(
-                "SELECT DISTINCT trade_date FROM tushare.stock_trade_daily "
+                f"SELECT DISTINCT trade_date FROM {tushare_table('stock_trade_daily')} "
                 "WHERE trade_date BETWEEN :s AND :e ORDER BY trade_date"
             ),
             {"s": start, "e": end},
@@ -112,7 +119,7 @@ def _closes(db: Session, day: date) -> dict[str, float]:
     return {
         row[0]: float(row[1])
         for row in db.execute(
-            text("SELECT ts_code, close FROM tushare.stock_trade_daily WHERE trade_date = :d"),
+            text(f"SELECT ts_code, close FROM {tushare_table('stock_trade_daily')} WHERE trade_date = :d"),
             {"d": day},
         ).all()
     }
@@ -123,7 +130,7 @@ def _st_codes(db: Session) -> set[str]:
         row[0]
         for row in db.execute(
             text(
-                "SELECT ts_code FROM tushare.stock_basic "
+                f"SELECT ts_code FROM {tushare_table('stock_basic')} "
                 "WHERE name LIKE '%ST%' OR name LIKE '%退%' OR name LIKE '%退市%'"
             )
         ).all()
@@ -138,40 +145,33 @@ def run_model_simulation(
     end: date,
     initial_cash: float,
     config: ModelRunConfig,
+    provider: RankingProvider | None = None,
     on_day=None,
 ) -> ModelRunResult:
     """Walk the window once, trading daily, recording equity and positions for every close."""
     result = ModelRunResult(run_id=run.id)
     cash = float(initial_cash)
     positions: dict[str, _Position] = {}
-    st_codes = _st_codes(db) if config.exclude_st else set()
+    # The runner does not know what produces the ranking — only that it is ordered.
+    ranker = provider or ModelRankingProvider(policy=config.policy, exclude_st=config.exclude_st)
 
     for day in _trade_days(db, start, end):
         try:
-            model = load_model_for(day, config.policy)
+            ordered: list[Ranked] = ranker.rankings(db, day)
         except ModelUnavailable as exc:
             result.skipped_days.append(f"{day}: {exc}")
             continue
-        codes = [factor["code"] for factor in model["factors"]]
-        ranks = rank_cross_section(db, day, codes)
-        if ranks.empty:
-            result.skipped_days.append(f"{day}: no factor values")
+        if not ordered:
+            result.skipped_days.append(f"{day}: nothing ranked")
             continue
-
-        ranked = ranks[~ranks["ts_code"].isin(st_codes)].reset_index(drop=True)
-        if ranked.empty:
-            result.skipped_days.append(f"{day}: nothing left after the ST filter")
-            continue
-        ranked["score"] = score_frame(model, ranked.drop(columns=["ts_code"]))
-        ranked = ranked.sort_values("score", ascending=False).reset_index(drop=True)
-        ranked["rank"] = ranked.index + 1
-        best = ranked.set_index("ts_code")[["rank", "score"]]
+        best = {item.ts_code: (item.rank, item.score) for item in ordered}
+        top_n = [item.ts_code for item in ordered[: config.top_n]]
         closes = _closes(db, day)
 
         # 1) sells: rank past the limit, or held too long
         for code in list(positions):
             position = positions[code]
-            rank = int(best["rank"].get(code, 10**9))
+            rank = best.get(code, (10**9, 0.0))[0]
             price = closes.get(code)
             if price is None or price < config.min_price:
                 continue
@@ -207,10 +207,10 @@ def run_model_simulation(
             position.shares * closes.get(code, position.cost) for code, position in positions.items()
         )
         target = equity * (1 - config.cash_buffer) / config.top_n
-        for row in ranked.head(config.top_n).itertuples():
-            code = row.ts_code
+        for code in top_n:
             if code in positions:
                 continue
+            rank_value, score_value = best[code]
             price = closes.get(code)
             if price is None or price < config.min_price:
                 continue
@@ -222,7 +222,9 @@ def run_model_simulation(
             if amount + fee > cash:
                 continue
             cash -= amount + fee
-            positions[code] = _Position(shares=shares, cost=price, opened=day, last_rank=int(row.rank), last_score=float(row.score))
+            positions[code] = _Position(
+                shares=shares, cost=price, opened=day, last_rank=rank_value, last_score=score_value
+            )
             result.trades += 1
             db.add(
                 SimulationTrade(
@@ -240,15 +242,16 @@ def run_model_simulation(
             )
 
         # 3) the pool for that day: what the run was allowed to hold, held or not
-        for row in ranked.head(config.top_n).itertuples():
+        for code in top_n:
+            rank_value, score_value = best[code]
             db.add(
                 SimulationPool(
                     run_id=run.id,
                     trade_date=day,
-                    ts_code=row.ts_code,
-                    rank=int(row.rank),
-                    score=Decimal(str(round(float(row.score), 6))),
-                    held=row.ts_code in positions,
+                    ts_code=code,
+                    rank=rank_value,
+                    score=Decimal(str(round(score_value, 6))),
+                    held=code in positions,
                 )
             )
 
@@ -258,8 +261,7 @@ def run_model_simulation(
         for code, position in positions.items():
             price = priced[code]
             value = position.shares * price
-            rank = best["rank"].get(code)
-            score = best["score"].get(code)
+            rank, score = best.get(code, (None, None))
             db.add(
                 SimulationHolding(
                     run_id=run.id,

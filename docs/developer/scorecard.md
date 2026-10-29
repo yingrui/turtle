@@ -55,6 +55,26 @@ A scorecard, in the credit-scoring sense:
 5. **Score.** `intercept + Σ coef × WOE`. Monotone with the fitted probability, so ranking by score
    is ranking by probability; `score` prints the contributions so a pick can be explained.
 
+### What "good" means (`--label`)
+
+| Label | Question | When it misleads |
+|---|---|---|
+| `relative` (default) | did it beat that day's **median** stock? | half the universe is a winner by construction; a 1% gain in a −3% day scores like a 6% gain |
+| `absolute` | was the return positive? | mostly market direction |
+| `benchmark` | did it beat an **index** over the same window? (`--benchmark 000300.SH`) | needs index bars; the horizon must be long enough to be a trend (`--horizon 20`) |
+
+The benchmark label is the one that asks a portfolio's question. Measured on one window
+(train 2024-01 → 2025-06, target 2025-07, 19 factors available):
+
+| Label / horizon | Factors kept | AUC (out of sample) | Top-50 excess |
+|---|---|---|---|
+| `relative` @5 | 0 (no factor reached IV ≥ 0.02) | — | — |
+| `relative` @20 | 3 | 0.470 | −1.93% |
+| `benchmark` (沪深300) @20 | 9 | 0.505 | **+0.92%** |
+
+One window is not a result, but the direction is what the critique predicted: a 5-day median label
+could not even produce a model, and the benchmark label kept three times as many informative factors.
+
 The label is **relative** by default (beat the day's median) because absolute up/down is mostly the
 market's direction. Entry is the **next session's open** and exit is the close `horizon` sessions
 later: a signal computed on a close cannot be traded at that close.

@@ -116,8 +116,19 @@ def load_dataset(
     label: str = "relative",
     factors: list[str] | None = None,
     exclude_st: bool = True,
+    benchmark: str | None = None,
 ) -> Dataset:
-    """Join factor values to forward returns and rank everything within its date."""
+    """Join factor values to forward returns and rank everything within its date.
+
+    `label` decides what "good" means:
+
+    - `relative` — beat that day's **median** stock. Cheap, but it makes a 1% gain in a −3% day look
+      as good as a 6% gain: half the universe is a "winner" by construction, however bad the market is.
+    - `absolute` — positive return. Mostly market direction.
+    - `benchmark` — beat an **index** (default 沪深300) over the same window. This is the only one that
+      asks the question a portfolio asks: "did this stock do better than just holding the market?"
+      With a 20-session horizon it is also a trend label rather than a 1-week noise label.
+    """
     codes = factors or _factor_codes(db)
     price_end = end + timedelta(days=horizon * 3 + 10)
 
@@ -163,6 +174,11 @@ def load_dataset(
         raise SystemExit("no market data in that window")
     frame = wide.merge(forward_returns(prices, horizon), on=["trade_date", "ts_code"], how="inner")
     frame = frame.dropna(subset=["fwd_ret"])
+
+    benchmark_ret: pd.Series | None = None
+    if label == "benchmark":
+        benchmark = benchmark or DEFAULT_BENCHMARK
+        benchmark_ret = _benchmark_forward(db, benchmark, frame["trade_date"].unique(), horizon, price_end)
     present = [code for code in codes if code in frame.columns]
     skip = excluded_codes(db, exclude_st)
     if skip:
@@ -174,7 +190,12 @@ def load_dataset(
     ranks = ranks.fillna(NEUTRAL_RANK)
     dates = sorted(frame["trade_date"].unique())
     out = pd.concat([frame[["trade_date", "ts_code", "fwd_ret"]], ranks], axis=1)
-    if label == "relative":
+    if label == "benchmark":
+        assert benchmark_ret is not None
+        out["excess_ret"] = out["fwd_ret"] - out["trade_date"].map(benchmark_ret)
+        out = out.dropna(subset=["excess_ret"])
+        out["label"] = (out["excess_ret"] > 0).astype(int)
+    elif label == "relative":
         median = out.groupby("trade_date")["fwd_ret"].transform("median")
         out["label"] = (out["fwd_ret"] > median).astype(int)
     elif label == "absolute":
@@ -182,6 +203,34 @@ def load_dataset(
     else:
         raise SystemExit(f"unknown label kind: {label}")
     return Dataset(frame=out, factors=present, dates=[pd.Timestamp(d).date() for d in dates])
+
+
+DEFAULT_BENCHMARK = "000300.SH"
+
+
+def _benchmark_forward(db, code: str, dates, horizon: int, price_end: date) -> pd.Series:
+    """The index's own forward return over the same window as the stock label.
+
+    Entry and exit mirror the stock side (next session's open → close `horizon` sessions later), so
+    "beat the index" compares like with like instead of close-to-close against open-to-close.
+    """
+    from app.core.tushare_schema import tushare_table
+
+    start = min(pd.Timestamp(d).date() for d in dates)
+    rows = pd.read_sql(
+        text(
+            f"SELECT trade_date, open, close FROM {tushare_table('index_daily')} "
+            "WHERE ts_code = :code AND trade_date BETWEEN :start AND :end ORDER BY trade_date"
+        ),
+        db.connection(),
+        params={"code": code, "start": start, "end": price_end},
+    )
+    if rows.empty:
+        raise SystemExit(f"no index data for {code}: cannot build a benchmark-relative label")
+    rows["entry"] = rows["open"].shift(-1)
+    rows["exit"] = rows["close"].shift(-horizon)
+    rows["fwd_ret"] = rows["exit"] / rows["entry"] - 1
+    return pd.Series(rows["fwd_ret"].to_numpy(), index=rows["trade_date"])
 
 
 # --- statistics -------------------------------------------------------------------------
@@ -350,6 +399,7 @@ def cmd_data(args, db) -> None:
         horizon=args.horizon,
         label=args.label,
         exclude_st=not args.include_st,
+        benchmark=getattr(args, "benchmark", None),
     )
     print(f"rows {len(data):,} · dates {len(data.dates)} · factors {len(data.factors)}")
     print(f"window {data.dates[0]} → {data.dates[-1]}")
@@ -367,6 +417,7 @@ def cmd_analyze(args, db) -> None:
         horizon=args.horizon,
         label=args.label,
         exclude_st=not args.include_st,
+        benchmark=getattr(args, "benchmark", None),
     )
     print(f"rows {len(data):,} · dates {len(data.dates)} · window {data.dates[0]} → {data.dates[-1]}\n")
     rows = []
@@ -408,6 +459,7 @@ def cmd_train(args, db) -> None:
         horizon=args.horizon,
         label=args.label,
         exclude_st=not args.include_st,
+        benchmark=getattr(args, "benchmark", None),
     )
     cut = max(1, int(len(data.dates) * (1 - args.holdout)))
     if cut >= len(data.dates):
@@ -560,8 +612,12 @@ def main(argv: list[str] | None = None) -> None:
     common.add_argument("--end", type=_date, default=None, help="last signal date")
     common.add_argument("--horizon", type=int, default=5, help="holding sessions (default 5)")
     common.add_argument(
-        "--label", choices=("relative", "absolute"), default="relative",
-        help="relative = beat that day's median (default); absolute = positive return",
+        "--label", choices=("relative", "absolute", "benchmark"), default="relative",
+        help="relative = beat the day's median (default); absolute = positive return; "
+        "benchmark = beat an index over the same window",
+    )
+    common.add_argument(
+        "--benchmark", default=DEFAULT_BENCHMARK, help="index for the benchmark label (default 沪深300)"
     )
     common.add_argument(
         "--include-st", action="store_true",

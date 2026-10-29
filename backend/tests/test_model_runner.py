@@ -181,3 +181,61 @@ def test_a_bound_run_supplies_the_portfolios_stocks_and_trades():
         db.commit()
     finally:
         db.close()
+
+
+def test_the_runner_trades_a_ranking_it_knows_nothing_about():
+    """Decoupling: any ordered list works — the simulation imports no model, label or dataset."""
+    import uuid as _uuid
+    from decimal import Decimal
+
+    from sqlalchemy import text
+
+    from app.core.simulation.model_runner import ModelRunConfig, run_model_simulation
+    from app.core.simulation.ranking import StaticRankingProvider
+    from app.core.tushare_schema import tushare_table
+    from app.database import SessionLocal
+    from app.models import Portfolio
+    from app.models.simulation import SimulationHolding, SimulationPool, SimulationRun
+
+    db = SessionLocal()
+    try:
+        # A two-name "market" for one session, so the runner has prices to trade on.
+        table = tushare_table("stock_trade_daily")
+        for code, close in (("600519.SH", 10.0), ("000001.SZ", 5.0)):
+            db.execute(
+                text(
+                    f"INSERT INTO {table} (ts_code, trade_date, open, high, low, close, pre_close, vol) "
+                    "VALUES (:code, :day, :close, :close, :close, :close, :close, 1000)"
+                ),
+                {"code": code, "day": date(2026, 5, 14), "close": close},
+            )
+
+        portfolio = Portfolio(
+            id=str(_uuid.uuid4()), name=f"rank-{_uuid.uuid4().hex[:6]}", balance=Decimal("0")
+        )
+        run = SimulationRun(
+            id=str(_uuid.uuid4()), portfolio_name=portfolio.name, portfolio_id=portfolio.id,
+            policy_id=0, mode="model", pool_mode="dynamic", config_snapshot="{}",
+        )
+        db.add_all([portfolio, run])
+        db.commit()
+
+        provider = StaticRankingProvider(["600519.SH", "000001.SZ"])
+        result = run_model_simulation(
+            db, run=run, start=date(2026, 5, 14), end=date(2026, 5, 14),
+            initial_cash=1_000_000, config=ModelRunConfig(top_n=2), provider=provider,
+        )
+        db.commit()
+
+        assert result.days == 1 and result.trades == 2
+        assert db.query(SimulationPool).filter_by(run_id=run.id).count() == 2
+        assert db.query(SimulationHolding).filter_by(run_id=run.id).count() == 2
+
+        db.query(SimulationHolding).filter_by(run_id=run.id).delete()
+        db.query(SimulationPool).filter_by(run_id=run.id).delete()
+        db.execute(text(f"DELETE FROM {table} WHERE trade_date = :day"), {"day": date(2026, 5, 14)})
+        db.delete(db.get(SimulationRun, run.id))
+        db.delete(db.get(Portfolio, portfolio.id))
+        db.commit()
+    finally:
+        db.close()

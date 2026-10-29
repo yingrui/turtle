@@ -39,9 +39,10 @@ REPORTS = Path(__file__).resolve().parents[2] / "reports"
 MODELS = REPORTS / "models"
 
 
-def policy_dir(lookback_days: int | None, root: Path = MODELS) -> Path:
-    """Expanding window and trailing windows are different experiments: one directory each."""
-    return root / (f"trailing{lookback_days}" if lookback_days else "expanding")
+def policy_dir(lookback_days: int | None, root: Path = MODELS, experiment: str | None = None) -> Path:
+    """Each window policy is a directory; `--experiment` adds a suffix for a label/feature variant."""
+    base = f"trailing{lookback_days}" if lookback_days else "expanding"
+    return root / (f"{base}-{experiment}" if experiment else base)
 
 
 def dataset_fingerprint(data: Dataset, *, horizon: int, label: str) -> str:
@@ -128,6 +129,7 @@ def train_month(db, month: str, args) -> dict:
         horizon=args.horizon,
         label=args.label,
         exclude_st=True,
+        benchmark=args.benchmark,
     )
     if len(train_data.dates) < args.min_train_days:
         return {
@@ -181,6 +183,7 @@ def train_month(db, month: str, args) -> dict:
             label=args.label,
             exclude_st=True,
             factors=[factor["code"] for factor in model["factors"]],
+            benchmark=args.benchmark,
         )
     except SystemExit as exc:
         return {
@@ -199,7 +202,7 @@ def train_month(db, month: str, args) -> dict:
         "fingerprint": dataset_fingerprint(train_data, horizon=args.horizon, label=args.label),
     }
 
-    out_dir = policy_dir(args.lookback_days)
+    out_dir = policy_dir(args.lookback_days, experiment=args.experiment)
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{month}.json"
     path.write_text(json.dumps(model, indent=1, default=str))
@@ -265,7 +268,8 @@ def main() -> None:
     parser.add_argument("--from", dest="month_from", required=True, help="first target month, YYYY-MM")
     parser.add_argument("--to", dest="month_to", required=True, help="last target month, YYYY-MM")
     parser.add_argument("--horizon", type=int, default=5)
-    parser.add_argument("--label", choices=("relative", "absolute"), default="relative")
+    parser.add_argument("--label", choices=("relative", "absolute", "benchmark"), default="relative")
+    parser.add_argument("--benchmark", default="000300.SH", help="index for the benchmark label")
     parser.add_argument("--top-n", type=int, default=10)
     parser.add_argument("--min-iv", type=float, default=0.02)
     parser.add_argument("--max-corr", type=float, default=0.7)
@@ -282,6 +286,10 @@ def main() -> None:
     parser.add_argument("--dataset-version", type=int, default=None, dest="dataset_version")
     parser.add_argument("--dataset-sha256", default=None, dest="dataset_sha256")
     parser.add_argument("--no-mlflow", action="store_true", help="train and save locally only")
+    parser.add_argument(
+        "--experiment", default=None,
+        help="suffix for the model directory, e.g. `bench20` — keeps two label variants apart",
+    )
     args = parser.parse_args()
 
     db = SessionLocal()
@@ -318,7 +326,7 @@ def main() -> None:
     finally:
         db.close()
 
-    out_dir = policy_dir(args.lookback_days)
+    out_dir = policy_dir(args.lookback_days, experiment=args.experiment)
     out_dir.mkdir(parents=True, exist_ok=True)
     index_path = out_dir / "index.json"
     previous = json.loads(index_path.read_text()) if index_path.exists() else {}
