@@ -21,7 +21,7 @@ Schema is applied by Alembic (`backend/alembic/versions/`). ORM models live in `
 | `factor_definitions` | Factor metadata — `code` (stable, unique), name, category, direction, logic, **`formula`** (null ⇒ definition only), params (JSONB), lookback, IC stats, source, and the coverage of the last compute (`value_count`, `stock_count`, `first_date`, `last_date`, `computed_at`) |
 | `factor_values` | Factor panel — `(factor_id, ts_code, trade_date)` → `value`, optional `extra` for multi-output factors; PK is the natural key so a recompute upserts |
 
-Migrations: `001_initial.py`, `003_portfolios.py`, `004_portfolio_normalization.py`, `005_simulation_summary.py`, `006_factor_library.py`, `007_factor_formula.py`, `008_factor_coverage.py`, `009_portfolio_lifecycle.py`, `010_simulation_holdings.py`, `011_simulation_trades.py`.
+Migrations: `001_initial.py`, `003_portfolios.py`, `004_portfolio_normalization.py`, `005_simulation_summary.py`, `006_factor_library.py`, `007_factor_formula.py`, `008_factor_coverage.py`, `009_portfolio_lifecycle.py`, `010_simulation_holdings.py`, `011_simulation_trades.py`, `012_pool_modes.py`, `013_index_market_data.py`.
 
 ## `tushare` schema (market data)
 

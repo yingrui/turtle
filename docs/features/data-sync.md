@@ -45,3 +45,13 @@ DDL 以 Alembic `002_market_data.py` 为准，外部管道需保持兼容：
 - [因子分析与选股 — 数据契约](../research/07-factor-and-stock-selection.md)
 - [数据与 API 策略](../research/05-data-and-api-strategy.md)
 - [配置](configuration.md) — `TUSHARE_TOKEN` 说明可视为遗留
+
+## Index tables
+
+`tushare.index_basic` and `tushare.index_daily` are written by the same external ETL. Migration `013`
+declares the **contract** the app reads (columns, key, a `trade_date` index) and is idempotent: on a
+database where the ETL created them first, it does nothing. Its `downgrade` is intentionally empty —
+a migration may describe tables it did not create, but it may not delete market data it does not own.
+
+`/api/data/status` reports both, so a missing or stale index feed shows up on the Data page instead of
+breaking a benchmark silently.
