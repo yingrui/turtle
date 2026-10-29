@@ -127,6 +127,7 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 | GET | `/{run_id}/holdings?day=` | The run's book at that day's close (positions, weight, model rank/score) — model runs only |
 | GET | `/{run_id}/holding-dates` | Every day the run recorded a book |
 | GET | `/{run_id}/daily` | Daily equity series |
+| PATCH | `/{run_id}` | Name/describe a run: `{"name": "bench20-top50-2024h2", "description": "…"}` |
 | GET | `/{run_id}/trades` | The run's fills, from `simulation_trades` (`limit`, default 60) |
 | GET | `/{run_id}/benefit` | Benefit chart data |
 | GET | `/{run_id}/win-loss` | Win/loss stats |

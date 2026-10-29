@@ -107,6 +107,8 @@ class JobService:
                     policy_id=0,
                     mode="model",
                     pool_mode="dynamic",
+                    name=payload.get("name"),
+                    description=payload.get("description"),
                     config_snapshot=json.dumps(
                         {"kind": "model", "portfolio": portfolio_name, **config.as_dict(),
                          "initial_cash": initial_cash,
@@ -163,6 +165,8 @@ class JobService:
                         portfolio_name=portfolio_name,
                         policy_id=policy_id,
                         mode="signal",
+                        name=payload.get("name"),
+                        description=payload.get("description"),
                         # A signal run's pool is the configured watchlist, the same list every day; it is
                         # read from the config snapshot rather than duplicated into `simulation_pool`.
                         pool_mode="fixed",

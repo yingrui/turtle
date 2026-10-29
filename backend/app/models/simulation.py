@@ -17,6 +17,9 @@ class SimulationRun(Base):
     )
     portfolio_name: Mapped[str] = mapped_column(String(128))
     policy_id: Mapped[int] = mapped_column(Integer)
+    #: Human name for an experiment run (`bench20-top50-2024h2`), so a report can point at it.
+    name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     config_snapshot: Mapped[str] = mapped_column(Text)
     started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

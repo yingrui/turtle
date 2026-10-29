@@ -47,6 +47,11 @@ POST /api/jobs
 | `cash_buffer` | 0.05 | share of equity kept in cash |
 | `initial_cash` | 1,000,000 | starting capital of the run |
 
+A run can be **named and described** (`name`, `description` in the job payload, or `PATCH
+/api/simulations/{run_id}` after the fact). An experiment report cites the name; the run list shows it
+instead of a uuid. `mode` and `pool_mode` travel with each run, so "signal/fixed" and "model/dynamic"
+are distinguishable in one glance.
+
 Rules are recorded in the run's `config_snapshot` and the run is stored with `mode='model'`. Each day
 writes: `simulation_daily` (equity), `portfolio_transactions` (fills, tagged with the run), and
 `simulation_holdings` (positions at the close, with the model's rank and score).

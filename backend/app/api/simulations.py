@@ -207,3 +207,17 @@ def simulation_benefit(run_id: str, db: Session = Depends(get_db), _: User = Dep
 @router.get("/{run_id}/win-loss")
 def simulation_win_loss(run_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     return SimulationService().get_win_loss(db, run_id)
+
+
+@router.patch("/{run_id}")
+def update_run_label(run_id: str, body: dict, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """Name or describe an existing run — how a completed experiment gets identified after the fact."""
+    run = db.get(SimulationRun, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if "name" in (body or {}):
+        run.name = (body["name"] or "").strip() or None
+    if "description" in (body or {}):
+        run.description = (body["description"] or "").strip() or None
+    db.commit()
+    return {"run_id": run.id, "name": run.name, "description": run.description}

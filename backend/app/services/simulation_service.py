@@ -24,6 +24,10 @@ class SimulationService:
                 "job_id": r.job_id,
                 "portfolio_name": r.portfolio_name,
                 "policy_id": r.policy_id,
+                "name": r.name,
+                "description": r.description,
+                "mode": r.mode,
+                "pool_mode": r.pool_mode,
                 "started_at": r.started_at.isoformat() if r.started_at else None,
                 "finished_at": r.finished_at.isoformat() if r.finished_at else None,
             }

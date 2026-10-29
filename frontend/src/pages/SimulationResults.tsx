@@ -12,6 +12,11 @@ type Run = {
   portfolio_name: string;
   policy_id: number;
   started_at: string | null;
+  //: An experiment's name — the thing a report cites, instead of a bare uuid.
+  name?: string | null;
+  description?: string | null;
+  mode?: string;
+  pool_mode?: string;
 };
 
 type Summary = {
@@ -225,7 +230,9 @@ export function SimulationResults() {
             <select id="sim-run" value={selectedRunId} onChange={(e) => selectRun(e.target.value)}>
               {runs.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.portfolio_name} — policy {r.policy_id} ({r.started_at?.slice(0, 10) ?? '—'})
+                  {r.name
+                    ? `${r.name} (${r.started_at?.slice(0, 10) ?? '—'})`
+                    : `${r.portfolio_name} — policy ${r.policy_id} (${r.started_at?.slice(0, 10) ?? '—'})`}
                 </option>
               ))}
             </select>

@@ -29,6 +29,9 @@ class CreateJobRequest(BaseModel):
     max_holding_days: int | None = None
     cash_buffer: float | None = None
     initial_cash: float | None = None
+    #: A run's name and description — an experiment report points at these.
+    name: str | None = None
+    description: str | None = None
 
 
 def _job_to_dict(job) -> dict:
