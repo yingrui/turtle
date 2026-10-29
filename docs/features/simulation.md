@@ -76,6 +76,11 @@ GET /api/simulations/{run_id}/holding-dates             # which days have one
 Ranking sources so far: `ModelRankingProvider` (monthly scorecard) and, from experiment 2, an
 IC-weighted score that needs no training at all (`scripts/ic_weighted.py`).
 
+**Execution is at the next open.** A signal computed from today's close cannot be filled at that
+close; `next_open(db, day)` supplies the next session's opening price for fills while positions are
+still valued at today's close — the same convention the training label uses. Measured on one run, the
+same-bar shortcut inflated the excess by **+20.7 points out of +64.5** (32%).
+
 **The runner trades a ranking, not a model.** `app/core/simulation/ranking.py` defines
 `RankingProvider.rankings(db, day) -> list[Ranked]`; `ModelRankingProvider` implements it with the
 monthly scorecard, and the runner only sees ordered rows. Changing the label, the features, the dataset
