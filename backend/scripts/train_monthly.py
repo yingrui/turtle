@@ -32,7 +32,7 @@ import pandas as pd
 from sqlalchemy import text
 
 from app.database import SessionLocal
-from scripts.mlflow_tracking import MODEL_NAME, log_scorecard_run
+from scripts.mlflow_tracking import MODEL_NAME, dataset_reference, log_scorecard_run
 from scripts.scorecard import Dataset, auc, build_model, load_dataset, score_frame
 
 REPORTS = Path(__file__).resolve().parents[2] / "reports"
@@ -218,6 +218,16 @@ def train_month(db, month: str, args) -> dict:
             indent=1,
         )
     )
+
+    # Provenance: an experiment cites a dataset version, so the run carries it rather than a note.
+    reference = dataset_reference(args.dataset, args.dataset_version) if args.dataset else None
+    if reference:
+        args.dataset_version = reference["version"]
+        args.dataset_sha256 = reference["manifest_sha256"]
+        print(
+            f"   dataset  {reference['name']} v{reference['version']} "
+            f"({reference['rows']:,} rows, {reference['date_from']} → {reference['date_to']})"
+        )
 
     info = None
     if not args.no_mlflow:

@@ -108,3 +108,57 @@ def _flatten(values: dict, prefix: str = "") -> dict:
         else:
             flat[name] = json.dumps(value, default=str)[:250]
     return flat
+
+
+def dataset_reference(name: str, version: int | None = None) -> dict | None:
+    """The published dataset version an experiment trained from: name, version, rows, manifest sha256.
+
+    An experiment report has to say *which data* and *which MLflow run*; the run's params carry this
+    dict, so "trained on `scorecard-training-20d-bench` v1" is a fact in MLflow rather than a note in a
+    document that can drift.
+
+    Returns `None` when openKMS is unreachable — training continues, the run just has no dataset stamp.
+    """
+    import hashlib
+    import json
+    import os
+    import urllib.error
+    import urllib.request
+
+    base = os.environ.get("OPENKMS_API_BASE") or os.environ.get("OPENKMS_API_BASE_URL")
+    key = os.environ.get("OPENKMS_API_KEY")
+    if not (base and key):
+        return None
+    headers = {"Authorization": f"Bearer {key}"}
+
+    def get(path: str):
+        request = urllib.request.Request(f"{base.rstrip('/')}/api{path}", headers=headers)
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return json.loads(response.read().decode())
+
+    try:
+        datasets = get("/datasets?kind=file")["items"]
+        match = [d for d in datasets if d.get("display_name") == name]
+        if not match:
+            return None
+        dataset = match[0]
+        versions = get(f"/dataset-versions/{dataset['id']}")
+        published = [v for v in versions if v["status"] == "published"]
+        if not published:
+            return None
+        chosen = next((v for v in published if v["version"] == version), published[-1])
+        manifest = get(f"/dataset-versions/{dataset['id']}/{chosen['version']}/manifest")
+        return {
+            "name": dataset["display_name"],
+            "id": dataset["id"],
+            "version": chosen["version"],
+            "rows": chosen["row_count"],
+            "files": chosen["file_count"],
+            "date_from": chosen["date_from"],
+            "date_to": chosen["date_to"],
+            "manifest_sha256": hashlib.sha256(
+                json.dumps(manifest, sort_keys=True, ensure_ascii=False).encode()
+            ).hexdigest(),
+        }
+    except (urllib.error.URLError, KeyError, ValueError, OSError):
+        return None
