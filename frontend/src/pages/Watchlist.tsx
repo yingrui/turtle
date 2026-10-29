@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
 import { DataTable, type Column } from '../components/DataTable';
 import { Dialog } from '../components/Dialog';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import './Watchlist.scss';
 
 type Quote = {
@@ -34,6 +35,8 @@ export function Watchlist() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
 
   const selectPortfolio = useCallback(
@@ -130,13 +133,16 @@ export function Watchlist() {
   }
 
   async function onDeletePortfolio() {
-    if (!portfolio || !window.confirm(t('portfolio.deleteConfirm', { name: portfolio }))) return;
+    if (!portfolio) return;
+    setDeleting(true);
     try {
       await apiFetch(`/api/portfolios/${encodeURIComponent(portfolio)}`, { method: 'DELETE' });
       toast.success(t('portfolio.deleted', { name: portfolio }));
       await refreshPortfolios();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('portfolio.deleteFailed'));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -269,7 +275,7 @@ export function Watchlist() {
               >
                 {t('watchlist.configLink')}
               </Link>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={onDeletePortfolio}>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setConfirmDelete(true)}>
                 {t('watchlist.deletePortfolio')}
               </button>
             </div>
@@ -301,6 +307,18 @@ export function Watchlist() {
           />
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title={t('watchlist.deletePortfolio')}
+        message={t('portfolio.deleteConfirm', { name: portfolio })}
+        busy={deleting}
+        onConfirm={() => {
+          setConfirmDelete(false);
+          onDeletePortfolio();
+        }}
+        onCancel={() => setConfirmDelete(false)}
+      />
 
       <Dialog
         open={createOpen}

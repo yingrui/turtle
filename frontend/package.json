@@ -10,9 +10,10 @@
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "check:styles": "python3 scripts/check-styles.py",
-    "check": "npm run typecheck && npm run check:styles && npm run check:classes && npm run check:i18n && npm run test && npm run build",
+    "check": "npm run typecheck && npm run check:styles && npm run check:classes && npm run check:i18n && npm run check:a11y && npm run test && npm run build",
     "check:i18n": "python3 scripts/check-i18n.py",
-    "check:classes": "python3 scripts/check-classes.py"
+    "check:classes": "python3 scripts/check-classes.py",
+    "check:a11y": "python3 scripts/check-a11y.py"
   },
   "dependencies": {
     "echarts": "^5.6.0",

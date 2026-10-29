@@ -1,0 +1,4 @@
+{
+ "_comment": "Frozen accessibility debt, per file. Ratchet: fix a hit and re-run with --update-baseline; never add.",
+ "files": {}
+}

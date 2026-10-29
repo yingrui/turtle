@@ -80,6 +80,20 @@ page CSS at all, and the spacing utilities I had just added (`mt-3`, `mb-2`, …
 markup while the classes did not exist — because I had written them into a sheet in one edit and
 referenced them from another. Both are fixed; the baseline is empty.
 
+## Guardrails — `npm run check:a11y`
+
+`scripts/check-a11y.py` fails on three things a mouse user never notices:
+
+| Failure | Why it breaks |
+|---|---|
+| icon-only button with no `aria-label` / `title` | announced as "button" — nothing to act on |
+| `<img>` without `alt` | announced as a file name, or skipped entirely |
+| `onClick` on a plain `<div>`/`<span>` | mouse-only: no focus, no Enter/Space, no role |
+
+Backdrops marked `role="presentation"` and wrappers whose handler only calls `stopPropagation()` are
+recognised as plumbing rather than controls. The baseline was empty on the first run — the page code
+was already naming its controls — so this check's job is to keep it that way.
+
 ## Guardrails — `npm run check:i18n`
 
 `scripts/check-i18n.py` compares the two locale files (`src/i18n/locales/en.json`, `zh-CN.json`) with

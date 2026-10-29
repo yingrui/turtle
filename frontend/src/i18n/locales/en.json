@@ -519,5 +519,8 @@
     "previous": "Previous",
     "next": "Next",
     "pageStatus": "Page {{current}} / {{total}}"
+  },
+  "common": {
+    "confirm": "Confirm"
   }
 }
