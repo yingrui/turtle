@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import './SimulationLayout.scss';
 
 export function SimulationLayout() {
   const { t } = useTranslation();

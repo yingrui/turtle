@@ -1,3 +1,7 @@
+@use './styles/design-system/tokens' as ds;
+@use './styles/design-system/local-tokens' as lt;
+@use './styles/design-system/mixins' as *;
+
 .app-layout {
   display: flex;
   min-height: 100vh;
@@ -226,6 +230,10 @@
   white-space: nowrap;
 }
 
+.health-chip__label {
+  color: var(--color-text-secondary);
+}
+
 .health-chip__dot {
   flex-shrink: 0;
   width: 6px;
@@ -239,14 +247,22 @@
   opacity: 0.8;
 }
 
-.health-chip--ok .health-chip__dot {
+.health-chip--ok .health-chip__label {
+  color: var(--color-text-secondary);
+}
+
+.health-chip__dot {
   background: var(--color-success);
 }
 
 .health-chip--down {
   color: var(--color-error);
 
-  .health-chip__dot {
+  .health-chip__label {
+  color: var(--color-text-secondary);
+}
+
+.health-chip__dot {
     background: var(--color-error);
   }
 }
@@ -258,7 +274,7 @@
 .user-menu__trigger {
   display: inline-flex;
   align-items: center;
-  padding: 2px;
+  padding: var(--space-half);
   border: none;
   border-radius: 50%;
   background: transparent;
@@ -448,7 +464,7 @@
   font-size: var(--text-sm);
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  margin-bottom: calc(-1 * var(--space-px));
 
   &--active {
     color: var(--color-accent);
@@ -470,7 +486,7 @@
   color: var(--color-text-muted);
   text-decoration: none;
   border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  margin-bottom: calc(-1 * var(--space-px));
 
   &--active {
     color: var(--color-accent);
@@ -566,7 +582,7 @@
   align-items: start;
 }
 
-@media (max-width: 900px) {
+@include max-width(lt.$bp-wide-min) {
   .simulation-layout {
     grid-template-columns: 1fr;
   }

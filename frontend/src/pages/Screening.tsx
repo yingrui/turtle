@@ -7,6 +7,7 @@ import { TradeDrawer } from '../components/portfolio/TradeDrawer';
 import { DataTable, type Column } from '../components/DataTable';
 import { FactorScreen } from '../components/screening/FactorScreen';
 import { useJobPoll } from '../hooks/useJobPoll';
+import './Screening.scss';
 
 type DataStatus = {
   as_of_date: string | null;

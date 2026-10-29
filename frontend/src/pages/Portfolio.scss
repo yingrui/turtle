@@ -176,7 +176,7 @@
 .portfolio-flag {
   display: inline-block;
   margin-right: var(--space-1);
-  padding: 2px var(--space-2);
+  padding: var(--space-half) var(--space-2);
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
 }
@@ -302,7 +302,7 @@
   display: inline-flex;
   gap: var(--space-1);
   margin: var(--space-3) 0 var(--space-2);
-  padding: 2px;
+  padding: var(--space-half);
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-bg-subtle);
@@ -330,4 +330,13 @@
 .portfolio-segment-count {
   font-variant-numeric: tabular-nums;
   color: var(--color-text-muted);
+}
+
+.portfolio-equity {
+  margin-bottom: var(--space-4);
+}
+
+// The weight column shows a share code as text; keep it aligned with the numeric column.
+.portfolio-weight-code {
+  font-variant-numeric: tabular-nums;
 }

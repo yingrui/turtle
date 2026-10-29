@@ -288,3 +288,10 @@
 
 .mb-1 { margin-bottom: var(--space-1); }
 .mb-2 { margin-bottom: var(--space-2); }
+
+// Page description under `.page-title` — the pair exists across pages but only the modifiers did.
+.page-subtitle {
+  margin-bottom: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

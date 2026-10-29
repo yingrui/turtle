@@ -1,5 +1,9 @@
 @use '../styles/design-system/tokens' as ds;
 
+.stock-list {
+  display: block;
+}
+
 .stock-list-head {
   display: flex;
   align-items: center;
@@ -126,4 +130,15 @@
   &:hover td {
     background: var(--color-bg-subtle);
   }
+}
+
+.stock-list-watchlist-popover {
+  position: absolute;
+  z-index: var(--z-popover);
+  min-width: 220px;
+  padding: var(--space-2);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
 }

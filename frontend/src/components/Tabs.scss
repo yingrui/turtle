@@ -1,0 +1,5 @@
+// Tabs: the panel below the tab strip. The strip itself is styled by its page; the panel needs the
+// rhythm so a tab's content is not glued to the buttons.
+.tabs__panel {
+  margin-top: var(--space-3);
+}

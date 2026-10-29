@@ -31,17 +31,25 @@ SRC = ROOT / "src"
 BASELINE = Path(__file__).resolve().parent / "styles-baseline.json"
 
 #: Files that legitimately hold raw values (they *are* the token layer).
+#: `!important` is how a utility wins against a component's own rule; that is the point of one.
+IMPORTANT_ALLOWED = {"src/styles/design-system/_utilities.scss"}
+
 TOKEN_FILES = {
     "src/styles/design-system/_css-variables.scss",
     "src/styles/design-system/_tokens.scss",
     "src/styles/design-system/_mixins.scss",
     "src/styles/design-system/_global.scss",
+    # turtle-only primitives (`--space-px`, `$bp-wide-min`, …) are values too.
+    "src/styles/design-system/_local-tokens.scss",
+    "src/styles/design-system/_local-css-variables.scss",
 }
 
 HEX = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 PX_FONT = re.compile(r"font-size:\s*[0-9]+px")
 PX_SPACE = re.compile(r"(?:padding|margin|gap)[a-z-]*:\s*[^;{}]*[0-9]+px")
-PX_MEDIA = re.compile(r"@media[^{]*[0-9]+px|@include (?:max|min)-width\(\s*[0-9]+px")
+PX_MEDIA = re.compile(
+    r"@media[^{]*[0-9]+px|@include (?:max|min)-width\(\s*[0-9]+px"
+)  # `ds.$bp-*` / `lt.$bp-*` are tokens, not raw pixels
 RAW_Z = re.compile(r"z-index:\s*[0-9]+")
 IMPORTANT = re.compile(r"!important")
 INLINE_STYLE = re.compile(r"style=\{\{")
@@ -82,6 +90,8 @@ def scan() -> dict[str, dict[str, list[str]]]:
     for rule, (pattern, glob, _hint) in SCSS_RULES.items():
         for path, rel in _files(glob):
             if rel in TOKEN_FILES:
+                continue
+            if rule == "important" and rel in IMPORTANT_ALLOWED:
                 continue
             for number, line in enumerate(path.read_text().splitlines(), start=1):
                 if pattern.search(line):

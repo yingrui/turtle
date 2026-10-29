@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
 import { useJobPoll } from '../hooks/useJobPoll';
+import './Simulation.scss';
 
 type PortfolioConfig = {
   policies?: unknown[];

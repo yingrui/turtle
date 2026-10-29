@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import './Tabs.scss';
 
 type Tab = { id: string; label: string };
 

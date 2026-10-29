@@ -1,0 +1,10 @@
+// Turtle-only primitives. `_css-variables.scss` / `_tokens.scss` / `_mixins.scss` stay as close to
+// openKMS as possible; anything this app needs beyond them lives here, so the delta is one file.
+
+//! Sub-4px rhythm: chip padding, badge offsets, the 1px overlap that keeps a tab's border from
+//! doubling. They are geometry, but they are repeated geometry, so they get names.
+$space-px: 1px;
+$space-half: 2px;
+
+//! A desktop-first breakpoint the shared scale does not have (openKMS jumps 768 → 960).
+$bp-wide-min: 900px;

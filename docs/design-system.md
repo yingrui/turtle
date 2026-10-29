@@ -57,6 +57,24 @@ npm run check:styles -- --update-baseline # freeze the tree after removing some
 number; adding one fails the check with the file and rule. `npm run check` runs typecheck →
 `check:styles` → tests → build, so the guardrail runs before a build can pass.
 
+## Guardrails — `npm run check:classes`
+
+`scripts/check-classes.py` fails on two failures that never crash and never show in a typecheck:
+
+1. **a literal `className="…"` that no stylesheet defines** — a rename or deletion has a second half,
+   and missing it leaves the element unstyled;
+2. **a component sheet nothing imports** — the rules exist but no bundle loads them.
+
+Only literal values are checked; `` className={`btn ${active}`} `` and ternaries are skipped on
+purpose. Classes are resolved through `&` nesting, so a BEM modifier (`&--lg` inside
+`.user-menu__avatar`) counts as defined. Pre-existing hits freeze in `scripts/classes-baseline.json`.
+
+This check paid for itself on its first run: **three page stylesheets were never imported**
+(`Screening.scss`, `Simulation.scss`, `SimulationLayout.scss`), so those pages rendered with no
+page CSS at all, and the spacing utilities I had just added (`mt-3`, `mb-2`, …) were attached to
+markup while the classes did not exist — because I had written them into a sheet in one edit and
+referenced them from another. Both are fixed; the baseline is empty.
+
 ## Guardrails — `npm run check:i18n`
 
 `scripts/check-i18n.py` compares the two locale files (`src/i18n/locales/en.json`, `zh-CN.json`) with
@@ -86,6 +104,20 @@ Three inline styles kept reappearing in TSX; they are classes now (`_utilities.s
 | `.text-muted` / `.text-sm` | the two halves of the above, when only one is needed |
 | `.field-narrow` / `.field-medium` / `.field-wide` | `style={{ maxWidth: 180 \| 220 \| 280 }}` on a `.form-row` |
 | `.stack` / `.stack-sm` / `.stack-lg` | `style={{ marginTop: 'var(--space-3 \| 2 \| 4)' }}` between stacked blocks |
+
+## Local tokens — the delta from openKMS
+
+`_css-variables.scss`, `_tokens.scss`, `_mixins.scss` and `_global.scss` are shared with openKMS and
+stay close to it. Anything this app needs beyond them lives in two files, so the difference is one
+place:
+
+| File | Holds |
+|---|---|
+| `_local-tokens.scss` | `$space-px: 1px`, `$space-half: 2px` (sub-4px rhythm), `$bp-wide-min: 900px` |
+| `_local-css-variables.scss` | the runtime counterparts (`--space-px`, `--space-half`) |
+
+Sub-4px values are geometry, but repeated geometry: a chip's 2px padding and the 1px overlap that
+stops a tab border doubling get names rather than living as magic numbers in three sheets.
 
 ## Conventions
 
