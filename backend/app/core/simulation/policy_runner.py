@@ -28,6 +28,7 @@ from app.core.simulation.model_runner import (
     STAMP_DUTY_RATE,
     _closes,
     _trade_days,
+    next_open,
     summarise,
 )
 from app.core.simulation.ranking import RankingProvider
@@ -104,6 +105,7 @@ def run_policy_simulation(
         pool = [item.ts_code for item in ranked[: config.top_n]]
         best = {item.ts_code: (item.rank, item.score) for item in ranked}
         closes = _closes(db, day)
+        fills = next_open(db, day)          # execute at the next open, value at today's close
         # The policy watches the pool **and** what is already held: a position that fell out of the
         # pool still needs its sell signal.
         watch = sorted(set(pool) | set(positions))
@@ -111,7 +113,7 @@ def run_policy_simulation(
 
         for signal in signals:
             code = signal.ts_code
-            price = closes.get(code)
+            price = fills.get(code)
             if price is None:
                 continue
             if signal.status == "sell" and positions.get(code):

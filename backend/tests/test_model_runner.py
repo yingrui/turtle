@@ -195,20 +195,26 @@ def test_the_runner_trades_a_ranking_it_knows_nothing_about():
     from app.core.tushare_schema import tushare_table
     from app.database import SessionLocal
     from app.models import Portfolio
-    from app.models.simulation import SimulationHolding, SimulationPool, SimulationRun
+    from app.models.simulation import SimulationHolding, SimulationPool, SimulationRun, SimulationTrade
 
     db = SessionLocal()
     try:
         # A two-name "market" for one session, so the runner has prices to trade on.
         table = tushare_table("stock_trade_daily")
-        for code, close in (("600519.SH", 10.0), ("000001.SZ", 5.0)):
-            db.execute(
-                text(
-                    f"INSERT INTO {table} (ts_code, trade_date, open, high, low, close, pre_close, vol) "
-                    "VALUES (:code, :day, :close, :close, :close, :close, :close, 1000)"
-                ),
-                {"code": code, "day": date(2026, 5, 14), "close": close},
-            )
+        # Two sessions: the signal is computed on the first close and filled at the **second open**,
+        # which is what the runner does now.
+        for day, close, open_price in (
+            (date(2026, 5, 14), 10.0, 10.0),
+            (date(2026, 5, 15), 11.0, 10.5),
+        ):
+            for code, price in (("600519.SH", close), ("000001.SZ", close)):
+                db.execute(
+                    text(
+                        f"INSERT INTO {table} (ts_code, trade_date, open, high, low, close, pre_close, vol) "
+                        "VALUES (:code, :day, :open, :close, :close, :close, :close, 1000)"
+                    ),
+                    {"code": code, "day": day, "open": open_price, "close": price},
+                )
 
         portfolio = Portfolio(
             id=str(_uuid.uuid4()), name=f"rank-{_uuid.uuid4().hex[:6]}", balance=Decimal("0")
@@ -228,12 +234,19 @@ def test_the_runner_trades_a_ranking_it_knows_nothing_about():
         db.commit()
 
         assert result.days == 1 and result.trades == 2
+        # Filled at 05-15's open, not at the 05-14 close that produced the ranking.
+        trade = db.query(SimulationTrade).filter_by(run_id=run.id).first()
+        assert float(trade.price) == pytest.approx(10.5)
         assert db.query(SimulationPool).filter_by(run_id=run.id).count() == 2
         assert db.query(SimulationHolding).filter_by(run_id=run.id).count() == 2
 
         db.query(SimulationHolding).filter_by(run_id=run.id).delete()
         db.query(SimulationPool).filter_by(run_id=run.id).delete()
-        db.execute(text(f"DELETE FROM {table} WHERE trade_date = :day"), {"day": date(2026, 5, 14)})
+        db.query(SimulationTrade).filter_by(run_id=run.id).delete()
+        db.execute(
+            text(f"DELETE FROM {table} WHERE trade_date IN (:d1, :d2)"),
+            {"d1": date(2026, 5, 14), "d2": date(2026, 5, 15)},
+        )
         db.delete(db.get(SimulationRun, run.id))
         db.delete(db.get(Portfolio, portfolio.id))
         db.commit()

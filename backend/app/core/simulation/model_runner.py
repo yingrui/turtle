@@ -125,6 +125,24 @@ def _closes(db: Session, day: date) -> dict[str, float]:
     }
 
 
+def next_open(db: Session, day: date) -> dict[str, float]:
+    """Execution price: the **next** session's open.
+
+    A signal computed from today's close cannot be filled at that same close — the close is what
+    produced it. Buying at the next open is the earliest executable price, and it matches the
+    convention the training label already uses (`close[t+h] / open[t+1]`).
+    """
+    rows = db.execute(
+        text(
+            f"SELECT ts_code, open FROM {tushare_table('stock_trade_daily')} "
+            "WHERE trade_date = (SELECT min(trade_date) FROM "
+            f"{tushare_table('stock_trade_daily')} WHERE trade_date > :d)"
+        ),
+        {"d": day},
+    ).all()
+    return {code: float(open_price) for code, open_price in rows if open_price is not None}
+
+
 def _st_codes(db: Session) -> set[str]:
     return {
         row[0]
@@ -167,12 +185,13 @@ def run_model_simulation(
         best = {item.ts_code: (item.rank, item.score) for item in ordered}
         top_n = [item.ts_code for item in ordered[: config.top_n]]
         closes = _closes(db, day)
+        fills = next_open(db, day)          # trade at the next open, value at today's close
 
         # 1) sells: rank past the limit, or held too long
         for code in list(positions):
             position = positions[code]
             rank = best.get(code, (10**9, 0.0))[0]
-            price = closes.get(code)
+            price = fills.get(code)
             if price is None or price < config.min_price:
                 continue
             too_far = rank > config.sell_rank_limit
@@ -211,7 +230,7 @@ def run_model_simulation(
             if code in positions:
                 continue
             rank_value, score_value = best[code]
-            price = closes.get(code)
+            price = fills.get(code)
             if price is None or price < config.min_price:
                 continue
             shares = int(target // (price * LOT)) * LOT
