@@ -98,6 +98,8 @@ def run_policy_simulation(
     days = 0
     trades = 0
 
+    last_seen: dict[str, float] = {}
+
     for day in _trade_days(db, start, end):
         ranked = provider.rankings(db, day)
         if not ranked:
@@ -105,6 +107,11 @@ def run_policy_simulation(
         pool = [item.ts_code for item in ranked[: config.top_n]]
         best = {item.ts_code: (item.rank, item.score) for item in ranked}
         closes = _closes(db, day)
+        # A suspended stock has no row today: value it at its last known close, not at zero. Zeroing
+        # it would tank the equity curve on every suspension day and corrupt every weight computed
+        # from it.
+        last_seen.update(closes)
+        valued = {code: closes.get(code, last_seen.get(code, 0.0)) for code in positions}
         fills = next_open(db, day)          # execute at the next open, value at today's close
         # The policy watches the pool **and** what is already held: a position that fell out of the
         # pool still needs its sell signal.
@@ -133,7 +140,7 @@ def run_policy_simulation(
                 )
             elif signal.status == "buy" and code not in positions:
                 equity = cash + sum(
-                    held * closes.get(other, 0.0) for other, held in positions.items()
+                    held * valued.get(other, 0.0) for other, held in positions.items()
                 )
                 target = equity * (1 - config.cash_buffer) / config.top_n
                 shares = int(target // (price * LOT)) * LOT
@@ -163,9 +170,9 @@ def run_policy_simulation(
                     score=Decimal(str(round(score, 6))), held=code in positions,
                 )
             )
-        equity = cash + sum(held * closes.get(code, 0.0) for code, held in positions.items())
+        equity = cash + sum(held * valued.get(code, 0.0) for code, held in positions.items())
         for code, shares in positions.items():
-            price = closes.get(code, 0.0)
+            price = valued.get(code, 0.0)
             db.add(
                 SimulationHolding(
                     run_id=run.id, trade_date=day, ts_code=code, shares=shares,
