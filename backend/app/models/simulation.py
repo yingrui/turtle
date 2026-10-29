@@ -1,10 +1,26 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, func
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    func,
+)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+
+#: JSONB on PostgreSQL, plain JSON where a sqlite test database builds the same tables.
+JSON_TYPE = JSON().with_variant(JSONB(), "postgresql")
 
 
 class SimulationRun(Base):
@@ -20,6 +36,8 @@ class SimulationRun(Base):
     #: Human name for an experiment run (`bench20-top50-2024h2`), so a report can point at it.
     name: Mapped[str | None] = mapped_column(String(128), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: What produced the ranking: `{"ranking": {...}, "dataset": {...}, "label": {...}}`.
+    provenance: Mapped[dict] = mapped_column(JSON_TYPE, default=dict, server_default="{}")
     config_snapshot: Mapped[str] = mapped_column(Text)
     started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

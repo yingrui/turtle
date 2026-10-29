@@ -47,6 +47,18 @@ POST /api/jobs
 | `cash_buffer` | 0.05 | share of equity kept in cash |
 | `initial_cash` | 1,000,000 | starting capital of the run |
 
+A run records its **provenance** — the recipe, machine-written, in `provenance` (JSONB):
+
+```json
+{"ranking": {"source": "model", "policy": "expanding-bench20"},
+ "dataset": {"name": "scorecard-training-20d-bench", "version": 1, "manifest_sha256": "dfb1524b…"},
+ "label":   {"kind": "benchmark", "horizon": 20, "benchmark": "000300.SH"}}
+```
+
+`name` and `description` are for people; `provenance` is what an experiment report quotes so the run
+can be reproduced. It is filled from the job payload (`dataset`, `dataset_version`, `dataset_sha256`,
+`label`, `horizon`, `benchmark`) and can be completed later with `PATCH /api/simulations/{run_id}`.
+
 A run can be **named and described** (`name`, `description` in the job payload, or `PATCH
 /api/simulations/{run_id}` after the fact). An experiment report cites the name; the run list shows it
 instead of a uuid. `mode` and `pool_mode` travel with each run, so "signal/fixed" and "model/dynamic"

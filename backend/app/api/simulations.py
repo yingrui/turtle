@@ -219,5 +219,12 @@ def update_run_label(run_id: str, body: dict, db: Session = Depends(get_db), _: 
         run.name = (body["name"] or "").strip() or None
     if "description" in (body or {}):
         run.description = (body["description"] or "").strip() or None
+    if "provenance" in (body or {}) and isinstance(body["provenance"], dict):
+        run.provenance = body["provenance"]
     db.commit()
-    return {"run_id": run.id, "name": run.name, "description": run.description}
+    return {
+        "run_id": run.id,
+        "name": run.name,
+        "description": run.description,
+        "provenance": run.provenance or {},
+    }

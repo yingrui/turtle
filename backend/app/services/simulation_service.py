@@ -26,6 +26,7 @@ class SimulationService:
                 "policy_id": r.policy_id,
                 "name": r.name,
                 "description": r.description,
+                "provenance": r.provenance or {},
                 "mode": r.mode,
                 "pool_mode": r.pool_mode,
                 "started_at": r.started_at.isoformat() if r.started_at else None,

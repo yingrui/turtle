@@ -32,6 +32,13 @@ class CreateJobRequest(BaseModel):
     #: A run's name and description — an experiment report points at these.
     name: str | None = None
     description: str | None = None
+    #: Provenance of the experiment: which dataset version, which label, which benchmark.
+    dataset: str | None = None
+    dataset_version: int | None = None
+    dataset_sha256: str | None = None
+    label: str | None = None
+    horizon: int | None = None
+    benchmark: str | None = None
 
 
 def _job_to_dict(job) -> dict:

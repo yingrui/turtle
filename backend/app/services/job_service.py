@@ -20,6 +20,28 @@ from app.core.simulation.runner import run_simulation
 from app.core.util.simulation_analysis import summarize_run
 
 
+def _provenance(payload: dict, *, policy: str | None, source: str) -> dict:
+    """The recipe of a run, in the shape an experiment report can quote verbatim."""
+    provenance: dict = {"ranking": {"source": source}}
+    if policy:
+        provenance["ranking"]["policy"] = policy
+    for key in ("dataset", "dataset_version", "dataset_sha256", "label", "horizon", "benchmark"):
+        if payload.get(key) is not None:
+            group = {
+                "dataset": "dataset",
+                "dataset_version": "dataset",
+                "dataset_sha256": "dataset",
+                "label": "label",
+                "horizon": "label",
+                "benchmark": "label",
+            }[key]
+            name = {"dataset": "name", "dataset_version": "version",
+                    "dataset_sha256": "manifest_sha256", "label": "kind",
+                    "horizon": "horizon", "benchmark": "benchmark"}[key]
+            provenance.setdefault(group, {})[name] = payload[key]
+    return provenance
+
+
 def _decimal_or_none(value) -> Decimal | None:
     if value is None or str(value) == "nan" or value == "":
         return None
