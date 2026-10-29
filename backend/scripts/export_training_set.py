@@ -112,9 +112,13 @@ def upload_slice(dataset_id: str, version: int, filename: str, payload: bytes) -
 # --- the slice --------------------------------------------------------------------------
 
 
-def build_slice(db, *, start: date, end: date, horizon: int, label: str) -> pd.DataFrame:
+def build_slice(
+    db, *, start: date, end: date, horizon: int, label: str, benchmark: str | None = None
+) -> pd.DataFrame:
     """The training panel for a window: ranks, forward return, label — one row per stock per day."""
-    data = load_dataset(db, start=start, end=end, horizon=horizon, label=label)
+    data = load_dataset(
+        db, start=start, end=end, horizon=horizon, label=label, benchmark=benchmark
+    )
     frame = data.frame.copy()
     frame["trade_date"] = pd.to_datetime(frame["trade_date"]).dt.date
     return frame.sort_values(["trade_date", "ts_code"])
@@ -132,7 +136,8 @@ def main() -> None:
     parser.add_argument("--start", type=date.fromisoformat, default=None)
     parser.add_argument("--end", type=date.fromisoformat, default=None)
     parser.add_argument("--horizon", type=int, default=5)
-    parser.add_argument("--label", choices=("relative", "absolute"), default="relative")
+    parser.add_argument("--label", choices=("relative", "absolute", "benchmark"), default="relative")
+    parser.add_argument("--benchmark", default="000300.SH", help="index for the benchmark label")
     parser.add_argument("--dataset", default=DEFAULT_DATASET_NAME, help="file dataset name in openKMS")
     parser.add_argument("--version", type=int, default=None, help="append to this draft (default: open a new one)")
     parser.add_argument("--publish", action="store_true", help="publish the version after uploading")
@@ -153,7 +158,14 @@ def main() -> None:
 
     db = SessionLocal()
     try:
-        frame = build_slice(db, start=start, end=end, horizon=args.horizon, label=args.label)
+        frame = build_slice(
+            db,
+            start=start,
+            end=end,
+            horizon=args.horizon,
+            label=args.label,
+            benchmark=args.benchmark,
+        )
     finally:
         db.close()
     if frame.empty:
