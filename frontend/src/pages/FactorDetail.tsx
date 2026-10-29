@@ -157,60 +157,47 @@ export function FactorDetail() {
 
   return (
     <div className="page-card">
-      <p style={{ fontSize: 'var(--text-sm)', marginBottom: 'var(--space-2)' }}>
+      <p className="text-sm mb-2">
         <Link to="/factor">← {t('factor.back')}</Link>
       </p>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+      <div className="split-row">
         <div>
-          <h1 className="page-title" style={{ marginBottom: 4 }}>
+          <h1 className="page-title mb-1">
             {factor.code} · {factor.name}
           </h1>
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+          <p className="text-hint">
             {factor.logic ?? '—'}
             {factor.source_ref ? ` · ${factor.source_ref}` : ''}
             {factor.ic_ir != null ? ` · IC IR ${factor.ic_ir}` : ''}
             {` · ${t(`factor.direction.${factor.direction}`)}`}
           </p>
         </div>
-        <div style={{ fontSize: 'var(--text-sm)', textAlign: 'right' }}>
+        <div className="meta-block">
           <div>
             {t('factor.coverage', {
               stocks: factor.stock_count,
               values: factor.value_count.toLocaleString(),
             })}
           </div>
-          <div style={{ color: 'var(--color-text-muted)' }}>
+          <div className="text-muted">
             {factor.first_date ?? '—'} → {factor.last_date ?? '—'}
           </div>
         </div>
       </div>
 
       {factor.formula ? (
-        <code
-          style={{
-            display: 'block',
-            margin: 'var(--space-3) 0',
-            padding: 'var(--space-2)',
-            background: 'var(--color-surface-alt, rgba(0,0,0,0.04))',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: 'var(--text-sm)',
-          }}
-        >
-          {factor.formula}
-        </code>
+        <code className="code-block">{factor.formula}</code>
       ) : (
-        <p style={{ margin: 'var(--space-3) 0', fontSize: 'var(--text-sm)', color: 'var(--color-warning, #b45309)' }}>
-          {t('factor.noFormula')}
-        </p>
+        <p className="note-warning">{t('factor.noFormula')}</p>
       )}
 
-      <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div className="form-row" style={{ maxWidth: 150 }}>
+      <div className="toolbar">
+        <div className="form-row field-narrow">
           <label>{t('factor.start')}</label>
           <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
         </div>
-        <div className="form-row" style={{ maxWidth: 150 }}>
+        <div className="form-row field-narrow">
           <label>{t('factor.end')}</label>
           <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
         </div>
@@ -224,7 +211,7 @@ export function FactorDetail() {
             ? t('factor.computing')
             : t('factor.compute')}
         </button>
-        <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+        <span className="text-hint">
           {job?.status === 'completed' && job.result
             ? summarizeResult(job.result, t)
             : job?.status === 'running'
@@ -234,15 +221,9 @@ export function FactorDetail() {
       </div>
 
       <div
-        style={{
-          display: 'flex',
-          gap: 'var(--space-3)',
-          flexWrap: 'wrap',
-          alignItems: 'flex-end',
-          marginTop: 'var(--space-4)',
-        }}
+        className="toolbar mt-4"
       >
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+        <div className="toolbar toolbar--tight">
           <button
             type="button"
             className={`btn btn-sm ${mode === 'stock' ? 'btn-primary' : 'btn-secondary'}`}
@@ -265,7 +246,7 @@ export function FactorDetail() {
           </button>
         </div>
         {mode === 'stock' ? (
-          <div className="form-row" style={{ maxWidth: 180 }}>
+          <div className="form-row field-narrow">
             <label>{t('factor.col.stock')}</label>
             <input
               type="text"
@@ -275,7 +256,7 @@ export function FactorDetail() {
             />
           </div>
         ) : (
-          <div className="form-row" style={{ maxWidth: 170 }}>
+          <div className="form-row field-narrow">
             <label>{t('factor.col.date')}</label>
             <input
               type="date"
@@ -294,13 +275,13 @@ export function FactorDetail() {
           {rowsLoading ? t('factor.loading') : t('factor.query')}
         </button>
         {rowTotal > 0 && (
-          <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+          <span className="text-hint">
             {t('factor.matches', { total: rowTotal.toLocaleString() })}
           </span>
         )}
       </div>
 
-      <div style={{ marginTop: 'var(--space-3)' }}>
+      <div className="mt-3">
         <DataTable
           columns={valueColumns}
           rows={rows}

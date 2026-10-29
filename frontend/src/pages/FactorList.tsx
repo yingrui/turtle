@@ -80,7 +80,7 @@ export function FactorList() {
             <strong>{row.code}</strong>
           </Link>
           {row.is_computable ? null : (
-            <span style={{ color: 'var(--color-text-muted)', marginLeft: 6 }}>
+            <span className="text-muted ml-1">
               ({t('factor.definitionOnly')})
             </span>
           )}
@@ -129,20 +129,12 @@ export function FactorList() {
   return (
     <div className="page-card">
       <h1 className="page-title">{t('nav.factor')}</h1>
-      <p style={{ color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
+      <p className="text-muted mb-3">
         {t('factor.subtitle')}
       </p>
 
-      <div
-        style={{
-          display: 'flex',
-          gap: 'var(--space-3)',
-          flexWrap: 'wrap',
-          alignItems: 'flex-end',
-          marginBottom: 'var(--space-3)',
-        }}
-      >
-        <div className="form-row" style={{ maxWidth: 220 }}>
+      <div className="toolbar mb-3">
+        <div className="form-row field-medium">
           <label>{t('factor.search')}</label>
           <input
             type="search"
@@ -151,7 +143,7 @@ export function FactorList() {
             placeholder="mom, 动量, EP"
           />
         </div>
-        <div className="form-row" style={{ maxWidth: 180 }}>
+        <div className="form-row field-narrow">
           <label>{t('factor.col.category')}</label>
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">{t('factor.allCategories')}</option>
@@ -162,7 +154,7 @@ export function FactorList() {
             ))}
           </select>
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <label className="check-inline">
           <input
             type="checkbox"
             checked={computableOnly}
@@ -170,7 +162,7 @@ export function FactorList() {
           />
           {t('factor.computableOnly')}
         </label>
-        <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-sm)' }}>
+        <span className="text-hint">
           {t('factor.counts', {
             total: factors.length,
             computable: factors.filter((f) => f.is_computable).length,
@@ -189,9 +181,7 @@ export function FactorList() {
         defaultSortCol="code"
       />
 
-      <p style={{ marginTop: 'var(--space-3)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-        {t('factor.pickHint')}
-      </p>
+      <p className="text-hint mt-3">{t('factor.pickHint')}</p>
     </div>
   );
 }

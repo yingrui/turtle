@@ -190,6 +190,10 @@
 }
 
 // A form field that should not stretch: `<div className="form-row field-narrow">`.
+.field-xs {
+  max-width: 120px;
+}
+
 .field-narrow {
   max-width: 180px;
 }
@@ -214,3 +218,73 @@
 .stack-lg > * + * {
   margin-top: var(--space-4);
 }
+
+// --- Row of controls (filters, toolbars) ----------------------------------
+// The single most repeated inline style in this app: a wrapping flex row of fields and buttons.
+.toolbar {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.toolbar--tight {
+  gap: var(--space-2);
+}
+
+// A header line: title/description on the left, meta on the right.
+.split-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+// Right-aligned meta block (counts, date ranges).
+.meta-block {
+  font-size: var(--text-sm);
+  text-align: right;
+}
+
+// A code/pre block used for formulas and YAML.
+.code-block {
+  display: block;
+  margin: var(--space-3) 0;
+  padding: var(--space-2);
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  overflow-x: auto;
+}
+
+// Warning sentence under a field (no formula, stale data…).
+.note-warning {
+  margin: var(--space-3) 0;
+  font-size: var(--text-sm);
+  color: var(--color-warning);
+}
+
+// --- Spacing utilities ----------------------------------------------------
+// `margin-top: var(--space-N)` between blocks is the other half of the inline-style debt. Keeping
+// them named makes the rhythm visible in review instead of buried in a JSX attribute.
+.mt-2 { margin-top: var(--space-2); }
+.mt-3 { margin-top: var(--space-3); }
+.mt-4 { margin-top: var(--space-4); }
+
+.field-xwide {
+  max-width: 420px;
+}
+
+// Inline checkbox + label (filters such as "computable only").
+.check-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+// Small offsets that are not part of the vertical rhythm.
+.ml-1 { margin-left: var(--space-1); }
+.mb-3 { margin-bottom: var(--space-3); }
+
+.mb-1 { margin-bottom: var(--space-1); }
+.mb-2 { margin-bottom: var(--space-2); }

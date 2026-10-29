@@ -57,7 +57,26 @@ npm run check:styles -- --update-baseline # freeze the tree after removing some
 number; adding one fails the check with the file and rule. `npm run check` runs typecheck →
 `check:styles` → tests → build, so the guardrail runs before a build can pass.
 
-### Utilities added for the recurring cases
+## Guardrails — `npm run check:i18n`
+
+`scripts/check-i18n.py` compares the two locale files (`src/i18n/locales/en.json`, `zh-CN.json`) with
+the keys the code actually asks for:
+
+1. every literal `t('…')` key exists in **both** languages;
+2. both languages define the **same key set** (a key in one only is a fallback in the other);
+3. template keys (`` t(`factor.direction.${dir}`) ``) are checked as a prefix — every key under
+   `factor.direction.` must exist.
+
+It is not pedantry: a missing key does not crash, i18next renders the key itself, so the UI quietly
+shows `pagination.aria`. The first run of this check found exactly that — the pagination strings sat
+under `en.common`, a sibling of `en.translation` that i18next never reads.
+
+### Strings live in JSON
+
+`src/i18n/config.ts` is now only wiring; the resources are `src/i18n/locales/*.json`. A thousand lines
+of object literals beside the init call made both harder to read, and JSON is what the checker parses.
+
+## Utilities added for the recurring cases
 
 Three inline styles kept reappearing in TSX; they are classes now (`_utilities.scss`):
 

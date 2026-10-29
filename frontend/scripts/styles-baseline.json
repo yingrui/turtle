@@ -17,12 +17,6 @@
   "src/pages/DataCollection.tsx": {
    "inline-style": 4
   },
-  "src/pages/FactorDetail.tsx": {
-   "inline-style": 18
-  },
-  "src/pages/FactorList.tsx": {
-   "inline-style": 8
-  },
   "src/pages/Home.scss": {
    "px-breakpoint": 2
   },
