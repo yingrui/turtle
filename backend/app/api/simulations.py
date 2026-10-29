@@ -228,3 +228,36 @@ def update_run_label(run_id: str, body: dict, db: Session = Depends(get_db), _: 
         "description": run.description,
         "provenance": run.provenance or {},
     }
+
+
+@router.delete("/{run_id}")
+def delete_run(run_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """Delete a run and everything it owns.
+
+    A run's trades, holdings, pool and daily curve only exist for that run, so they go with it. A
+    portfolio pointing at it through `active_run_id` is detached rather than deleted — the portfolio
+    is the long-lived thing.
+    """
+    from app.models.portfolio import Portfolio
+    from app.models.simulation import SimulationDaily, SimulationHolding, SimulationPool, SimulationTrade
+
+    run = db.get(SimulationRun, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if run.job_id:
+        from app.models.job import Job
+
+        job = db.get(Job, run.job_id)
+        if job and job.status in {"pending", "running"}:
+            raise HTTPException(status_code=409, detail="The job that owns this run is still running")
+    removed = {}
+    for model in (SimulationTrade, SimulationHolding, SimulationPool, SimulationDaily):
+        removed[model.__tablename__] = (
+            db.query(model).filter(model.run_id == run_id).delete(synchronize_session=False)
+        )
+    db.query(Portfolio).filter(Portfolio.active_run_id == run_id).update(
+        {Portfolio.active_run_id: None}, synchronize_session=False
+    )
+    db.delete(run)
+    db.commit()
+    return {"run_id": run_id, "deleted": removed}
