@@ -416,7 +416,10 @@
     "tradeFailed": "记账失败",
     "tradeInvalidShares": "请填写整数股数",
     "tradeInvalidPrice": "请填写大于 0 的价格",
-    "tradeInsufficient": "最多可卖 {{available}} 股"
+    "tradeInsufficient": "最多可卖 {{available}} 股",
+    "benchmarkTitle": "组合 vs 基准",
+    "benchmarkDesc": "两条线都以曲线首日 = 100 归一化 —— 这组合有没有跑赢指数。",
+    "benchmarkEquity": "组合"
   },
   "auth": {
     "login": "登录",

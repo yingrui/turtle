@@ -416,7 +416,10 @@
     "tradeFailed": "Failed to record trade",
     "tradeInvalidShares": "Enter a whole number of shares",
     "tradeInvalidPrice": "Enter a price greater than 0",
-    "tradeInsufficient": "Only {{available}} shares available"
+    "tradeInsufficient": "Only {{available}} shares available",
+    "benchmarkTitle": "Portfolio vs benchmark",
+    "benchmarkDesc": "Both rebased to 100 on the first day of the curve — did the book beat the index?",
+    "benchmarkEquity": "Portfolio"
   },
   "auth": {
     "login": "Log in",

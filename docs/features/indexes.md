@@ -21,12 +21,20 @@ The home dashboard also renders a compact strip (`上证指数`, `深证成指`,
 (`相对基准：-9.13 点`). A return percentage alone cannot say whether a strategy beat the market;
 two rebased lines can.
 
+## Portfolio vs benchmark
+
+The portfolio overview draws the same comparison for the **live** book: `/api/portfolios/{name}/benchmark`
+rebuilds the equity curve from the ledger (that is how `/equity` already works), rebases it to 100 on
+the first day of the window, and puts the chosen index beside it with the point difference. A portfolio
+with no trades has no curve, so the section simply does not render.
+
 ## API
 
 | Method | Path | Notes |
 |--------|------|-------|
 | GET | `/api/indexes` | Indexes with daily bars, benchmarks first, with latest `close` and `pct_chg` |
 | GET | `/api/indexes/{ts_code}/daily?start=&end=` | OHLC + `pct_chg`/`vol`/`amount` (default: last year) |
+| GET | `/api/portfolios/{name}/benchmark?ts_code=&days=` | The live book vs an index, both rebased to 100, plus `excess_pct` |
 | GET | `/api/simulations/{run_id}/benchmark?ts_code=` | Equity vs index, both rebased to 100, plus `excess_pct` |
 
 ## Data

@@ -88,6 +88,7 @@ All routes except `/health`, `/api/auth/mode`, `/api/auth/login`, and `/api/auth
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/{name}/benchmark?ts_code=&days=` | The portfolio's equity curve vs an index, both rebased to 100 on the first day, with `excess_pct` (404 when the ledger is empty) |
 | GET | `/{name}/stocks?day=` | The bound run's book that day (`source: "run"`, with `available_dates`), else the editable watchlist (`source: "portfolio"`) |
 | GET | `/{name}/transactions` | The bound run's fills (`source: "run"`), else the portfolio's own ledger |
 | GET | `/{name}/pool?day=` | The stock pool: run's pool when bound, else the watchlist |

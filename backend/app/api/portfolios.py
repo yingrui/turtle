@@ -577,6 +577,44 @@ def rebuild_portfolio_stock(
 
 # --------------------------------------------------------------- transactions
 
+@router.get("/{name}/benchmark")
+def portfolio_benchmark(
+    name: str,
+    ts_code: str = Query("000300.SH", description="Index to compare against"),
+    days: int = Query(180, ge=10, le=1200),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """The portfolio's equity next to an index, both rebased to 100 on the first day.
+
+    Same shape as `/api/simulations/{run}/benchmark`: one series for the book, one for the market, and
+    the point difference at the end.
+    """
+    from app.services.index_service import IndexService
+
+    try:
+        curve = PortfolioService(db).equity_curve(name, days=days)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    points = curve.get("points") or []
+    if not points:
+        raise HTTPException(status_code=404, detail="This portfolio has no trades to build a curve from")
+    dates = [point["date"] for point in points]
+    first = float(points[0]["market_value"]) or 1.0
+    equity = [round(float(point["market_value"]) / first * 100, 4) for point in points]
+    benchmark = IndexService().benchmark_series(db, ts_code, dates)
+    return {
+        "portfolio": name,
+        "ts_code": ts_code,
+        "dates": dates,
+        "equity": equity,
+        "benchmark": benchmark,
+        "excess_pct": (
+            None if benchmark[-1] is None else round(equity[-1] - benchmark[-1], 4)
+        ),
+    }
+
+
 @router.get("/{name}/equity")
 def portfolio_equity(
     name: str,

@@ -67,6 +67,15 @@ type PortfolioPool = {
   count: number;
 };
 
+type PortfolioBenchmark = {
+  portfolio: string;
+  ts_code: string;
+  dates: string[];
+  equity: number[];
+  benchmark: (number | null)[];
+  excess_pct: number | null;
+};
+
 type RunSummary = {
   id: string;
   portfolio_name: string;
@@ -104,6 +113,9 @@ export function Portfolio() {
   const [poolDates, setPoolDates] = useState<string[]>([]);
   const [poolDay, setPoolDay] = useState<string | null>(null);
   const [runs, setRuns] = useState<RunSummary[]>([]);
+  const [benchmarkCode, setBenchmarkCode] = useState('000300.SH');
+  const [benchmarks, setBenchmarks] = useState<{ ts_code: string; name: string }[]>([]);
+  const [benchmark, setBenchmark] = useState<PortfolioBenchmark | null>(null);
   const [draft, setDraft] = useState<TradeDraft | null>(null);
   const [tab, setTabState] = useState<'overview' | 'holdings' | 'pool' | 'trades' | 'risk' | 'advanced'>(
     (searchParams.get('tab') as 'overview' | 'holdings' | 'trades' | 'risk' | 'advanced') ?? 'overview',
@@ -215,6 +227,24 @@ export function Portfolio() {
       .then((d) => setRuns(d.runs.filter((run) => run.portfolio_name === name)))
       .catch(() => setRuns([]));
   }, [name]);
+
+  useEffect(() => {
+    apiFetch<{ indexes: { ts_code: string; name: string }[] }>('/api/indexes')
+      .then((d) => setBenchmarks((d.indexes ?? []).slice(0, 8)))
+      .catch(() => setBenchmarks([]));
+  }, []);
+
+  useEffect(() => {
+    if (!name || !benchmarkCode) {
+      setBenchmark(null);
+      return;
+    }
+    apiFetch<PortfolioBenchmark>(
+      `/api/portfolios/${encodeURIComponent(name)}/benchmark?ts_code=${encodeURIComponent(benchmarkCode)}&days=180`,
+    )
+      .then(setBenchmark)
+      .catch(() => setBenchmark(null));   // no trades yet: the chart simply does not appear
+  }, [name, benchmarkCode]);
 
   useEffect(() => {
     if (tab === 'pool') loadPool().catch(() => toast.error(t('portfolio.poolError')));
@@ -624,6 +654,48 @@ export function Portfolio() {
                       <h2 className="portfolio-panel-title">{t('portfolio.equityTitle')}</h2>
                       <p className="portfolio-panel-desc">{t('portfolio.equityDesc')}</p>
                       <LineChart data={equity} />
+                    </section>
+                  )}
+
+                  {benchmark && benchmark.dates.length > 0 && (
+                    <section className="portfolio-equity">
+                      <div className="split-row">
+                        <div>
+                          <h2 className="portfolio-panel-title">{t('portfolio.benchmarkTitle')}</h2>
+                          <p className="portfolio-panel-desc">{t('portfolio.benchmarkDesc')}</p>
+                        </div>
+                        <div className="form-row field-medium">
+                          <label htmlFor="portfolio-benchmark">{t('results.benchmark')}</label>
+                          <select
+                            id="portfolio-benchmark"
+                            value={benchmarkCode}
+                            onChange={(e) => setBenchmarkCode(e.target.value)}
+                          >
+                            {benchmarks.map((item) => (
+                              <option key={item.ts_code} value={item.ts_code}>
+                                {item.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      {benchmark.excess_pct != null && (
+                        <p className={`text-sm ${benchmark.excess_pct >= 0 ? 'price-up' : 'price-down'}`}>
+                          {t('results.excessVsBenchmark', { value: benchmark.excess_pct.toFixed(2) })}
+                        </p>
+                      )}
+                      <LineChart
+                        data={{
+                          dates: benchmark.dates,
+                          series: [
+                            {
+                              name: t('portfolio.benchmarkEquity'),
+                              data: benchmark.equity as (number | null)[],
+                            },
+                            { name: benchmark.ts_code, data: benchmark.benchmark },
+                          ],
+                        }}
+                      />
                     </section>
                   )}
                   <div className="stat-grid">
