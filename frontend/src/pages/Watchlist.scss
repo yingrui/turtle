@@ -74,37 +74,4 @@
     gap: var(--space-3);
     padding: var(--space-4) 0;
   }
-
-  .watchlist-modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: var(--z-dropdown);
-  }
-
-  .watchlist-modal {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-5);
-    width: min(400px, 90vw);
-
-    h2 {
-      font-size: var(--text-lg);
-      margin: 0 0 var(--space-2);
-    }
-
-    .watchlist-muted {
-      margin-bottom: var(--space-4);
-    }
-  }
-
-  .watchlist-modal-actions {
-    display: flex;
-    gap: var(--space-2);
-    margin-top: var(--space-4);
-  }
 }

@@ -1,4 +1,5 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Pagination } from '../styles/design-system/Pagination';
 import { compareSortValues, sortIndicator, toggleSortColumn, type SortOrder } from '../utils/tableSort';
 import './DataTable.scss';
 
@@ -40,6 +41,13 @@ type Props<T> = {
   rowClassName?: (row: T) => string | undefined;
   wrapperClassName?: string;
   className?: string;
+  /**
+   * Rows per page. Omitted means "show everything" — a 47-row factor list needs no pager, a
+   * 200-row screening result does. Sorting and selection stay over the *visible* page, which is what
+   * a reader means by "select all".
+   */
+  pageSize?: number;
+  pageSizeOptions?: readonly number[];
 };
 
 export function DataTable<T>({
@@ -62,6 +70,8 @@ export function DataTable<T>({
   rowClassName,
   wrapperClassName,
   className,
+  pageSize,
+  pageSizeOptions,
 }: Props<T>) {
   const controlled = Boolean(onSortChange);
   const [internalSort, setInternalSort] = useState<{ col: string; order: SortOrder }>({
@@ -79,6 +89,21 @@ export function DataTable<T>({
     );
   }, [rows, columns, active.col, active.order, controlled]);
 
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(pageSize ?? 0);
+
+  useEffect(() => {
+    setSize(pageSize ?? 0);
+  }, [pageSize]);
+
+  const pagedRows = useMemo(() => {
+    if (!size) return sortedRows;
+    const start = page * size;
+    // A page that no longer exists (rows filtered away) falls back to the last real one.
+    if (start >= sortedRows.length) return sortedRows.slice(0, size);
+    return sortedRows.slice(start, start + size);
+  }, [sortedRows, size, page]);
+
   function onSortClick(column: Column<T>) {
     const next = toggleSortColumn(active.col, active.order, column.key, column.defaultOrder === 'desc');
     if (controlled) onSortChange?.(next.col, next.order);
@@ -93,7 +118,7 @@ export function DataTable<T>({
   }
 
   const allSelected =
-    selectable && selected ? sortedRows.every((row, index) => selected.has(rowKey(row, index))) : false;
+    selectable && selected ? pagedRows.every((row, index) => selected.has(rowKey(row, index))) : false;
 
   return (
     <div className={wrapperClassName ? `data-table-wrap ${wrapperClassName}` : 'data-table-wrap'}>
@@ -129,7 +154,7 @@ export function DataTable<T>({
           </tr>
         </thead>
         <tbody>
-          {sortedRows.map((row, index) => {
+          {pagedRows.map((row, index) => {
             const key = rowKey(row, index);
             return (
               <tr
@@ -167,6 +192,19 @@ export function DataTable<T>({
           })}
         </tbody>
       </table>
+      {size > 0 && (
+        <Pagination
+          total={sortedRows.length}
+          page={page}
+          pageSize={size}
+          pageSizeOptions={pageSizeOptions}
+          onPageChange={setPage}
+          onPageSizeChange={(next) => {
+            setSize(next);
+            setPage(0);
+          }}
+        />
+      )}
     </div>
   );
 }

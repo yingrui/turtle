@@ -101,3 +101,28 @@ describe('DataTable', () => {
     expect(html).toContain('data-table-select');
   });
 });
+
+describe('pagination', () => {
+  const rows = Array.from({ length: 60 }, (_, index) => ({ code: `S${index}`, name: `n${index}`, pct: 0 }));
+  const cols: Column<Row>[] = [{ key: 'code', label: 'Code', render: (r) => r.code }];
+
+  function bodyRows(html: string): number {
+    return (html.match(/<tr/g) ?? []).length - 1; // minus the header row
+  }
+
+  it('shows every row when no page size is given', () => {
+    const html = renderToStaticMarkup(<DataTable columns={cols} rows={rows} rowKey={(r) => r.code} />);
+    expect(bodyRows(html)).toBe(rows.length);
+    expect(html).not.toContain('ds-pagination');
+  });
+
+  it('renders one page and a pager when a page size is given', () => {
+    const html = renderToStaticMarkup(
+      <DataTable columns={cols} rows={rows} rowKey={(r) => r.code} pageSize={25} />,
+    );
+    expect(bodyRows(html)).toBe(25);
+    expect(html).toContain('ds-pagination');
+    expect(html).toContain('S0');
+    expect(html).not.toContain('S25');
+  });
+});

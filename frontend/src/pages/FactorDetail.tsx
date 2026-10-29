@@ -283,6 +283,7 @@ export function FactorDetail() {
 
       <div className="mt-3">
         <DataTable
+          pageSize={25}
           columns={valueColumns}
           rows={rows}
           rowKey={(row) => `${row.trade_date}-${row.ts_code}`}

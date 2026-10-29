@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
 import { DataTable, type Column } from '../components/DataTable';
+import { Dialog } from '../components/Dialog';
 import './Watchlist.scss';
 
 type Quote = {
@@ -281,6 +282,7 @@ export function Watchlist() {
           )}
 
           <DataTable
+            pageSize={25}
             columns={columns}
             rows={items}
             rowKey={(row) => row.ts_code}
@@ -300,35 +302,34 @@ export function Watchlist() {
         </>
       )}
 
-      {createOpen && (
-        <div className="watchlist-modal-backdrop" onClick={() => setCreateOpen(false)}>
-          <div className="watchlist-modal" onClick={(e) => e.stopPropagation()}>
-            <h2>{t('watchlist.createPortfolio')}</h2>
-            <p className="watchlist-muted">{t('portfolio.createDesc')}</p>
-            <form onSubmit={onCreate}>
-              <div className="form-row">
-                <label htmlFor="watchlist-modal-name">{t('portfolio.newName')}</label>
-                <input
-                  id="watchlist-modal-name"
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder={t('portfolio.namePlaceholder')}
-                  autoFocus
-                />
-              </div>
-              <div className="watchlist-modal-actions">
-                <button type="submit" className="btn btn-primary" disabled={creating || !newName.trim()}>
-                  {creating ? t('portfolio.creating') : t('portfolio.create')}
-                </button>
-                <button type="button" className="btn btn-secondary" onClick={() => setCreateOpen(false)}>
-                  {t('screening.cancel')}
-                </button>
-              </div>
-            </form>
+      <Dialog
+        open={createOpen}
+        title={t('watchlist.createPortfolio')}
+        onClose={() => setCreateOpen(false)}
+      >
+        <p className="text-hint">{t('portfolio.createDesc')}</p>
+        <form onSubmit={onCreate} className="stack">
+          <div className="form-row">
+            <label htmlFor="watchlist-modal-name">{t('portfolio.newName')}</label>
+            <input
+              id="watchlist-modal-name"
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder={t('portfolio.namePlaceholder')}
+              autoFocus
+            />
           </div>
-        </div>
-      )}
+          <div className="dialog-actions">
+            <button type="submit" className="btn btn-primary" disabled={creating || !newName.trim()}>
+              {creating ? t('portfolio.creating') : t('portfolio.create')}
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={() => setCreateOpen(false)}>
+              {t('screening.cancel')}
+            </button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 }

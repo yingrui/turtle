@@ -1,0 +1,39 @@
+// Native <dialog> already sits above the page and inerts the background; this only styles it.
+.ds-dialog {
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  width: min(440px, 90vw);
+  box-shadow: var(--shadow-elevated);
+
+  &::backdrop {
+    background: var(--overlay-backdrop, rgba(0, 0, 0, 0.45));
+  }
+}
+
+.ds-dialog__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.ds-dialog__title {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.ds-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ds-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}

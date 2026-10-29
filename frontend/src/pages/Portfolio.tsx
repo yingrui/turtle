@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -667,9 +667,10 @@ export function Portfolio() {
                           <li key={s.ts_code}>
                             <span className="portfolio-weight-code">{s.ts_code}</span>
                             <span className="portfolio-weight-bar">
+                              {/* Geometry comes from the stylesheet; only the number crosses over. */}
                               <span
                                 className="portfolio-weight-fill"
-                                style={{ width: `${(((s.market_value ?? 0) / totalMarketValue) * 100).toFixed(1)}%` }}
+                                style={{ '--fill': `${(((s.market_value ?? 0) / totalMarketValue) * 100).toFixed(1)}%` } as CSSProperties}
                               />
                             </span>
                             <span className="portfolio-weight-pct">
@@ -700,21 +701,21 @@ export function Portfolio() {
                               <span className="portfolio-bullet">
                                 <span
                                   className={`portfolio-bullet-fill ${gain ? 'price-up-bg' : 'price-down-bg'}`}
-                                  style={{ left: `${fillLeft}%`, width: `${fillWidth}%` }}
+                                  style={{ '--from': `${fillLeft}%`, '--width': `${fillWidth}%` } as CSSProperties}
                                 />
                                 <span
                                   className="portfolio-bullet-mark portfolio-bullet-mark--cost"
-                                  style={{ left: `${pos(cost)}%` }}
+                                  style={{ '--at': `${pos(cost)}%` } as CSSProperties}
                                 />
                                 {stop != null && (
                                   <span
                                     className="portfolio-bullet-mark portfolio-bullet-mark--stop"
-                                    style={{ left: `${pos(stop)}%` }}
+                                    style={{ '--at': `${pos(stop)}%` } as CSSProperties}
                                   />
                                 )}
                                 <span
                                   className="portfolio-bullet-mark portfolio-bullet-mark--price"
-                                  style={{ left: `${pos(price)}%` }}
+                                  style={{ '--at': `${pos(price)}%` } as CSSProperties}
                                 />
                               </span>
                               <span className={`portfolio-weight-pct ${gain ? 'price-up' : 'price-down'}`}>
@@ -777,6 +778,7 @@ export function Portfolio() {
               </div>
               )}
               <DataTable
+                pageSize={25}
                 columns={holdingColumns}
                 rows={stocksSource === 'run' ? stocks : stocks.filter((row) => row.status === statusFilter)}
                 onRowClick={(row) => setDetail(row)}
@@ -830,6 +832,7 @@ export function Portfolio() {
                         </div>
                       )}
                       <DataTable
+                        pageSize={25}
                         columns={poolColumns}
                         rows={pool.pool}
                         rowKey={(row) => row.ts_code}
@@ -846,6 +849,7 @@ export function Portfolio() {
               <h2 className="portfolio-panel-title">{t('portfolio.tradesTitle')}</h2>
               <p className="portfolio-panel-desc">{t('portfolio.tradesDesc')}</p>
               <DataTable
+                pageSize={25}
                 columns={tradeColumns}
                 rows={trades}
                 rowKey={(row) => row.id}

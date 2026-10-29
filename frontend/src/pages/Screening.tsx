@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
 import { TradeDrawer } from '../components/portfolio/TradeDrawer';
 import { DataTable, type Column } from '../components/DataTable';
+import { Dialog } from '../components/Dialog';
 import { FactorScreen } from '../components/screening/FactorScreen';
 import { useJobPoll } from '../hooks/useJobPoll';
 import './Screening.scss';
@@ -552,6 +553,7 @@ export function Screening() {
 
           <DataTable
             key={tab}
+            pageSize={25}
             columns={resultColumns}
             rows={activeRows.slice(0, 200)}
             rowKey={(row) => row.ts_code}
@@ -565,10 +567,7 @@ export function Screening() {
         </div>
       )}
 
-      {backtestOpen && (
-        <div className="overlay" onClick={() => setBacktestOpen(false)}>
-          <div className="page-card dialog-card" onClick={(e) => e.stopPropagation()}>
-            <h2 className="panel-title">{t('screening.backtestTitle')}</h2>
+      <Dialog open={backtestOpen} title={t('screening.backtestTitle')} onClose={() => setBacktestOpen(false)}>
             <p className="text-hint">
               {t('screening.backtestHint', { count: selected.size || allCodes.length })}
             </p>
@@ -590,7 +589,7 @@ export function Screening() {
                 <input type="date" value={btEnd} onChange={(e) => setBtEnd(e.target.value)} />
               </div>
             </div>
-            <div className="toolbar toolbar--tight mt-4">
+            <div className="dialog-actions">
               <button type="button" className="btn btn-primary" onClick={runBacktest}>
                 {t('screening.runBacktest')}
               </button>
@@ -598,9 +597,7 @@ export function Screening() {
                 {t('screening.cancel')}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Dialog>
       {tradeCode && (bulkPortfolio || portfolios[0]) && (
         <TradeDrawer
           portfolio={bulkPortfolio || portfolios[0]}

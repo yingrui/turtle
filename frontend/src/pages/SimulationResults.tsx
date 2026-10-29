@@ -255,6 +255,7 @@ export function SimulationResults() {
           )}
           {tab === 'trades' && (
             <DataTable
+              pageSize={25}
               columns={tradeColumns}
               rows={trades.slice(-80)}
               rowKey={(row, i) => `${String(row.ts_code)}-${String(row.date)}-${i}`}

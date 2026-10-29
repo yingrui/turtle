@@ -26,7 +26,7 @@ export function Pagination({
   className = '',
   compact = false,
 }: PaginationProps) {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation();
   const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
   const from = total > 0 ? page * pageSize + 1 : 0;
   const to = total > 0 ? Math.min((page + 1) * pageSize, total) : 0;

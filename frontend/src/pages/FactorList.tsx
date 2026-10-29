@@ -172,6 +172,7 @@ export function FactorList() {
       </div>
 
       <DataTable
+        pageSize={25}
         columns={columns}
         rows={visible}
         rowKey={(row) => row.code}

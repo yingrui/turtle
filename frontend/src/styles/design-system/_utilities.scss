@@ -345,23 +345,6 @@
   margin-bottom: var(--space-4);
 }
 
-// A lightweight modal shell: the overlay + the card. `<Dialog>` is the long-term answer, but two
-// screens still hand-roll it, and this at least keeps the values in the stylesheet.
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-modal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--overlay-backdrop, rgba(0, 0, 0, 0.4));
-}
-
-.dialog-card {
-  width: 90%;
-  max-width: 420px;
-}
-
 // Dashed container for "nothing here yet".
 .empty-panel {
   padding: var(--space-4);
@@ -402,4 +385,11 @@
   grid-column: 1 / -1;
   font-weight: var(--font-weight-medium);
   margin-bottom: var(--space-1);
+}
+
+// The button row at the bottom of a dialog or inline form.
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }

@@ -32,6 +32,9 @@ CONFIG = ROOT / "src" / "i18n" / "config.ts"
 SRC = ROOT / "src"
 
 T_CALL = re.compile(r"\bt\(\s*'([^']+)'")
+#: The app has exactly one namespace. Asking for another one looks up `ns:key`, which never exists —
+#: the strings then render as keys even though the key check happily passes.
+NAMESPACE = re.compile(r"useTranslation\(\s*['\"]([^'\"]+)['\"]|\bns:\s*['\"]([^'\"]+)['\"]")
 T_TEMPLATE = re.compile(r"\bt\(\s*`([^`]*)\$\{")
 
 LOCALES = ROOT / "src" / "i18n" / "locales"
@@ -56,6 +59,26 @@ def resource_keys() -> dict[str, set[str]]:
         "en": _flatten(json.loads((LOCALES / "en.json").read_text())),
         "zh": _flatten(json.loads((LOCALES / "zh-CN.json").read_text())),
     }
+
+
+def namespace_problems() -> list[str]:
+    """`useTranslation('common')` asks for `common:pagination.aria`, which this app never defines."""
+    problems: list[str] = []
+    for path in sorted(SRC.rglob("*")):
+        if path.suffix not in (".ts", ".tsx") or "i18n" in path.parts:
+            continue
+        if re.search(r"\.(test|spec)\.", path.name):
+            continue
+        text = path.read_text()
+        for match in NAMESPACE.finditer(text):
+            name = match.group(1) or match.group(2)
+            if name and name not in ("translation", "default"):
+                line = text[: match.start()].count("\n") + 1
+                problems.append(
+                    f"{path.relative_to(ROOT).as_posix()}:{line} asks for namespace '{name}', "
+                    "but only `translation` is loaded"
+                )
+    return problems
 
 
 def used_keys() -> tuple[set[str], set[str]]:
@@ -86,6 +109,12 @@ def main() -> int:
 
     literal, prefixes = used_keys()
     problems: list[str] = []
+
+    problems.extend(namespace_problems())
+
+    for key in sorted(literal):
+        if ":" in key:
+            problems.append(f"'{key}' uses a namespace; this app loads `translation` only")
 
     for language, keys in languages.items():
         for key in sorted(literal):
