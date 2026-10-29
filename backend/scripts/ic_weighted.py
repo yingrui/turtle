@@ -44,11 +44,13 @@ def per_date_ic(frame: pd.DataFrame, factors: list[str]) -> pd.DataFrame:
 
 
 def score_with_rolling_ic(
-    frame: pd.DataFrame, factors: list[str], ic: pd.DataFrame, lookback: int
+    frame: pd.DataFrame, factors: list[str], ic: pd.DataFrame, lookback: int, horizon: int = 20
 ) -> pd.DataFrame:
     """Weight each date's ranks by the mean IC of the preceding `lookback` sessions."""
-    # shift(1): today's weight may only use ICs measured before today.
-    weights = ic.rolling(lookback, min_periods=max(20, lookback // 3)).mean().shift(1)
+    # `shift(horizon)`, not `shift(1)`: the IC measured at t is a correlation with the return from
+    # t+1 to t+horizon, so it is only *known* at t+horizon. Using it earlier leaks up to
+    # horizon−1 sessions of the future into the score — which flatters the backtest enormously.
+    weights = ic.rolling(lookback, min_periods=max(20, lookback // 3)).mean().shift(horizon)
     centred = frame[factors].sub(0.5)
     score = pd.Series(0.0, index=frame.index)
     for factor in factors:
@@ -93,6 +95,10 @@ def main() -> None:
     parser.add_argument("--benchmark", default="000300.SH")
     parser.add_argument("--top-n", type=int, default=50, dest="top_n")
     parser.add_argument("--out", default=None, help="write the per-month table as CSV")
+    parser.add_argument(
+        "--export-weights", default=None, dest="export_weights",
+        help="write the per-date IC weights as JSON, for `IcWeightsRankingProvider` to score with",
+    )
     args = parser.parse_args()
 
     db = SessionLocal()
@@ -112,7 +118,7 @@ def main() -> None:
     frame = data.frame.copy()
     frame["trade_date"] = pd.to_datetime(frame["trade_date"]).dt.strftime("%Y-%m-%d")
     ic = per_date_ic(frame, data.factors)
-    scored = score_with_rolling_ic(frame, data.factors, ic, args.lookback)
+    scored = score_with_rolling_ic(frame, data.factors, ic, args.lookback, args.horizon)
     scored = scored.dropna(subset=["score"])
     table = evaluate(scored, args.top_n)
 
@@ -127,6 +133,29 @@ def main() -> None:
         f"({positive / max(1, len(table)) * 100:.0f}%) · mean excess {table['excess'].mean() * 100:+.2f}% "
         f"· mean AUC {table['auc'].mean():.3f}"
     )
+    if args.export_weights:
+        import json
+
+        weights = (
+            ic.rolling(args.lookback, min_periods=max(20, args.lookback // 3)).mean().shift(
+                args.horizon
+            )
+        )
+        payload = {
+            "lookback": args.lookback,
+            "horizon": args.horizon,
+            "label": args.label,
+            "benchmark": args.benchmark,
+            "factors": data.factors,
+            "weights": {
+                str(day): {factor: (None if pd.isna(value) else round(float(value), 6))
+                           for factor, value in row.items()}
+                for day, row in weights.iterrows()
+            },
+        }
+        Path(args.export_weights).write_text(json.dumps(payload, ensure_ascii=False))
+        print(f"weights written to {args.export_weights} ({len(payload['weights'])} dates)")
+
     if args.out:
         table.to_csv(args.out, index=False)
         print(f"written {args.out}")

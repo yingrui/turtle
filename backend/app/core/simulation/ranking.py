@@ -67,6 +67,59 @@ class ModelRankingProvider:
         ]
 
 
+class IcWeightsRankingProvider:
+    """Ranks by an IC-weight table written offline (`scripts/ic_weighted.py --export-weights`).
+
+    The weights are a fact about the past: for each date, the mean cross-sectional IC of every factor
+    over the preceding window. Scoring is a dot product with today's ranks, so nothing is fitted here —
+    the simulation reads a table, exactly like it reads a model.
+    """
+
+    def __init__(self, path: str, *, exclude_st: bool = True) -> None:
+        import json
+        from pathlib import Path
+
+        payload = json.loads(Path(path).read_text())
+        self.factors: list[str] = payload["factors"]
+        self.lookback: int = payload["lookback"]
+        self.weights: dict[str, dict[str, float | None]] = payload["weights"]
+        self.exclude_st = exclude_st
+        self._dates = sorted(self.weights)
+
+    def _weights_for(self, day: date) -> dict[str, float | None] | None:
+        import bisect
+
+        index = bisect.bisect_right(self._dates, day.isoformat()) - 1
+        return self.weights[self._dates[index]] if index >= 0 else None
+
+    def rankings(self, db, day: date) -> list[Ranked]:
+        weights = self._weights_for(day)
+        if not weights:
+            return []
+        ranks = rank_cross_section(db, day, self.factors)
+        if ranks.empty:
+            return []
+        if self.exclude_st:
+            from app.core.simulation.model_runner import _st_codes
+
+            ranks = ranks[~ranks["ts_code"].isin(_st_codes(db))]
+        if ranks.empty:
+            return []
+        score = []
+        for _, row in ranks.iterrows():
+            value = 0.0
+            for factor, weight in weights.items():
+                if weight is None:
+                    continue
+                value += weight * (float(row[factor]) - 0.5)
+            score.append(value)
+        ordered = sorted(zip(ranks["ts_code"].to_numpy(), score), key=lambda pair: pair[1], reverse=True)
+        return [
+            Ranked(ts_code=str(code), score=float(value), rank=index + 1)
+            for index, (code, value) in enumerate(ordered)
+        ]
+
+
 class StaticRankingProvider:
     """A fixed order per day — the "fixed pool" case, and the seam a test uses."""
 
@@ -81,6 +134,7 @@ class StaticRankingProvider:
 
 
 __all__ = [
+    "IcWeightsRankingProvider",
     "ModelUnavailable",
     "ModelRankingProvider",
     "Ranked",

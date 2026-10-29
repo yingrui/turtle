@@ -39,6 +39,9 @@ class CreateJobRequest(BaseModel):
     label: str | None = None
     horizon: int | None = None
     benchmark: str | None = None
+    #: `ic_weights` swaps the scorecard for an IC-weight table (no training involved).
+    ranking_source: str | None = None
+    ranking_weights: str | None = None
 
 
 def _job_to_dict(job) -> dict:

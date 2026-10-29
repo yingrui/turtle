@@ -119,6 +119,14 @@ class JobService:
                 end_date = date.fromisoformat(payload.get("end_date", date.today().isoformat()))
                 portfolio_svc = PortfolioService(db)
                 portfolio_name = payload["portfolio"]
+                # A ranking source other than the scorecard: an IC-weight table written offline.
+                provider = None
+                if payload.get("ranking_source") == "ic_weights":
+                    from app.core.simulation.ranking import IcWeightsRankingProvider
+
+                    provider = IcWeightsRankingProvider(
+                        payload["ranking_weights"], exclude_st=config.exclude_st
+                    )
                 portfolio_id = portfolio_svc.get_portfolio_id(portfolio_name)
                 initial_cash = float(payload.get("initial_cash") or 1_000_000)
                 run = SimulationRun(
@@ -131,6 +139,11 @@ class JobService:
                     pool_mode="dynamic",
                     name=payload.get("name"),
                     description=payload.get("description"),
+                    provenance=_provenance(
+                        payload,
+                        policy=config.policy,
+                        source=payload.get("ranking_source") or "model",
+                    ),
                     config_snapshot=json.dumps(
                         {"kind": "model", "portfolio": portfolio_name, **config.as_dict(),
                          "initial_cash": initial_cash,
@@ -146,7 +159,7 @@ class JobService:
 
                 result = run_model_simulation(
                     db, run=run, start=start_date, end=end_date,
-                    initial_cash=initial_cash, config=config, on_day=report,
+                    initial_cash=initial_cash, config=config, provider=provider, on_day=report,
                 )
                 summary = summarise(db, run.id)
                 for field_name, value in summary.items():
@@ -189,6 +202,7 @@ class JobService:
                         mode="signal",
                         name=payload.get("name"),
                         description=payload.get("description"),
+                        provenance=_provenance(payload, policy=None, source="signal"),
                         # A signal run's pool is the configured watchlist, the same list every day; it is
                         # read from the config snapshot rather than duplicated into `simulation_pool`.
                         pool_mode="fixed",
