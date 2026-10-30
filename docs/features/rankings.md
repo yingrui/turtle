@@ -317,3 +317,106 @@ UI for.
    cheap to add a rolling out-of-sample protocol, but choosing the protocol is a research decision.
 3. **Where analyses execute**: in-process job worker for now; a separate worker pool is warranted once
    a single analysis exceeds ~10 minutes.
+
+---
+
+## 14. Extensibility: adding a factor, adding an experiment
+
+The pipeline above is built around four kinds of things that will keep growing: **factors**, **labels**,
+**strategies**, and **experiments**. Each needs a declared contract, otherwise the growth shows up as
+code churn in the core.
+
+### 14.1 Factors
+
+A factor is not just a formula — it has dependencies, a point-in-time rule, and a version.
+
+```python
+@dataclass
+class FactorSpec:
+    code: str                     # "mom_20d"
+    version: int                  # bumped when the formula changes
+    formula: str                  # engine expression
+    needs: list[ColumnRef]        # ("stock_trade_daily", "close"), ("income", "n_income", as_of="ann_date")
+    pit: PointInTime              # as-of join key, publication lag, restatement policy
+    universe: str                 # "all_a" | "non_st" | custom
+    direction: int                # +1 / -1, documentation for humans and for sign checks
+    category: str                 # price / fundamental / flow / sentiment
+    coverage_ok_from: date        # first date with enough history for this formula
+```
+
+Consequences for the rest of the system:
+
+| Concern | Rule |
+|---|---|
+| model fingerprint | includes `(factor code, version)` — a formula change invalidates cached models instead of silently reusing a model trained on different inputs |
+| analysis validation | `needs` are checked against the actual tables; a fundamental factor trained on a non-PIT join is rejected, because `ann_date` lag is where look-ahead lives |
+| recompute | a version bump marks `factor_values` for that factor stale from the change date; analyses refuse stale inputs unless explicitly allowed |
+| panel load | the existing wide-panel loader already reads only named factor columns — the new part is that the column set now comes from `inputs.factors` instead of a hardcoded list |
+
+Adding a factor therefore = one `FactorSpec` + its data columns + a recompute job. No change to
+analyses, models, runs or the UI: the factor picker is driven by the factor table.
+
+### 14.2 Labels
+
+A label is currently a script flag (`--label benchmark --horizon 20`) and appears in the code in at
+least four places: export, training, dataset naming, report text. It becomes a first-class object:
+
+```json
+{"id": "bench20", "kind": "benchmark", "horizon": 20, "benchmark": "000300.SH",
+ "entry": "open[t+1]", "exit": "close[t+1+h]", "filter": {"exclude_st": true},
+ "notes": "跑赢沪深300，20 个交易日"}
+```
+
+| Concern | Rule |
+|---|---|
+| dataset | a dataset is built *for* a label id; the manifest records it, so `scorecard-training-20d-bench` is derivable rather than hand-named |
+| model | `label_id` in the artifact; training and scoring both read the same definition — no drift between "what we trained on" and "what the report claims" |
+| new label kinds | triple-barrier is just another `kind` with `{"upper": 0.05, "lower": -0.03, "vertical": 20}` — the export path needs a new implementation, but nothing downstream changes |
+| comparison | runs with different labels are not comparable; the UI must show the label next to every metric, and experiment comparison refuses a mixed-label selection |
+
+### 14.3 Strategies (the trade rule)
+
+`buy_rule: "policy" | "mechanical"` is an enum — it will not survive the third strategy. It becomes a
+registry with the same shape as analyses:
+
+| Strategy | Reads | Notes |
+|---|---|---|
+| `policy` | the portfolio's configured policies | current default; pool → policy → trades |
+| `mechanical` | `top_n`, `hold_days`, `sell_rank_limit` | the ranking diagnostic used in experiments 1–3 |
+| `quarterly_rebalance` | `top_n`, `rebalance` | the low-turnover experiment that is currently next in the queue |
+| `risk_parity` (later) | volatility, correlations | sizing, not selection |
+| `custom` (later) | a declared rule set | only if the above prove insufficient |
+
+A strategy declares `requires` (rankings? positions? volatility?) and `params_model`, and produces
+`list[Order]` from `(pool, book, cash, day)`. The runner owns execution and accounting for all of them,
+so cost and tradability rules cannot differ between strategies — which is exactly the bug that would
+otherwise appear when a second strategy is added.
+
+### 14.4 Experiments
+
+Today an experiment lives in a report and a run name. Two structural problems follow: comparing
+variants requires manual matching, and "same experiment, new factor" means re-writing a payload.
+
+```json
+{"id": "exp3-regime", "question": "regime 切换是否优于固定符号",
+ "ranking": [{"source": "regime-ma60-v1"}, {"source": "mom-sign-always-v1"}, {"source": "rev-sign-always-v1"}],
+ "label": "bench20", "strategy": "policy", "window": ["2025-07-01", "2026-10-09"],
+ "controls": [{"source": "pool-random-11"}, {"source": "pool-random-12"}],
+ "conclusion": {"verdict": "no incremental information", "evidence": "..."}}
+```
+
+| Concern | Rule |
+|---|---|
+| variant matrix | an experiment expands into runs: `ranking × strategy × window × seed`; each cell is a `SimulationRun`, the experiment holds the comparison and the verdict |
+| controls | random-pool controls are part of the definition, not an afterthought — a verdict without controls is rejected by review |
+| new factor / new label | change one field, re-expand; the diff between two experiments is the answer to "did the factor help" |
+| sweep | `params` may carry a grid; expansion creates one run per cell (bounded by a declared limit) |
+| provenance | every cell records source id + artifact sha + model fingerprints + dataset version, so a verdict is auditable years later |
+| sprawl | experiments have `status` (draft / running / concluded / abandoned) and their own tags; abandoned ones are hidden from the source picker |
+
+### 14.5 What stays out of the core
+
+Deliberately not built: a general DSL for strategies, a plugin system with dynamic imports, an
+arbitrary-code analysis runner. Every extension point above is a **registry entry with a typed params
+model**, because that is what keeps the audit trail intact. If a future experiment cannot be expressed
+as a registry entry, that is a signal to discuss the shape of the abstraction — not to add an `eval`.
