@@ -7,12 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
     admin_ops,
+    analyses,
     auth,
     data,
     factors,
     indexes,
     jobs,
     portfolios,
+    rankings,
     screening,
     simulations,
     stock_pick,
@@ -56,6 +58,8 @@ app.add_middleware(
 )
 
 app.include_router(admin_ops.router)
+app.include_router(analyses.router)
+app.include_router(rankings.router)
 app.include_router(auth.router)
 app.include_router(data.router)
 app.include_router(portfolios.router)
