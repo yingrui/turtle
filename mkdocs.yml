@@ -56,6 +56,7 @@ nav:
       - Market quotes: features/stock-universe.md
       - Portfolios: features/portfolios.md
       - Simulation: features/simulation.md
+      - Rankings: features/rankings.md
       - Screening & analysis: features/screening-and-analysis.md
       - Stock picking: features/stock-pick.md
       - Factors: features/factors.md
