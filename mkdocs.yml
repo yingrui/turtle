@@ -57,6 +57,7 @@ nav:
       - Portfolios: features/portfolios.md
       - Simulation: features/simulation.md
       - Rankings: features/rankings.md
+      - Research workflow: features/research-workflow.md
       - Screening & analysis: features/screening-and-analysis.md
       - Stock picking: features/stock-pick.md
       - Factors: features/factors.md
