@@ -42,6 +42,10 @@ class PolicyRunConfig:
     top_n: int = 50
     cash_buffer: float = 0.05
     max_new_per_day: int | None = None
+    #: Buy on entering the pool, let the policy decide only the exit.
+    #: A `moving_average` policy is built for a fixed watchlist: its golden cross rarely lands while a
+    #: rotating pool member is in the pool, so "pool → policy decides both sides" trades almost never.
+    enter_on_pool: bool = False
 
     def as_dict(self) -> dict:
         return {
@@ -49,6 +53,7 @@ class PolicyRunConfig:
             "top_n": self.top_n,
             "cash_buffer": self.cash_buffer,
             "max_new_per_day": self.max_new_per_day,
+            "enter_on_pool": self.enter_on_pool,
         }
 
 
@@ -119,7 +124,17 @@ def run_policy_simulation(
         # it would tank the equity curve on every suspension day and corrupt every weight computed
         # from it.
         last_seen.update(closes)
-        valued = {code: closes.get(code, last_seen.get(code, 0.0)) for code in positions}
+
+        def equity_now() -> float:
+            """Cash plus every **currently** held position.
+
+            Valuing a snapshot taken before the day's trades understated equity on any day that opened
+            positions — on a day with 50 entries the curve reported only the leftover cash, which the
+            benchmark view then used as the base and turned a loss into a doubling.
+            """
+            return cash + sum(
+                held * closes.get(code, last_seen.get(code, 0.0)) for code, held in positions.items()
+            )
         fills = next_open(db, day)          # execute at the next open, value at today's close
         # The policy watches the pool **and** what is already held: a position that fell out of the
         # pool still needs its sell signal.
@@ -146,10 +161,8 @@ def run_policy_simulation(
                         tax=Decimal(str(round(tax, 2))), reason=f"policy:{signal.status}",
                     )
                 )
-            elif signal.status == "buy" and code not in positions:
-                equity = cash + sum(
-                    held * valued.get(other, 0.0) for other, held in positions.items()
-                )
+            elif signal.status == "buy" and code not in positions and not config.enter_on_pool:
+                equity = equity_now()
                 target = equity * (1 - config.cash_buffer) / config.top_n
                 shares = int(target // (price * LOT)) * LOT
                 if shares <= 0:
@@ -170,6 +183,35 @@ def run_policy_simulation(
                     )
                 )
 
+        if config.enter_on_pool:
+            # Entry is the pool's decision; the policy above only produced exits.
+            for code in pool:
+                if code in positions or len(positions) >= config.top_n:
+                    continue
+                price = fills.get(code)
+                if price is None:
+                    continue
+                equity = equity_now()
+                target = equity * (1 - config.cash_buffer) / config.top_n
+                shares = int(target // (price * LOT)) * LOT
+                if shares <= 0:
+                    continue
+                amount = price * shares
+                fee = max(COMMISSION_MIN, amount * COMMISSION_RATE)
+                if amount + fee > cash:
+                    continue
+                cash -= amount + fee
+                positions[code] = shares
+                trades += 1
+                db.add(
+                    SimulationTrade(
+                        id=str(uuid.uuid4()), run_id=run.id, ts_code=code, trade_date=day,
+                        side="buy", shares=shares, price=Decimal(str(price)),
+                        amount=Decimal(str(round(amount, 2))), fee=Decimal(str(round(fee, 2))),
+                        reason="pool_entry",
+                    )
+                )
+
         for code in pool:
             rank, score = best[code]
             db.add(
@@ -178,9 +220,9 @@ def run_policy_simulation(
                     score=Decimal(str(round(score, 6))), held=code in positions,
                 )
             )
-        equity = cash + sum(held * valued.get(code, 0.0) for code, held in positions.items())
+        equity = equity_now()
         for code, shares in positions.items():
-            price = valued.get(code, 0.0)
+            price = closes.get(code, last_seen.get(code, 0.0))
             db.add(
                 SimulationHolding(
                     run_id=run.id, trade_date=day, ts_code=code, shares=shares,

@@ -165,13 +165,17 @@ class JobService:
                 def report(day, equity, cash, names):
                     log_fn(f"{day}: equity {equity:,.0f} · cash {cash:,.0f} · {names} names")
 
-                if payload.get("buy_rule") == "policy":
+                if payload.get("buy_rule") in {"policy", "pool_entry"}:
                     from app.core.simulation.policy_runner import PolicyRunConfig, run_policy_simulation
 
                     summary_result = run_policy_simulation(
                         db, run=run, start=start_date, end=end_date,
                         initial_cash=initial_cash,
-                        config=PolicyRunConfig(top_n=config.top_n, cash_buffer=config.cash_buffer),
+                        config=PolicyRunConfig(
+                            top_n=config.top_n,
+                            cash_buffer=config.cash_buffer,
+                            enter_on_pool=payload.get("buy_rule") == "pool_entry",
+                        ),
                         provider=provider
                         or __import__("app.core.simulation.ranking", fromlist=["ModelRankingProvider"])
                         .ModelRankingProvider(policy=config.policy),
