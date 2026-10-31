@@ -624,6 +624,9 @@
     "noCells": "还没有运行记录。",
     "empty": "还没有实验。",
     "loadFailed": "加载实验失败",
-    "detailFailed": "加载实验详情失败"
+    "detailFailed": "加载实验详情失败",
+    "expand": "展开为运行（变体 + 对照）",
+    "expanded": "已启动 {{count}} 个运行",
+    "expandFailed": "展开失败"
   }
 }

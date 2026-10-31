@@ -624,6 +624,9 @@
     "noCells": "No runs recorded yet.",
     "empty": "No experiments yet.",
     "loadFailed": "Could not load experiments",
-    "detailFailed": "Could not load the experiment"
+    "detailFailed": "Could not load the experiment",
+    "expand": "Expand into runs (variants + controls)",
+    "expanded": "Launched {{count}} runs",
+    "expandFailed": "Could not expand"
   }
 }

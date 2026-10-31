@@ -80,6 +80,19 @@ export function Experiments() {
     setValue(current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
 
+  async function onExpand(id: string) {
+    try {
+      const res = await apiFetch<{ launched: { variant: string; job_id: string }[] }>(
+        `/api/experiments/${id}/expand`,
+        { method: 'POST', body: JSON.stringify({}) },
+      );
+      toast.success(t('experiments.expanded', { count: res.launched.length }));
+      await openDetail(id);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('experiments.expandFailed'));
+    }
+  }
+
   async function onCreate() {
     if (!controlIds.length) {
       toast.error(t('experiments.controlsRequired'));
@@ -221,6 +234,11 @@ export function Experiments() {
       {detail && (
         <div className="experiments-detail">
           <h2>{detail.question}</h2>
+          <div>
+            <button type="button" className="btn btn-primary" onClick={() => onExpand(detail.id)}>
+              {t('experiments.expand')}
+            </button>
+          </div>
           {detail.controls && (
             <p className="experiments-hint">
               {t('experiments.band', {
