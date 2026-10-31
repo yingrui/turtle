@@ -74,6 +74,8 @@ def run(db: Session, params: RegimeScoreParams, dataset: dict | None = None) -> 
         )
 
     days = sorted(set().union(*[set(panel.index) for panel in panels.values()]))
+    # The script indexes regime by **string** dates; keep that, or every lookup misses and every day
+    # silently takes the trend branch.
     regime = market_regime(db, params.benchmark, params.start, params.end, params.ma_window)
     excluded = _st_codes(db) if params.exclude_st else set()
 
@@ -89,14 +91,14 @@ def run(db: Session, params: RegimeScoreParams, dataset: dict | None = None) -> 
             columns[code] = sliced
         if any(sliced.empty for sliced in columns.values()):
             continue
-        # z-score each factor across the section, then sign by regime, then sum — the script's order.
+        # The script's arithmetic: each factor is already a cross-sectional percentile rank (that is
+        # what `load_dataset` produces), so the composite is Σ(rank − 0.5), not a z-score sum.
         for code in columns:
-            sliced = columns[code]
-            mean = sliced.mean(axis=1)
-            std = sliced.std(axis=1).replace(0, np.nan)
-            columns[code] = sliced.sub(mean, axis=0).div(std, axis=0)
+            columns[code] = columns[code].rank(axis=1, pct=True) - 0.5
         composite = sum(columns.values())
-        signs = pd.Series({day: 1.0 if regime.get(day, True) else -1.0 for day in chunk})
+        signs = pd.Series(
+            {day: 1.0 if regime.get(str(day)) is True else -1.0 for day in chunk}
+        )
         composite = composite.mul(signs, axis=0)
         long = composite.stack().rename("score").reset_index()
         long.columns = ["trade_date", "ts_code", "score"]
