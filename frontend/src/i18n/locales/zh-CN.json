@@ -1,28 +1,10 @@
 {
   "appName": "股票交易",
   "navGroup": {
-    "today": "每天",
+    "invest": "投资",
     "research": "研究",
-    "market": "市场",
-    "nav": {
-      "home": "今天",
-      "screening": "选股",
-      "portfolio": "我的组合",
-      "methods": "选股方法",
-      "factor": "因子",
-      "simulation": "回测",
-      "experiments": "实验",
-      "quote": "行情",
-      "indexes": "指数"
-    },
-    "methods": {
-      "title": "选股方法",
-      "lead": "一套方法 = 怎么给股票打分。这里是它的全部生命周期：新建、运行、查看每天选出什么。",
-      "buildTitle": "新建 / 更新一套方法",
-      "buildHint": "选一种计算方式、填参数、运行。产物会出现在下面的列表里，回测可以直接选它。",
-      "listTitle": "已有的方法",
-      "listHint": "每行是一套方法：覆盖的时间区间、用了哪份数据。可以查看某天它排出的前 20 名。"
-    }
+    "data": "数据",
+    "system": "系统"
   },
   "settings": {
     "subtitle": "工作区偏好、数据来源与诊断信息。",
@@ -55,7 +37,7 @@
     "saved": "已保存"
   },
   "nav": {
-    "home": "今天",
+    "home": "概览",
     "data": "数据状态",
     "portfolio": "我的组合",
     "screening": "选股",
@@ -72,7 +54,8 @@
     "analyses": "截面分析",
     "rankings": "排序来源",
     "experiments": "对照比较",
-    "methods": "选股方法"
+    "methods": "选股方法",
+    "dataStatus": "数据状态"
   },
   "home": {
     "dashboardTitle": "工作台",

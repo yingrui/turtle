@@ -41,26 +41,35 @@ Two pages disappear as top-level items (因子, 对照比较); two move groups (
 
 ## 3. Target tree
 
+Groups name a **subject**, never a frequency. "每天" was a mistake worth recording: it mixed two axes
+(frequency and subject), so "每天 / 市场" could not be told apart — a screen is used daily, an index is
+looked at daily. Nothing in the industry groups a menu by cadence; the home page carries that idea on
+its own (Home / Overview / 今日概览), and the groups stay object-based.
+
 ```
-每天                         打开它就该知道今天做什么
-├── 今天                    概览：数据新鲜度、我有哪些方法、今天它们各选出什么、持仓异动
-├── 选股                    临时条件筛一遍全市场
-└── 我的组合                持仓 / 自选 / 成交 / 策略设置
+概览                         (a single entry, not a group) 数据新鲜度、我有哪些方法、今日选出什么、持仓异动
+
+投资
+├── 选股                    用条件筛一遍全市场（决策：这次买什么）
+└── 我的组合                持仓 / 自选 / 成交 / 策略设置（决策：拿着还是换掉）
 
 研究                         想验证一个想法时才来
 ├── 选股方法                新建一套方法；已有方法列表；某天的前 20 名
 ├── 回测                    运行列表 → 新建回测（含"同时跑基线"选项）→ 结果：净值、成交、与基线的 σ
 └── 实验记录                已下过结论的对照（只读档案，从回测结果页"保存为实验"进入）
 
-市场                         查数据
-├── 行情                    个股列表与详情
-└── 指数                    指数列表与走势
+数据
+├── 行情                    查一只票：走势、因子、公告（检索，不决策）
+├── 指数                    指数列表与走势
+└── 数据状态                数据到哪一天、缺什么
 
 系统
-├── 数据状态
 ├── 任务
 └── 设置
 ```
+
+选股 and 行情 are different jobs, which is why they stay apart: **选股 narrows the universe to decide;
+行情 looks one name up.** 行情 is a lookup, 选股 is a decision.
 
 Note the asymmetry: 回测 is the page that produces a verdict; 实验记录 is where verdicts are *filed*. The
 comparison itself happens on the run page — that is the change that removes a whole concept from the

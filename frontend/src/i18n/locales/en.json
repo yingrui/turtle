@@ -1,28 +1,10 @@
 {
   "appName": "Stock Trading System",
   "navGroup": {
-    "today": "Daily",
+    "invest": "Invest",
     "research": "Research",
-    "market": "Market",
-    "nav": {
-      "home": "Today",
-      "screening": "Screen",
-      "portfolio": "Portfolio",
-      "methods": "Methods",
-      "factor": "Factors",
-      "simulation": "Backtest",
-      "experiments": "Experiments",
-      "quote": "Quotes",
-      "indexes": "Indexes"
-    },
-    "methods": {
-      "title": "Stock-picking methods",
-      "lead": "A method is how stocks get scored. This page is its whole lifecycle: create, run, and see what it picks each day.",
-      "buildTitle": "Create or refresh a method",
-      "buildHint": "Pick a computation, fill in the parameters, run it. The result lands in the list below and a backtest can use it.",
-      "listTitle": "Methods you have",
-      "listHint": "Each row is a method: the period it covers and which data it used. You can preview its top 20 for a given day."
-    }
+    "data": "Data",
+    "system": "System"
   },
   "settings": {
     "subtitle": "Preferences, data sources and diagnostics for this workspace.",
@@ -55,7 +37,7 @@
     "saved": "Saved"
   },
   "nav": {
-    "home": "Today",
+    "home": "Overview",
     "data": "Data Status",
     "portfolio": "Portfolio",
     "screening": "Screen",
@@ -72,7 +54,8 @@
     "analyses": "Cross-section",
     "rankings": "Ranking sources",
     "experiments": "Compare",
-    "methods": "Methods"
+    "methods": "Methods",
+    "dataStatus": "Data status"
   },
   "home": {
     "dashboardTitle": "Dashboard",

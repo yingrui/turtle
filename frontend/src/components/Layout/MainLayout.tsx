@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
+  Database,
+  ListChecks,
   Beaker,
   BarChart3,
   Briefcase,
@@ -26,7 +28,7 @@ import '../../App.scss';
 
 const navGroups = [
   {
-    key: 'today',
+    key: 'invest',
     items: [
       { to: '/', icon: Home, key: 'home', end: true },
       { to: '/screening', icon: Filter, key: 'screening', end: true },
@@ -43,10 +45,17 @@ const navGroups = [
     ],
   },
   {
-    key: 'market',
+    key: 'data',
     items: [
       { to: '/market', icon: CandlestickChart, key: 'quote', end: true },
       { to: '/indexes', icon: BarChart3, key: 'indexes', end: true },
+      { to: '/data', icon: Database, key: 'dataStatus', end: true },
+    ],
+  },
+  {
+    key: 'system',
+    items: [
+      { to: '/jobs', icon: ListChecks, key: 'jobs', end: true },
     ],
   },
 ] as const;
