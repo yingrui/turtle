@@ -10,6 +10,7 @@ import { Screening } from './pages/Screening';
 import { FactorList } from './pages/FactorList';
 import { Indexes } from './pages/Indexes';
 import { Analyses } from './pages/Analyses';
+import { Experiments } from './pages/Experiments';
 import { Rankings } from './pages/Rankings';
 import { FactorDetail } from './pages/FactorDetail';
 import { Simulation } from './pages/Simulation';
@@ -40,6 +41,7 @@ export function App() {
         <Route path="/screening" element={<Screening />} />
         <Route path="/analyses" element={<Analyses />} />
         <Route path="/rankings" element={<Rankings />} />
+        <Route path="/experiments" element={<Experiments />} />
         <Route path="/factor" element={<FactorList />} />
         <Route path="/factor/:code" element={<FactorDetail />} />
         <Route path="/watchlist" element={<Navigate to="/portfolio?tab=holdings&status=watching" replace />} />

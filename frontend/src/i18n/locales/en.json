@@ -50,7 +50,8 @@
     "settings": "Settings",
     "indexes": "Indexes",
     "analyses": "Analyses",
-    "rankings": "Ranking sources"
+    "rankings": "Ranking sources",
+    "experiments": "Experiments"
   },
   "home": {
     "dashboardTitle": "Dashboard",
@@ -591,5 +592,38 @@
     "previewFailed": "Could not read the ranking",
     "empty": "No published sources yet.",
     "loadFailed": "Could not load ranking sources"
+  },
+  "experiments": {
+    "title": "Experiments",
+    "subtitle": "An experiment = a question + a kill criterion + variants + controls. No controls, no verdict.",
+    "question": "Question",
+    "kill": "Kill criterion",
+    "start": "Start",
+    "end": "End",
+    "variants": "Variants (sources to test)",
+    "controls": "Controls (required)",
+    "controlsRequired": "Pick at least one control",
+    "create": "Create experiment",
+    "created": "Experiment created",
+    "createFailed": "Could not create",
+    "colQuestion": "Question",
+    "colStatus": "Status",
+    "colStrategy": "Strategy",
+    "colWindow": "Window",
+    "colCells": "Variants/controls",
+    "colVerdict": "Verdict",
+    "colVariant": "Variant",
+    "colRole": "Role",
+    "colRunStatus": "Run status",
+    "colExcess": "Excess",
+    "colSigma": "vs controls",
+    "colTrades": "Trades",
+    "variant": "Variant",
+    "control": "Control",
+    "band": "{{n}} controls: mean {{mean}}, sd {{sd}}",
+    "noCells": "No runs recorded yet.",
+    "empty": "No experiments yet.",
+    "loadFailed": "Could not load experiments",
+    "detailFailed": "Could not load the experiment"
   }
 }

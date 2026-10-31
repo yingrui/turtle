@@ -50,7 +50,8 @@
     "settings": "设置",
     "indexes": "指数",
     "analyses": "分析",
-    "rankings": "排序来源"
+    "rankings": "排序来源",
+    "experiments": "实验"
   },
   "home": {
     "dashboardTitle": "工作台",
@@ -591,5 +592,38 @@
     "previewFailed": "读取排名失败",
     "empty": "还没有已发布的排序来源。",
     "loadFailed": "加载排序来源失败"
+  },
+  "experiments": {
+    "title": "实验",
+    "subtitle": "一个实验 = 问题 + 证伪条件 + 变体 + 对照。对照没跑完不能下结论。",
+    "question": "问题",
+    "kill": "证伪条件",
+    "start": "开始",
+    "end": "结束",
+    "variants": "变体（要检验的排序来源）",
+    "controls": "对照组（必填）",
+    "controlsRequired": "至少要选一个对照组",
+    "create": "创建实验",
+    "created": "实验已创建",
+    "createFailed": "创建失败",
+    "colQuestion": "问题",
+    "colStatus": "状态",
+    "colStrategy": "策略",
+    "colWindow": "窗口",
+    "colCells": "变体/对照",
+    "colVerdict": "结论",
+    "colVariant": "变体",
+    "colRole": "角色",
+    "colRunStatus": "运行状态",
+    "colExcess": "超额",
+    "colSigma": "相对对照",
+    "colTrades": "成交",
+    "variant": "变体",
+    "control": "对照",
+    "band": "对照组 {{n}} 个：均值 {{mean}}，标准差 {{sd}}",
+    "noCells": "还没有运行记录。",
+    "empty": "还没有实验。",
+    "loadFailed": "加载实验失败",
+    "detailFailed": "加载实验详情失败"
   }
 }
