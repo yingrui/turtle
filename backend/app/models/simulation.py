@@ -42,6 +42,8 @@ class SimulationRun(Base):
     started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     #: signal = the configured trade policies; model = a scorecard's daily ranking drives the book.
+    #: Which registered ranking source produced the pool — the online counterpart of `provenance.ranking`.
+    ranking_source_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     mode: Mapped[str] = mapped_column(String(16), default="signal", server_default="signal")
     #: fixed = an explicit stock list; dynamic = the model's top-N changes every day.
     pool_mode: Mapped[str] = mapped_column(String(16), default="fixed", server_default="fixed")

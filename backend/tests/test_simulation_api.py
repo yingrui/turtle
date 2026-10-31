@@ -56,3 +56,36 @@ def test_deleting_a_run_takes_its_books_and_detaches_the_portfolio(auth_token):
         assert db.get(SimulationRun, "run-to-delete") is None
         assert db.query(SimulationDaily).filter_by(run_id="run-to-delete").count() == 0
         assert db.query(SimulationTrade).filter_by(run_id="run-to-delete").count() == 0
+
+
+def test_the_run_list_carries_what_the_detail_page_shows(auth_token):
+    """An empty column in the list is a bug in the list, not a missing feature."""
+    from datetime import datetime
+
+    from app.database import SessionLocal
+    from app.models.simulation import SimulationRun
+
+    with SessionLocal() as db:
+        db.add(
+            SimulationRun(
+                id="run-with-metrics", portfolio_name="p", policy_id=0, config_snapshot="{}",
+                mode="model", pool_mode="dynamic",
+                window_start=date(2025, 7, 1), window_end=date(2026, 10, 9),
+                initial_total=1_000_000, final_total=962_155, return_rate_pct=-5.6,
+                trade_count=490, finished_at=datetime(2026, 10, 31),
+            )
+        )
+        db.commit()
+
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    runs = client.get("/api/simulations", headers=headers).json()["runs"]
+    row = next(item for item in runs if item["id"] == "run-with-metrics")
+
+    assert row["window_start"] == "2025-07-01" and row["window_end"] == "2026-10-09"
+    assert row["trade_count"] == 490
+    assert row["return_rate_pct"] == -5.6
+    assert row["mode"] == "model"
+
+    with SessionLocal() as db:
+        db.query(SimulationRun).filter_by(id="run-with-metrics").delete()
+        db.commit()

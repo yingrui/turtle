@@ -138,6 +138,7 @@ class JobService:
                 portfolio_id = portfolio_svc.get_portfolio_id(portfolio_name)
                 initial_cash = float(payload.get("initial_cash") or 1_000_000)
                 run = SimulationRun(
+                    ranking_source_id=payload.get("ranking_source_id"),
                     id=str(uuid.uuid4()),
                     job_id=job.id,
                     portfolio_id=portfolio_id,

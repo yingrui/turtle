@@ -29,6 +29,14 @@ class SimulationService:
                 "provenance": r.provenance or {},
                 "mode": r.mode,
                 "pool_mode": r.pool_mode,
+                # The list shows what the detail page shows; an empty column is worse than no column.
+                "window_start": r.window_start.isoformat() if r.window_start else None,
+                "window_end": r.window_end.isoformat() if r.window_end else None,
+                "initial_total": float(r.initial_total) if r.initial_total is not None else None,
+                "final_total": float(r.final_total) if r.final_total is not None else None,
+                "return_rate_pct": float(r.return_rate_pct) if r.return_rate_pct is not None else None,
+                "trade_count": r.trade_count,
+                "ranking_source_id": r.ranking_source_id,
                 "started_at": r.started_at.isoformat() if r.started_at else None,
                 "finished_at": r.finished_at.isoformat() if r.finished_at else None,
             }
