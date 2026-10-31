@@ -169,6 +169,11 @@ export function Experiments() {
     <div className="experiments-page">
       <h1>{t('experiments.title')}</h1>
       <p className="experiments-subtitle">{t('experiments.subtitle')}</p>
+      <ol className="experiments-steps">
+        <li>{t('experiments.step1')}</li>
+        <li>{t('experiments.step2')}</li>
+        <li>{t('experiments.step3')}</li>
+      </ol>
 
       <div className="experiments-form">
         <div className="form-row">
