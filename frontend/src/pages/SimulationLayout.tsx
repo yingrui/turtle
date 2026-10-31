@@ -14,7 +14,13 @@ export function SimulationLayout() {
           end
           className={({ isActive }) => `simulation-subnav__link${isActive ? ' simulation-subnav__link--active' : ''}`}
         >
-          {t('simulation.tabRun')}
+          {t('simulation.tabList')}
+        </NavLink>
+        <NavLink
+          to="/simulation/new"
+          className={({ isActive }) => `simulation-subnav__link${isActive ? ' simulation-subnav__link--active' : ''}`}
+        >
+          {t('simulation.tabNew')}
         </NavLink>
         <NavLink
           to="/simulation/results"

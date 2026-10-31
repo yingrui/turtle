@@ -232,7 +232,12 @@
     "colWindow": "Window",
     "colTrades": "Trades",
     "colReturn": "Return",
-    "colStatus": "Status"
+    "colStatus": "Status",
+    "tabList": "Runs",
+    "tabNew": "New run",
+    "newRun": "New run",
+    "listSubtitle": "Pick a run to inspect it, or start a new one.",
+    "loadFailed": "Could not load runs"
   },
   "results": {
     "noTrades": "No trades for this run.",

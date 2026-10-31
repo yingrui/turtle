@@ -14,6 +14,7 @@ import { Experiments } from './pages/Experiments';
 import { Rankings } from './pages/Rankings';
 import { FactorDetail } from './pages/FactorDetail';
 import { Simulation } from './pages/Simulation';
+import { SimulationRuns } from './pages/SimulationRuns';
 import { SimulationLayout } from './pages/SimulationLayout';
 import { SimulationResults } from './pages/SimulationResults';
 import { StockList } from './pages/StockList';
@@ -46,7 +47,8 @@ export function App() {
         <Route path="/factor/:code" element={<FactorDetail />} />
         <Route path="/watchlist" element={<Navigate to="/portfolio?tab=holdings&status=watching" replace />} />
         <Route path="/simulation" element={<SimulationLayout />}>
-          <Route index element={<Simulation />} />
+          <Route index element={<SimulationRuns />} />
+          <Route path="new" element={<Simulation />} />
           <Route path="results" element={<SimulationResults />} />
         </Route>
         <Route path="/market" element={<StockList />} />

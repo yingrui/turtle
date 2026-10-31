@@ -1,0 +1,21 @@
+@use '../styles/design-system/local-tokens' as lt;
+@use '../styles/design-system/mixins' as *;
+
+// Run list: the entry point. Starting a run is a separate route, not a panel on this page.
+.simulation-runs-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.simulation-runs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.simulation-runs-subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+}

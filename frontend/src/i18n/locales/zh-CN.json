@@ -232,7 +232,12 @@
     "colWindow": "区间",
     "colTrades": "成交",
     "colReturn": "收益",
-    "colStatus": "状态"
+    "colStatus": "状态",
+    "tabList": "运行列表",
+    "tabNew": "新建回测",
+    "newRun": "新建回测",
+    "listSubtitle": "选择一次运行查看详情，或新建一次回测。",
+    "loadFailed": "加载运行列表失败"
   },
   "results": {
     "noTrades": "该回测没有成交记录。",
