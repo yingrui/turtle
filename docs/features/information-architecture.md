@@ -1,189 +1,159 @@
-# Information architecture
+# 信息架构
 
-The product accumulated four nouns for two ideas — *score the cross-section* and *test a selection* —
-and exposed all four in the sidebar. This page is the inventory, the principles, and the target tree.
-It is a design decision record: when a page or a label changes, this is what it has to stay consistent
-with.
+这份文档回答一个问题：**界面上有哪些页面、每个页面放什么、东西按什么顺序出现。**
+它是从上往下推出来的，不是从数据库表倒推的。做新页面前先对照这里；和这里冲突时，先改这里再改代码。
 
-## 1. Principles
+---
 
-1. **Group by what the user is doing, not by how it is built.** "Ranking source" is a database row;
-   "选股方法" is what a person has. The menu speaks the second language.
-2. **One concept, one entry.** If two pages describe one idea (an action and its stored result), they are
-   one page with two sections.
-3. **A page earns its place by a recurring decision.** If a page exists only because a table needed a
-   home, it belongs inside the page that owns the decision.
-4. **Depth over breadth.** Four groups of at most four items; anything deeper is reached from the thing
-   it modifies (a factor is edited from the method that uses it, not from the menu).
-5. **Every page answers three questions in its first screen:** what is this, what do I do here, what is
-   the state of my data.
-6. **Words come from the domain, not from the code.** `run`, `artifact`, `source`, `registry` never
-   appear in the UI.
+## 1. 使用者与目标
 
-## 2. Concept model
+一个人，自己炒股，自己有数据。他要三件事：
 
-Six concepts, each with exactly one name in the UI. Everything else is a detail view or an archive.
+1. 知道今天该看什么
+2. 想清楚买什么、什么时候换
+3. 判断自己的选股思路是不是真有用
 
-| Concept | User-facing word | What it is | Where it lives |
-|---|---|---|---|
-| 打分方法 | **选股方法** | how stocks get scored; produces a daily ranking | 研究 → 选股方法 |
-| 试一次 | **回测** | one method + one window + one strategy → an equity curve | 研究 → 回测 |
-| 参照 | **基线** | the same run with stocks picked at random; stands for luck | an option on 新建回测 |
-| 判断 | **结论** | "beats baselines by ≥2σ" or "no incremental information" | attached to a 回测, archived |
-| 规则 | **策略** | how to trade the ranking: enter on pool, exit on policy, fees | 策略配置, chosen in 新建回测 |
-| 账户 | **我的组合** | holdings, cash, transactions, watchlist | 投资 → 我的组合 |
+这三件事之外的东西不进产品。
 
-Two things that are *not* concepts in the menu:
+## 2. 目标拆成动作
 
-- **因子** — raw material for a method, edited from the method that uses it (and visible on a stock's page).
-- **任务 / 数据状态** — plumbing, under 系统.
-
-## 3. Target tree
-
-Groups name a **subject**, never a frequency. "每天" was a mistake worth recording: it mixed two axes
-(frequency and subject), so "每天 / 市场" could not be told apart — 选股 is used daily, an index is looked at
-daily. Nothing in the industry groups a menu by cadence; the home page carries that idea on its own, and the
-groups stay object-based.
-
-```
-概览                         (a single entry, not a group)
-                             数据到哪一天 · 我有哪些方法 · 今天各选出什么 · 持仓异动
-
-投资
-├── 选股                    用条件筛一遍全市场          (决策：这次买什么)
-└── 我的组合                持仓 / 自选 / 成交 / 策略绑定  (决策：拿着还是换掉)
-
-研究
-├── 选股方法                新建一套方法 · 已有方法 · 某天的前 20 名
-└── 回测                    运行列表 · 新建回测（可勾选"同时跑基线"）· 结果与结论
-
-数据
-├── 行情                    查一只票：走势、因子、公告      (检索，不决策)
-├── 指数                    指数列表与走势
-└── 数据状态                数据到哪一天、缺什么
-
-系统
-├── 任务
-└── 设置                    含交易费率（佣金、印花税、手数）
-```
-
-选股 and 行情 stay apart because they are different jobs: **选股 narrows the universe to decide; 行情 looks one
-name up.** 行情 is a lookup, 选股 is a decision.
-
-The menu item 「对照比较」 is gone; `/experiments` survives only as a deep link to legacy records until verdicts
-move onto runs (feature list E8). There is no 「对照比较」page. Running baselines is a checkbox on 新建回测; the result page shows
-`本策略 −15.13 | 基线均值 −0.36 ± 9.32 → −1.59σ`; "保存为结论" files the verdict. A verdict is read from the
-run it belongs to, not from a separate list.
-
-## 4. Page contracts
-
-Each page answers, in its first screen: what is this, what do I do here, what is the state of my data.
-
-| Page | Purpose | Primary action | Empty state |
-|---|---|---|---|
-| 概览 | 今天需要你决定的事 | — | "还没有方法：去 选股方法 建一套" |
-| 选股 | 用条件筛一遍全市场 | 加入自选 | "没有满足条件的股票，放宽条件试试" |
-| 我的组合 | 你持有的和关注的 | 记一笔成交 | "还没有持仓，从 选股 里挑几只" |
-| 选股方法 | 一套方法 = 怎么给股票打分 | 新建方法 | "还没有方法，用 regime 打分或训练一个评分卡开始" |
-| 回测（列表） | 一次回测 = 一套方法 + 一段区间 → 一条净值曲线 | 新建回测 | "还没有回测，选一套方法跑一次" |
-| 新建回测 | 方法 + 区间 + 策略（+ 可选基线） | 开始回测 | — |
-| 回测结果 | 这次回测的账本，以及它相对基线的位置 | 保存为结论 | — |
-| 行情 | 查一只票 | 搜索代码 | "数据截至 X" |
-| 指数 | 指数走势 | 选一个指数 | "暂无数日线数据" |
-| 数据状态 | 数据到哪一天、缺什么 | — | — |
-| 任务 | 后台在跑什么 | — | "没有正在运行的任务" |
-
-## 5. Vocabulary
-
-| Internal (never shown) | User-facing | Why |
+| 目标 | 动作 | 多久做一次 |
 |---|---|---|
-| ranking source / artifact | 选股方法 | a person owns methods, not rows |
-| analysis method / registry entry | 计算方法（新建方法时的一个选项） | it is a choice, not a place |
-| simulation run | 回测 | one word for the action and its result |
-| experiment / variant / control | 结论 / 候选 / 基线 | lab words replaced by what they do |
-| strategy config / trading rules | 策略 | the thing you pick when starting a backtest |
-| provenance / manifest / sha256 | 用了哪份数据（版本与日期） | hashes belong in the record, not the sentence |
-| job | 后台任务 | and only under 系统 |
+| 知道今天该看什么 | 看数据更新了没、看持仓变化、看候选票 | 每天 |
+| 想清楚买什么 | 按条件筛、看个股、决定买卖、记下来 | 每天 |
+| 判断思路有没有用 | 建一套打分方法、跑历史、和"随便挑"比、下结论 | 每周到每月 |
 
-## 6. Migration order
+一共九个动作。后面每个页面、每个按钮，都要能指回这九个里的一个；指不回去的就删。
 
-1. **回测表单加"同时跑 3 个随机基线"** → result page shows mean ± σ; then remove 对照比较 from the menu
-   and keep `/experiments` as a read-only archive behind "保存为实验".
-2. **因子 demote**: the factor list stays at `/factor` but leaves the menu; a method page links to it
-   ("用到的因子").
-3. **系统 group**: move 数据状态 and 任务 under one collapsible group; nothing else changes.
-4. **今天** becomes the only entry point for the daily loop, so a user can work a whole day without
-   opening the research section.
+## 3. 页面
 
-## 7. What this buys
+一页只服务一个动作群；同一页里的东西要"一起看才有用"。
 
-Three interactions cover the product:
-
-- **每天**: 今天 → 选股 → 我的组合
-- **试一试**: 选股方法 → 回测（带基线）→ 看 σ
-- **查一查**: 行情 / 指数
-
-Everything else is either a detail view of one of those, or an archive.
-
-## 8. Open questions
-
-1. 因子 as a top-level item: some users browse factors like a library. If usage shows that, promote it
-   back and let 方法 link downward instead — the tree above is the default, not a dogma.
-2. Whether 实验记录 should be a page at all, or simply a filter on the run list ("只看带基线的")。Decide
-   after the baseline option ships and we can see how often verdicts are filed.
-
-## 9. The data model behind the navigation
-
-Three different things are called "portfolio" in the current schema, and that is why the navigation feels
-tangled. Separating the **words** is not enough; the **records** have to separate too — but not into a new
-catch-all table.
-
-| What it is | Nature | Where it belongs |
+| 页面 | 回答的问题 | 由哪些动作合成 |
 |---|---|---|
-| **投资组合**: holdings, cash, transactions, watchlist | one long-lived account per user | `portfolios` — the only thing called a portfolio |
-| **交易成本**: commission rate, minimum fee, stamp duty, lot size | a market/broker **fact**, the same for every run | configuration (`settings`), not a table of user data |
-| **策略参数**: cash buffer, position cap, stop loss, MA windows | a **choice** the user iterates on | one reusable record per strategy configuration |
+| **概览** | 我今天该看什么 | 数据更新 + 持仓变化 + 候选票 |
+| **选股** | 我要买什么 | 按条件筛、看结果 |
+| **组合** | 我拿着什么、要不要换 | 看持仓 + 决定买卖 + 记录 |
+| **研究** | 我的方法行不行 | 建方法 + 跑历史 + 比对照 + 下结论 |
+| **市场** | 这只票 / 这个指数什么情况 | 查行情、查指数 |
 
-An earlier draft of this section proposed a `trading_rules` table holding costs *and* strategy parameters
-together. That was wrong on both halves: costs are facts (they belong in configuration, and hard-coding
-them in the runner — as it happens today — is nearly as wrong in the other direction), and strategy
-parameters are choices that have nothing to do with fees. A table that mixes a constant with a preference
-is a table that will be denormalised the first time the broker changes its rate.
+导航就这五项，设置放在最下面（它是配置，不是任务）。
 
-### Target
+### 为什么不做一级菜单的
+
+| 想加的 | 为什么不做 | 实际放哪 |
+|---|---|---|
+| 因子 | 是方法的材料，不是一个动作 | 研究 → 选股方法里点进去 |
+| 数据状态 | 出问题才看 | 概览第一块的详情 + 设置 |
+| 任务日志 | 同上 | 设置 |
+| 对照比较 / 排序来源 | 不是一个地方：对照是回测的一个选项，来源是方法的列表 | 见第 4 节 |
+| 实验 | 结论写在那次回测上，不需要单独一页 | 见第 4 节 |
+
+## 4. 每页放什么
+
+从上往下按"你会先看什么"排，一页最多四块。
+
+### 概览
 
 ```
-settings / config            commission, stamp duty, lot size, cash buffer default  ← facts
-strategy_configs (策略配置)   strategy name + params (pool_entry / policy / mechanical) ← choices
-portfolios ── strategy_config_id (bound, replaceable)
-           └─ active_run_id (optional)
-simulation_runs ── strategy_config_id, window, ranking_source_id, model fingerprints,
-                   cost model snapshot (the numbers actually used)
-experiments ──── several runs
+1 数据更新到哪一天          不对就停，后面都白看
+2 我的持仓今天怎么了        大跌 / 掉出方法的池子 / 触发止损
+3 我的每套方法今天选出什么  一行一套，标出今天新进来的
+4 需要你处理的事            失败的运行、没确认的成交（有事才出现）
 ```
 
-- **选股 → 组合**: writes `portfolio_stocks`. A portfolio action, correctly so.
-- **选股方法**: produces a `ranking_source`. Needs no portfolio.
-- **回测**: needs a strategy configuration, a window and a ranking source. **Needs no portfolio.**
-- **组合跟随回测**: only when the user asks (`active_run_id`), one direction only.
+### 选股
 
-The one thing a run must *store* rather than reference is the **cost model snapshot** — the fee numbers in
-force when it ran. Costs are configuration and configuration changes; a 2025 backtest must not silently be
-re-priced with 2026 fees.
+```
+1 条件（可以存成股票池，每天自动重算）
+2 结果表：代码 / 名称 / 是哪些条件命中的
+3 操作：加入自选 · 存成池 · 用这些条件建一套方法
+```
 
-### Migration
+### 组合
 
-1. Move the fee constants out of the runner into configuration (they are already constants in code; give them
-   one home and a settings screen section).
-2. Introduce `strategy_configs`; backfill one per existing portfolio from `portfolio_policies` +
-   `portfolio_risk_control`, parameters unchanged (the numbers must not move).
-3. Add `simulation_runs.strategy_config_id` and `cost_snapshot`, backfill from the run's `portfolio_id`.
-4. Make `simulation_runs.portfolio_id` nullable. The run form asks for a strategy configuration, not a
-   portfolio, and shows the cost numbers it will use.
-5. Only then remove the portfolio selector from the backtest form — UI follows the model, not the reverse.
+```
+1 概览条：总市值、今天盈亏、与沪深300的差距
+2 持仓表：成本、现价、浮盈、占比、买入日期
+3 自选（还没买的）
+4 成交记录 + 记一笔
+```
 
-### Why the separation matters for the navigation
+### 研究
 
-「选股方法」and「回测」are research; they must not require an object the user manages daily. As long as a run
-needs a portfolio, the menu has to pretend research and investing are the same area, and 「回测」versus
-「对照比较」keeps looking like one thing split in two.
+只有两个标签页。
+
+**选股方法**
+```
+1 我有哪些方法：覆盖区间、用的哪份数据
+2 新建一套方法：选计算方式、填参数、运行
+3 某天它排出的前 20 名
+```
+
+**回测**
+```
+1 跑过的回测：名称、区间、成交数、收益、状态
+2 新建回测：选方法 + 区间 + 买卖规则
+     ☑ 同时跑随机对照（用来看是不是运气）
+3 结果：净值曲线、成交明细、与对照差几个标准差
+4 写结论：一句话 + 依据（记在这次回测下面）
+```
+
+### 市场
+
+```
+1 搜索框：输入代码或名称直接跳个股
+2 个股：走势、关键因子值、所属指数
+3 指数：列表 + 走势
+```
+
+## 5. 三条判断规则
+
+1. **一项菜单 = 一个问题。** 概览"今天看什么"、选股"买什么"、组合"拿着什么"、研究"方法行不行"、市场"这只票什么情况"。
+2. **一个东西只出现在一个地方。** 结论只在那次回测下面；因子只从方法页进；数据状态只在概览第一块和设置里。
+3. **一页最多四块，顺序按"先看什么"排。** 第四块通常是"需要你处理的事"，没有就不显示。
+
+判断一个新功能该不该加，问三句：
+
+- 它服务九个动作里的哪一个？（答不上 → 不加）
+- 它在这页排第几，为什么？（答不上 → 挪位置或去掉）
+- 用户拿它下一步做什么？（答不上 → 去掉）
+
+## 6. 用三个场景验收
+
+| 场景 | 路径 | 点击次数 |
+|---|---|---|
+| 早上看一眼 | 打开 → 概览 | 1 |
+| 找票并记下买入 | 选股 → 筛 → 加自选 → 组合 → 记一笔 | 4 |
+| 验证一个想法 | 研究 → 选股方法 → 新建 → 回测 → 勾对照 → 看结果 → 写结论 | 6 |
+
+实际操作比这多，就说明页面里放错了东西。
+
+## 7. 用词
+
+界面上只用左边"用户看到的"那一列；右列是实现里的叫法，不出现在界面和文档正文里。
+
+| 实现里的叫法 | 用户看到的 | 说明 |
+|---|---|---|
+| 排序来源 / 产物 | 选股方法 | 一个人拥有的是方法，不是一条记录 |
+| 打分方法 / 计算方法 | 新建方法时的一个选项 | 它是一个选项，不是一个地方 |
+| 回测运行 / run | 回测 | 一个词同时表示"做一次"和"这次的结果" |
+| 实验 / 变体 / 对照 | 结论 / 候选 / 基线 | 用"候选、基线"说清谁和谁比 |
+| 策略配置 / 交易规则 | 买卖规则 | 新建回测时要选的东西 |
+| 数据版本 / 指纹 / sha | 用了哪份数据（版本与日期） | 指纹只出现在详情里 |
+| 任务 | 后台任务 | 只在设置里出现 |
+
+## 8. 已经改过的两个错误（留作提醒）
+
+1. **按使用频率分组**：曾经做出"每天 / 市场"两个菜单组，二者无法区分 —— 选股也每天用，指数也每天看。菜单按**事情**分组，频率由首页承担。
+2. **把动作做成页面**：曾经有独立的「对照比较」页，实际上"和随机比一比"是新建回测里的一个勾选，不是另一个地方。
+
+## 9. 与现状的差距
+
+| 这一版要求 | 现在代码里 | 要做的 |
+|---|---|---|
+| 概览四块内容 | 还是旧工作台 | 按第 4 节重做 |
+| 新建回测勾选随机对照 | 需要先建"实验"再展开 | 做成勾选项，结果显示标准差 |
+| 结论写在回测上 | 已经支持（回测有结论字段） | 结果页加"写结论"入口 |
+| 组合显示与沪深300差距 | 只有自己的净值 | 加对比线 |
+| 买卖规则从配置里选 | 参数绑在组合上 | 拆成独立的"买卖规则"，回测直接选 |
