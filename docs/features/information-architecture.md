@@ -129,3 +129,53 @@ Everything else is either a detail view of one of those, or an archive.
    back and let 方法 link downward instead — the tree above is the default, not a dogma.
 2. Whether 实验记录 should be a page at all, or simply a filter on the run list ("只看带基线的")。Decide
    after the baseline option ships and we can see how often verdicts are filed.
+
+## 9. The data model behind the navigation
+
+Three different things are called "portfolio" in the current schema, and that is why the navigation feels
+tangled. Untangling the words is not enough; the records have to separate too.
+
+| What it is | Who owns it | Current home | Should be |
+|---|---|---|---|
+| **投资组合**: my real holdings, cash, transactions, watchlist | the investor | `portfolios` (+ `portfolio_stocks`, `portfolio_transactions`) | unchanged — this is the only thing called a portfolio |
+| **交易规则**: fees, lot size, cash buffer, policy parameters, risk control | reusable, several runs may share one | `portfolio_policies`, `portfolio_risk_control` — *inside* a portfolio | its own record, referenced by a portfolio **and** by runs |
+| **回测配置**: method + window + trading rules + cost model | research | `simulation_runs` (with `portfolio_id` required) | `simulation_runs.trading_rules_id`; `portfolio_id` optional |
+
+The consequence of the current shape: **a backtest cannot exist without a portfolio**, so research silently
+creates portfolio-shaped rows, and `portfolios.active_run_id` grows a second, reverse dependency. Reading
+the model, it looks like the portfolio runs the backtest; in reality the backtest borrows the portfolio's
+fee and policy settings.
+
+### Target
+
+```
+trading_rules (id, name, cash_buffer, commission, stamp_duty, lot, policy params, risk control)
+     ▲                                   ▲
+     │ 绑定（可换）                        │ 引用
+portfolios ── active_run_id (optional)   simulation_runs ── experiments
+     │                                        │
+     └─ holdings / transactions / watchlist    └─ trading_rules_id, window, ranking_source_id, model fingerprints
+```
+
+- 选股 writes into `portfolio_stocks` of a chosen portfolio — that is a portfolio action, correctly so.
+- 选股方法 (research) produces a `ranking_source`; it needs **no** portfolio.
+- 回测 references `trading_rules_id` and a window; **no** portfolio.
+- 组合 follows a run only if the user asks (`active_run_id`), and that is a one-directional pointer.
+
+### Migration
+
+1. Add `trading_rules`; backfill one row per existing portfolio from `portfolio_policies` +
+   `portfolio_risk_control` (1:1, preserving parameters exactly — the numbers must not change).
+2. Add `simulation_runs.trading_rules_id`; backfill from the run's `portfolio_id`.
+3. Make `simulation_runs.portfolio_id` nullable; the run form stops asking for a portfolio and asks for a
+   trading rule (defaulting to the user's only rule).
+4. Keep `portfolio_id` on runs as "which portfolio was this run made for", for the advisory case; it stops
+   being a required input.
+5. Only then remove the portfolio selector from the backtest form — UI follows the model, not the reverse.
+
+### Why not simply reuse `portfolios`
+
+Because the two have opposite lifecycles: a portfolio is singular and long-lived (you have one account), a
+trading rule is plural and disposable (you iterate on fee assumptions and policy parameters). Forcing
+research to create throwaway "portfolios" pollutes the object the user manages daily, and it is exactly the
+coupling that made 「实验」and「回测」feel like the same thing.
