@@ -283,7 +283,7 @@ A source that fails gates 1, 2 or 4 stays `draft` and cannot be referenced by a 
 
 | Concern | Handling |
 |---|---|
-| object storage loss (happened once already) | artifact sha256 recorded on the source; a missing object marks the source `stale` and simulations refuse to start with a clear message, rather than silently degrading |
+| artifact loss (happened once already, with the dataset objects) | **not backed up, by design**: an artifact is derived — code + pinned dataset regenerate it, and `regime_score` over 28 months takes ~40 s. The source keeps its `artifact_sha256`, so a recomputed artifact whose hash differs is a signal that an input changed, not a fault to paper over. Recovery: re-run the analysis with the same parameters and dataset version (below) |
 | method code changes | `AnalysisRun` records `code_version` (git sha at runtime); an old source stays reproducible because the artifact is frozen |
 | long analyses (3.4M-row exports) | run as a job with progress; the UI polls; cancellation is allowed between partitions |
 | big score tables | parquet partition per month; preview reads one row group |
@@ -420,3 +420,24 @@ Deliberately not built: a general DSL for strategies, a plugin system with dynam
 arbitrary-code analysis runner. Every extension point above is a **registry entry with a typed params
 model**, because that is what keeps the audit trail intact. If a future experiment cannot be expressed
 as a registry entry, that is a signal to discuss the shape of the abstraction — not to add an `eval`.
+
+---
+
+## 15. Recovering a lost artifact
+
+The artifact store is a PVC, so a restart keeps it and a lost node does not. Nothing copies it, on
+purpose — see the failure-mode table above. Recovery is a re-run, and the run record is what makes the
+re-run faithful:
+
+1. `GET /api/rankings/{id}` → read `method`, `params`, `dataset.name`, `dataset.version`.
+2. `POST /api/analyses/{method}/runs` with those parameters, plus `source_id` set to the same id.
+3. Compare the new `artifact_sha256` with the old one:
+   - **equal** — the same artifact, byte for byte; old runs reproduce exactly.
+   - **different** — an input moved (dataset version, factor formula, upstream data). That is the signal
+     the backup would have hidden. Decide explicitly: republish under a new id, or investigate.
+4. Old runs keep their original `artifact_sha256`; they become comparable to each other, not to the new
+   one. Re-pointing them is a deliberate act, never automatic.
+
+Model artifacts (`model.json`) are parameter files of a few kilobytes and take longer to regenerate than
+a score table, but the same rule applies: the fingerprint names the inputs, so retraining with the same
+inputs and a different fingerprint means something upstream changed.
