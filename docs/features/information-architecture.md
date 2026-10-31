@@ -133,49 +133,55 @@ Everything else is either a detail view of one of those, or an archive.
 ## 9. The data model behind the navigation
 
 Three different things are called "portfolio" in the current schema, and that is why the navigation feels
-tangled. Untangling the words is not enough; the records have to separate too.
+tangled. Separating the **words** is not enough; the **records** have to separate too — but not into a new
+catch-all table.
 
-| What it is | Who owns it | Current home | Should be |
-|---|---|---|---|
-| **投资组合**: my real holdings, cash, transactions, watchlist | the investor | `portfolios` (+ `portfolio_stocks`, `portfolio_transactions`) | unchanged — this is the only thing called a portfolio |
-| **交易规则**: fees, lot size, cash buffer, policy parameters, risk control | reusable, several runs may share one | `portfolio_policies`, `portfolio_risk_control` — *inside* a portfolio | its own record, referenced by a portfolio **and** by runs |
-| **回测配置**: method + window + trading rules + cost model | research | `simulation_runs` (with `portfolio_id` required) | `simulation_runs.trading_rules_id`; `portfolio_id` optional |
+| What it is | Nature | Where it belongs |
+|---|---|---|
+| **投资组合**: holdings, cash, transactions, watchlist | one long-lived account per user | `portfolios` — the only thing called a portfolio |
+| **交易成本**: commission rate, minimum fee, stamp duty, lot size | a market/broker **fact**, the same for every run | configuration (`settings`), not a table of user data |
+| **策略参数**: cash buffer, position cap, stop loss, MA windows | a **choice** the user iterates on | one reusable record per strategy configuration |
 
-The consequence of the current shape: **a backtest cannot exist without a portfolio**, so research silently
-creates portfolio-shaped rows, and `portfolios.active_run_id` grows a second, reverse dependency. Reading
-the model, it looks like the portfolio runs the backtest; in reality the backtest borrows the portfolio's
-fee and policy settings.
+An earlier draft of this section proposed a `trading_rules` table holding costs *and* strategy parameters
+together. That was wrong on both halves: costs are facts (they belong in configuration, and hard-coding
+them in the runner — as it happens today — is nearly as wrong in the other direction), and strategy
+parameters are choices that have nothing to do with fees. A table that mixes a constant with a preference
+is a table that will be denormalised the first time the broker changes its rate.
 
 ### Target
 
 ```
-trading_rules (id, name, cash_buffer, commission, stamp_duty, lot, policy params, risk control)
-     ▲                                   ▲
-     │ 绑定（可换）                        │ 引用
-portfolios ── active_run_id (optional)   simulation_runs ── experiments
-     │                                        │
-     └─ holdings / transactions / watchlist    └─ trading_rules_id, window, ranking_source_id, model fingerprints
+settings / config            commission, stamp duty, lot size, cash buffer default  ← facts
+strategy_configs (策略配置)   strategy name + params (pool_entry / policy / mechanical) ← choices
+portfolios ── strategy_config_id (bound, replaceable)
+           └─ active_run_id (optional)
+simulation_runs ── strategy_config_id, window, ranking_source_id, model fingerprints,
+                   cost model snapshot (the numbers actually used)
+experiments ──── several runs
 ```
 
-- 选股 writes into `portfolio_stocks` of a chosen portfolio — that is a portfolio action, correctly so.
-- 选股方法 (research) produces a `ranking_source`; it needs **no** portfolio.
-- 回测 references `trading_rules_id` and a window; **no** portfolio.
-- 组合 follows a run only if the user asks (`active_run_id`), and that is a one-directional pointer.
+- **选股 → 组合**: writes `portfolio_stocks`. A portfolio action, correctly so.
+- **选股方法**: produces a `ranking_source`. Needs no portfolio.
+- **回测**: needs a strategy configuration, a window and a ranking source. **Needs no portfolio.**
+- **组合跟随回测**: only when the user asks (`active_run_id`), one direction only.
+
+The one thing a run must *store* rather than reference is the **cost model snapshot** — the fee numbers in
+force when it ran. Costs are configuration and configuration changes; a 2025 backtest must not silently be
+re-priced with 2026 fees.
 
 ### Migration
 
-1. Add `trading_rules`; backfill one row per existing portfolio from `portfolio_policies` +
-   `portfolio_risk_control` (1:1, preserving parameters exactly — the numbers must not change).
-2. Add `simulation_runs.trading_rules_id`; backfill from the run's `portfolio_id`.
-3. Make `simulation_runs.portfolio_id` nullable; the run form stops asking for a portfolio and asks for a
-   trading rule (defaulting to the user's only rule).
-4. Keep `portfolio_id` on runs as "which portfolio was this run made for", for the advisory case; it stops
-   being a required input.
+1. Move the fee constants out of the runner into configuration (they are already constants in code; give them
+   one home and a settings screen section).
+2. Introduce `strategy_configs`; backfill one per existing portfolio from `portfolio_policies` +
+   `portfolio_risk_control`, parameters unchanged (the numbers must not move).
+3. Add `simulation_runs.strategy_config_id` and `cost_snapshot`, backfill from the run's `portfolio_id`.
+4. Make `simulation_runs.portfolio_id` nullable. The run form asks for a strategy configuration, not a
+   portfolio, and shows the cost numbers it will use.
 5. Only then remove the portfolio selector from the backtest form — UI follows the model, not the reverse.
 
-### Why not simply reuse `portfolios`
+### Why the separation matters for the navigation
 
-Because the two have opposite lifecycles: a portfolio is singular and long-lived (you have one account), a
-trading rule is plural and disposable (you iterate on fee assumptions and policy parameters). Forcing
-research to create throwaway "portfolios" pollutes the object the user manages daily, and it is exactly the
-coupling that made 「实验」and「回测」feel like the same thing.
+「选股方法」and「回测」are research; they must not require an object the user manages daily. As long as a run
+needs a portfolio, the menu has to pretend research and investing are the same area, and 「回测」versus
+「对照比较」keeps looking like one thing split in two.
