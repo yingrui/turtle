@@ -60,6 +60,7 @@ nav:
       - Research workflow: features/research-workflow.md
       - Information architecture: features/information-architecture.md
       - Design (target model): features/design.md
+      - Feature list: features/feature-list.md
       - Screening & analysis: features/screening-and-analysis.md
       - Stock picking: features/stock-pick.md
       - Factors: features/factors.md
