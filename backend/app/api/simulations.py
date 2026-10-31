@@ -145,6 +145,149 @@ def simulation_benchmark(
     }
 
 
+def _excess_of(db, run_id: str, ts_code: str) -> float | None:
+    """Same rebasing as `/benchmark`, shared so the comparison and the chart never disagree."""
+    from sqlalchemy import select
+
+    from app.models.simulation import SimulationDaily
+    from app.services.index_service import IndexService
+
+    daily = db.scalars(
+        select(SimulationDaily)
+        .where(SimulationDaily.run_id == run_id)
+        .order_by(SimulationDaily.trade_date)
+    ).all()
+    if not daily:
+        return None
+    dates = [row.trade_date.isoformat() for row in daily]
+    first = float(daily[0].total or 0) or 1.0
+    equity_last = float(daily[-1].total or 0) / first * 100
+    benchmark = IndexService().benchmark_series(db, ts_code, dates)
+    if not benchmark or benchmark[-1] is None:
+        return None
+    return round(equity_last - benchmark[-1], 4)
+
+
+@router.post("/{run_id}/baselines")
+def launch_baselines(
+    run_id: str,
+    count: int = Query(3, ge=1, le=10),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """Run the same window with stocks picked at random — the number that turns a return into a verdict.
+
+    The baselines use the run's own strategy, window and portfolio, and differ only in where the pool
+    comes from. Anything else would compare two different experiments.
+    """
+    import json as _json
+    import uuid
+
+    from app.models.job import Job
+    from app.services.analysis_service import run_analysis
+
+    run = db.get(SimulationRun, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if not run.ranking_source_id:
+        raise HTTPException(status_code=422, detail="This run has no ranking source to randomise")
+    source = db.get(RankingSource, run.ranking_source_id)
+    start = run.window_start or (run.started_at.date() if run.started_at else None)
+    end = run.window_end or (run.finished_at.date() if run.finished_at else None)
+    if not start or not end:
+        raise HTTPException(status_code=422, detail="This run has no window to repeat")
+
+    created = []
+    for index in range(count):
+        source_id = f"{run_id[:8]}-random-{index + 1}"
+        # A real random basket, produced by the same analysis machinery as any other source — not a
+        # pointer to the original artifact, which would make every baseline identical to the run.
+        run_analysis(
+            db,
+            method="constant_pool",
+            params={"size": 50, "seed": 1000 + index, "start": start, "end": end},
+            source_id=source_id,
+            display_name=f"随机对照 {index + 1}（{start}…{end}）",
+        )
+        payload = {
+            "type": "simulation",
+            "mode": "model",
+            "buy_rule": "pool_entry",
+            "portfolio": run.portfolio_name,
+            "ranking_source_id": source_id,
+            "start_date": str(start),
+            "end_date": str(end),
+            "retrain": "none",
+            "name": f"{run.name or run.id[:8]} · 随机对照 {index + 1}",
+            "description": f"主结果 {run.id} 的对照",
+        }
+        job = Job(id=str(uuid.uuid4()), type="simulation", status="pending",
+                  payload=_json.dumps(payload, ensure_ascii=False), log="")
+        db.add(job)
+        db.commit()
+        created.append({"source_id": source_id, "job_id": job.id})
+
+    provenance = dict(run.provenance or {})
+    provenance["baselines"] = [
+        *(provenance.get("baselines") or []),
+        *[item["job_id"] for item in created],
+    ]
+    run.provenance = provenance
+    db.commit()
+    return {"run_id": run_id, "created": created}
+
+
+@router.get("/{run_id}/comparison")
+def simulation_comparison(
+    run_id: str,
+    ts_code: str = Query("000300.SH"),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """How this run's excess compares with the runs that picked stocks at random.
+
+    The question a single number cannot answer: is +9 points skill, or is it what any basket did this
+    year? The answer is a multiple of the spread between those random baskets.
+    """
+    run = db.get(SimulationRun, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    provenance = run.provenance or {}
+    baseline_ids = provenance.get("baselines") or []
+    mine = _excess_of(db, run_id, ts_code)
+    rows = []
+    for baseline_id in baseline_ids:
+        baseline = db.get(SimulationRun, baseline_id)
+        if not baseline:
+            continue
+        rows.append(
+            {
+                "run_id": baseline_id,
+                "name": baseline.name,
+                "excess_pct": _excess_of(db, baseline_id, ts_code),
+                "finished": baseline.finished_at is not None,
+            }
+        )
+    values = [row["excess_pct"] for row in rows if row["excess_pct"] is not None]
+    spread = None
+    sigma = None
+    if len(values) >= 2:
+        import statistics
+
+        mean = statistics.mean(values)
+        sd = statistics.stdev(values)
+        spread = {"mean": round(mean, 4), "sd": round(sd, 4), "n": len(values)}
+        if sd:
+            sigma = None if mine is None else round((mine - mean) / sd, 2)
+    return {
+        "run_id": run_id,
+        "excess_pct": mine,
+        "baselines": rows,
+        "spread": spread,
+        "sigma": sigma,
+    }
+
+
 @router.get("/{run_id}/holdings")
 def simulation_holdings(
     run_id: str,

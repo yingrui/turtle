@@ -18,14 +18,15 @@ sync_backend() {
   echo "→ backend: changed app/*.py → pod, then POST /-/reload"
   local files
   if [ "$FULL" = "1" ]; then
-    files=$(cd backend && find app -name '*.py' | sort)
+    files=$(cd backend && find app alembic -name '*.py' | sort)
   else
-    files=$(cd backend && git ls-files -m -o --exclude-standard app | grep -E '\.py$' || true)
+    files=$(cd backend && { git ls-files -m -o --exclude-standard app alembic; } | grep -E '\.py$' || true)
   fi
   if [ -z "$files" ]; then
     echo "  (no changed python files)"
   else
-    tar -C backend -cf - $files | kubectl -n "$NS" exec -i deploy/backend -- tar -C /app/backend -xf -
+    # macOS adds AppleDouble `._*.py` files, which break `alembic` ("null bytes" in a source string).
+    COPYFILE_DISABLE=1 tar -C backend -cf - $files | kubectl -n "$NS" exec -i deploy/backend -- tar -C /app/backend -xf -
     echo "  copied: $(echo "$files" | tr '\n' ' ')"
   fi
   kubectl -n "$NS" exec deploy/backend -- curl -sf -X POST http://127.0.0.1:8200/-/reload >/dev/null || true
