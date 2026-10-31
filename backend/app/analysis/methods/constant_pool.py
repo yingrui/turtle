@@ -60,9 +60,10 @@ METHOD = register(
     MethodSpec(
         name="constant_pool",
         display_name="固定池（对照组）",
-        description="把选定的（或随机抽取的）一组股票作为池，全程不变；用于估计策略本身的基线收益。",
+        description="对照组：给一组固定的（或随机抽取的）股票打分，全程不变。它不是分析，是基准。",
         params_model=ConstantPoolParams,
         output_kind="score_table",
+        family="control",
         run=run,
     )
 )

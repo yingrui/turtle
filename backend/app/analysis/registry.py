@@ -21,6 +21,9 @@ class MethodSpec:
     params_model: type[BaseModel]
     output_kind: str                     # "score_table" | "model"
     needs_factors: tuple[str, ...] = ()  # validated against factor_definitions before running
+    #: `analysis` computes scores from data. `control` builds a basket with no model behind it — it
+    #: belongs where controls are declared, not on the analysis page.
+    family: str = "analysis"
     run: Callable[..., object] | None = None
 
 
@@ -50,6 +53,7 @@ def describe() -> list[dict]:
             "display_name": spec.display_name,
             "description": spec.description,
             "output_kind": spec.output_kind,
+            "family": spec.family,
             "params_schema": spec.params_model.model_json_schema(),
         }
         for spec in all_methods()

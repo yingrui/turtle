@@ -55,3 +55,15 @@ def test_validation_reports_schema_and_key_problems():
     report = validate(duplicated, spec)
     assert report["ok"] is False
     assert any(check["gate"] == "unique_keys" and not check["ok"] for check in report["checks"])
+
+
+def test_control_helpers_are_not_offered_as_analyses():
+    """A basket with no model behind it is a benchmark, not a cross-sectional analysis."""
+    described = {item["name"]: item for item in registry.describe()}
+    assert described["constant_pool"]["family"] == "control"
+    assert described["regime_score"]["family"] == "analysis"
+
+
+def test_the_api_exposes_the_family_so_the_page_can_filter():
+    payload = registry.describe()
+    assert all("family" in item for item in payload)

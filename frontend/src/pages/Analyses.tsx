@@ -15,6 +15,8 @@ type Method = {
   display_name: string;
   description: string;
   output_kind: string;
+  /** `analysis` computes scores from data; `control` builds a basket with no model behind it. */
+  family: string;
   params_schema: ParamsSchema;
 };
 
@@ -59,9 +61,11 @@ export function Analyses() {
         apiFetch<{ methods: Method[] }>('/api/analyses'),
         apiFetch<{ runs: Run[] }>('/api/analyses/runs'),
       ]);
-      setMethods(methodRes.methods);
+      // Only real analyses: a control basket is declared where controls are, not here.
+      const analyses = methodRes.methods.filter((item) => item.family !== 'control');
+      setMethods(analyses);
       setRuns(runRes.runs);
-      setSelected((current) => current || methodRes.methods[0]?.name || '');
+      setSelected((current) => current || methodRes.methods.find((item) => item.family !== 'control')?.name || '');
     } catch {
       toast.error(t('analyses.loadFailed'));
     }
