@@ -1,0 +1,51 @@
+# The artifact store lives on a PVC: a restart keeps it, a lost node does not. This project has already
+# lost one artifact store (the dataset objects), so the ranking sources get a daily copy.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rankings-backup
+  namespace: stock
+spec:
+  schedule: "17 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: turtle-backend:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - python
+                - -m
+                - app.analysis.backup
+                - --to
+                - s3://openkms/rankings-backup
+              env:
+                - name: STOCK_RANKINGS_DIR
+                  value: /app/reports/rankings
+                - name: BACKUP_S3_ENDPOINT
+                  value: http://minio.mlops-hub.svc.cluster.local:9000
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: minio-credentials
+                      key: access-key
+                      optional: true
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: minio-credentials
+                      key: secret-key
+                      optional: true
+              volumeMounts:
+                - name: rankings
+                  mountPath: /app/reports/rankings
+          volumes:
+            - name: rankings
+              persistentVolumeClaim:
+                claimName: rankings-pvc

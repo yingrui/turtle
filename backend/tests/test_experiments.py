@@ -80,3 +80,45 @@ def test_the_summary_measures_each_variant_against_the_control_spread(db_session
     assert summary["controls"]["n"] == 3
     regime = next(cell for cell in summary["cells"] if cell["variant"] == "regime")
     assert regime["sigma"] == 2.0      # mean 1.0, sd 4.0 → (9 − 1) / 4
+
+
+def test_expanding_creates_one_job_per_cell_and_remembers_them(db_session):
+    """The matrix is the point: variants and controls must run under the same window and strategy."""
+    import json
+
+    from app.models.job import Job
+
+    service = ExperimentService()
+    experiment = service.create(db_session, _payload(
+        variants=[{"name": "regime", "ranking_source_id": "regime-ma60-v1"}],
+        controls=[{"name": "random11", "ranking_source_id": "pool-random-11"}],
+    ))
+    launched = service.expand(db_session, experiment)
+
+    assert [cell["variant"] for cell in launched] == ["regime", "random11"]
+    assert launched[0]["is_control"] is False and launched[1]["is_control"] is True
+    assert experiment.status == "running"
+    jobs = db_session.query(Job).all()
+    assert len(jobs) == 2
+    payload = json.loads(jobs[0].payload)
+    assert payload["ranking_source_id"] == "regime-ma60-v1"
+    assert payload["start_date"] == "2025-07-01" and payload["buy_rule"] == "pool_entry"
+
+    from app.models.experiment import ExperimentRun
+
+    cells = db_session.query(ExperimentRun).filter(ExperimentRun.experiment_id == experiment.id).all()
+    assert {cell.variant for cell in cells} == {"regime", "random11"}
+    assert all(cell.job_id for cell in cells)
+
+    # Leave the global job table as we found it: another test asserts what a restart does to *all* jobs.
+    db_session.query(Job).delete()
+    db_session.commit()
+
+
+def test_expanding_refuses_a_cell_without_a_source(db_session):
+    service = ExperimentService()
+    experiment = service.create(db_session, _payload(
+        variants=[{"name": "broken"}], controls=[{"name": "random11", "ranking_source_id": "x"}]
+    ))
+    with pytest.raises(ValueError, match="missing a ranking source"):
+        service.expand(db_session, experiment)

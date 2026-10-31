@@ -44,6 +44,43 @@ class ExperimentService:
             *[(item["name"], item, True) for item in experiment.controls],
         ]
 
+    def expand(self, db: Session, experiment: Experiment, *, buy_rule: str | None = None,
+               portfolio: str | None = None, launched_by: str | None = None) -> list[dict]:
+        """Create one simulation job per cell, and remember which job belongs to which cell.
+
+        Expanding is a single action because the matrix is the point: variants and their controls must
+        run under the same window, label and strategy, or the comparison is meaningless.
+        """
+        import json as _json
+
+        from app.models.job import Job
+
+        launched = []
+        for variant, spec, is_control in self.cells(experiment):
+            payload = {
+                "type": "simulation",
+                "mode": "model",
+                "buy_rule": buy_rule or experiment.strategy,
+                "portfolio": portfolio or experiment.portfolio or "top50-sim",
+                "ranking_source_id": spec.get("ranking_source_id"),
+                "start_date": experiment.window_start,
+                "end_date": experiment.window_end,
+                "retrain": "none",
+                "name": f"{experiment.id}:{variant}",
+                "description": f"{experiment.question} · {'对照' if is_control else '变体'}",
+            }
+            if not payload["ranking_source_id"] or not payload["start_date"]:
+                raise ValueError(f"cell {variant} is missing a ranking source or a window")
+            job = Job(id=str(uuid.uuid4()), type="simulation", status="pending",
+                      payload=_json.dumps(payload, ensure_ascii=False), log="")
+            db.add(job)
+            db.commit()
+            self.attach(db, experiment.id, variant, job_id=job.id, is_control=is_control)
+            launched.append({"variant": variant, "job_id": job.id, "is_control": is_control})
+        experiment.status = "running"
+        db.commit()
+        return launched
+
     def attach(self, db: Session, experiment_id: str, variant: str, *, job_id: str | None = None,
                run_id: str | None = None, is_control: bool = False) -> ExperimentRun:
         cell = db.get(ExperimentRun, (experiment_id, variant))

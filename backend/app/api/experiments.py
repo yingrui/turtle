@@ -68,6 +68,22 @@ def conclude(experiment_id: str, body: dict, db: Session = Depends(get_db), _: U
     return {"id": experiment.id, "status": experiment.status}
 
 
+@router.post("/{experiment_id}/expand")
+def expand(experiment_id: str, body: dict, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """Launch the whole matrix: one simulation job per variant and per control."""
+    experiment = db.get(Experiment, experiment_id)
+    if not experiment:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+    try:
+        launched = ExperimentService().expand(
+            db, experiment,
+            buy_rule=body.get("buy_rule"), portfolio=body.get("portfolio"),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    return {"experiment_id": experiment.id, "launched": launched}
+
+
 @router.post("/{experiment_id}/cells/{variant}")
 def attach_cell(
     experiment_id: str, variant: str, body: dict, db: Session = Depends(get_db),
