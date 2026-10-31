@@ -47,7 +47,7 @@ function paramsPayload(values: Record<string, string>): Record<string, unknown> 
   return payload;
 }
 
-export function Analyses() {
+export function Analyses({ embedded = false }: { embedded?: boolean } = {}) {
   const { t } = useTranslation();
   const [methods, setMethods] = useState<Method[]>([]);
   const [runs, setRuns] = useState<Run[]>([]);
@@ -111,9 +111,13 @@ export function Analyses() {
   ];
 
   return (
-    <div className="analyses-page">
-      <h1>{t('analyses.title')}</h1>
-      <p className="analyses-subtitle">{t('analyses.subtitle')}</p>
+    <div className={embedded ? 'analyses-body' : 'analyses-page'}>
+      {!embedded && (
+        <>
+          <h1>{t('analyses.title')}</h1>
+          <p className="analyses-subtitle">{t('analyses.subtitle')}</p>
+        </>
+      )}
 
       <div className="analyses-form">
         <div className="form-row">
@@ -157,7 +161,7 @@ export function Analyses() {
         </button>
       </div>
 
-      <h2>{t('analyses.history')}</h2>
+      <h3>{t('analyses.history')}</h3>
       <DataTable<Run>
         columns={columns}
         rows={runs}

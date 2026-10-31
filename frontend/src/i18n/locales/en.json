@@ -1,8 +1,28 @@
 {
   "appName": "Stock Trading System",
   "navGroup": {
+    "today": "Daily",
     "research": "Research",
-    "portfolio": "Portfolio"
+    "market": "Market",
+    "nav": {
+      "home": "Today",
+      "screening": "Screen",
+      "portfolio": "Portfolio",
+      "methods": "Methods",
+      "factor": "Factors",
+      "simulation": "Backtest",
+      "experiments": "Experiments",
+      "quote": "Quotes",
+      "indexes": "Indexes"
+    },
+    "methods": {
+      "title": "Stock-picking methods",
+      "lead": "A method is how stocks get scored. This page is its whole lifecycle: create, run, and see what it picks each day.",
+      "buildTitle": "Create or refresh a method",
+      "buildHint": "Pick a computation, fill in the parameters, run it. The result lands in the list below and a backtest can use it.",
+      "listTitle": "Methods you have",
+      "listHint": "Each row is a method: the period it covers and which data it used. You can preview its top 20 for a given day."
+    }
   },
   "settings": {
     "subtitle": "Preferences, data sources and diagnostics for this workspace.",
@@ -35,13 +55,13 @@
     "saved": "Saved"
   },
   "nav": {
-    "home": "Workbench",
+    "home": "Today",
     "data": "Data Status",
-    "portfolio": "Portfolio config",
-    "screening": "Stock Picking",
+    "portfolio": "Portfolio",
+    "screening": "Screen",
     "factor": "Factors",
     "watchlist": "Watchlist",
-    "simulation": "Simulation",
+    "simulation": "Backtest",
     "results": "Results",
     "quote": "Quotes",
     "stocks": "Stock Analysis",
@@ -51,7 +71,8 @@
     "indexes": "Indexes",
     "analyses": "Cross-section",
     "rankings": "Ranking sources",
-    "experiments": "Experiments"
+    "experiments": "Experiments",
+    "methods": "Methods"
   },
   "home": {
     "dashboardTitle": "Dashboard",
@@ -653,5 +674,13 @@
     "step1": "The cross-sectional analysis produces candidate methods — different ways of picking stocks — each registered as a ranking source.",
     "step2": "Here the candidates (variants) and a few baselines (controls, e.g. 50 random stocks) run on the same window with the same trade rule.",
     "step3": "Only a clear margin over the baselines (≥2σ) counts; otherwise the verdict is \"no incremental information\", and that verdict is recorded."
+  },
+  "methods": {
+    "title": "Stock-picking methods",
+    "lead": "A method is how stocks get scored. This page is its whole lifecycle: create, run, and see what it picks each day.",
+    "buildTitle": "Create or refresh a method",
+    "buildHint": "Pick a computation, fill in the parameters, run it. The result lands in the list below and a backtest can use it.",
+    "listTitle": "Methods you have",
+    "listHint": "Each row is a method: the period it covers and which data it used. You can preview its top 20 for a given day."
   }
 }

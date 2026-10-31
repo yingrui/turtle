@@ -1,7 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Microscope,
   Beaker,
   BarChart3,
   Briefcase,
@@ -27,23 +26,27 @@ import '../../App.scss';
 
 const navGroups = [
   {
-    key: 'research',
+    key: 'today',
     items: [
       { to: '/', icon: Home, key: 'home', end: true },
       { to: '/screening', icon: Filter, key: 'screening', end: true },
+      { to: '/portfolio', icon: Briefcase, key: 'portfolio', end: false },
+    ],
+  },
+  {
+    key: 'research',
+    items: [
+      { to: '/methods', icon: ListOrdered, key: 'methods', end: true },
       { to: '/factor', icon: FlaskConical, key: 'factor', end: false },
-      { to: '/market', icon: CandlestickChart, key: 'quote', end: true },
-      { to: '/indexes', icon: BarChart3, key: 'indexes', end: true },
-      { to: '/rankings', icon: ListOrdered, key: 'rankings', end: true },
-      { to: '/analyses', icon: Microscope, key: 'analyses', end: true },
+      { to: '/simulation', icon: Play, key: 'simulation', end: false },
       { to: '/experiments', icon: Beaker, key: 'experiments', end: true },
     ],
   },
   {
-    key: 'portfolio',
+    key: 'market',
     items: [
-      { to: '/portfolio', icon: Briefcase, key: 'portfolio', end: false },
-      { to: '/simulation', icon: Play, key: 'simulation', end: false },
+      { to: '/market', icon: CandlestickChart, key: 'quote', end: true },
+      { to: '/indexes', icon: BarChart3, key: 'indexes', end: true },
     ],
   },
 ] as const;

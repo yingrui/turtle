@@ -23,7 +23,7 @@ type Source = {
 
 type RankRow = { ts_code: string; score: number; rank: number };
 
-export function Rankings() {
+export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
   const { t } = useTranslation();
   const [sources, setSources] = useState<Source[]>([]);
   const [selected, setSelected] = useState<string>('');
@@ -86,9 +86,13 @@ export function Rankings() {
   ];
 
   return (
-    <div className="rankings-page">
-      <h1>{t('rankings.title')}</h1>
-      <p className="rankings-subtitle">{t('rankings.subtitle')}</p>
+    <div className={embedded ? 'rankings-body' : 'rankings-page'}>
+      {!embedded && (
+        <>
+          <h1>{t('rankings.title')}</h1>
+          <p className="rankings-subtitle">{t('rankings.subtitle')}</p>
+        </>
+      )}
 
       <DataTable<Source>
         columns={columns}

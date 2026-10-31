@@ -9,9 +9,9 @@ import { Portfolio } from './pages/Portfolio';
 import { Screening } from './pages/Screening';
 import { FactorList } from './pages/FactorList';
 import { Indexes } from './pages/Indexes';
-import { Analyses } from './pages/Analyses';
+import { Methods } from './pages/Methods';
 import { Experiments } from './pages/Experiments';
-import { Rankings } from './pages/Rankings';
+
 import { FactorDetail } from './pages/FactorDetail';
 import { Simulation } from './pages/Simulation';
 import { SimulationRuns } from './pages/SimulationRuns';
@@ -40,8 +40,9 @@ export function App() {
         <Route path="/data" element={<DataCollection />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/screening" element={<Screening />} />
-        <Route path="/analyses" element={<Analyses />} />
-        <Route path="/rankings" element={<Rankings />} />
+        <Route path="/methods" element={<Methods />} />
+        <Route path="/analyses" element={<Navigate to="/methods" replace />} />
+        <Route path="/rankings" element={<Navigate to="/methods" replace />} />
         <Route path="/experiments" element={<Experiments />} />
         <Route path="/factor" element={<FactorList />} />
         <Route path="/factor/:code" element={<FactorDetail />} />
