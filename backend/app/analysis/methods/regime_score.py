@@ -9,19 +9,17 @@ month by month and never materialises the whole window.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.analysis.artifact import ScoreTable
 from app.analysis.registry import MethodSpec, register
 
 DEFAULT_FACTORS = ("mom_20d", "MACD", "ma_dev_20")
-CHUNK_DAYS = 21
 
 
 class RegimeScoreParams(BaseModel):
@@ -34,78 +32,66 @@ class RegimeScoreParams(BaseModel):
     exclude_st: bool = Field(True, description="剔除 ST")
 
 
-def _factor_panel(db: Session, code: str, start: date, end: date) -> pd.DataFrame:
-    """One factor widened to `date x code`. Read per factor so only one panel is in memory."""
-    frame = pd.read_sql(
-        text(
-            "SELECT v.trade_date, v.ts_code, v.value FROM factor_values v "
-            "JOIN factor_definitions d ON d.id = v.factor_id "
-            "WHERE d.code = :code AND v.trade_date BETWEEN :start AND :end"
-        ),
-        db.connection(),
-        params={"code": code, "start": start, "end": end},
-    )
-    if frame.empty:
-        return pd.DataFrame()
-    return frame.pivot_table(index="trade_date", columns="ts_code", values="value", aggfunc="last")
-
-
-def _st_codes(db: Session) -> set[str]:
-    from app.core.tushare_schema import tushare_table
-
-    return {
-        row[0]
-        for row in db.execute(
-            text(f"SELECT ts_code FROM {tushare_table('stock_basic')} WHERE name LIKE '%ST%'")
-        ).all()
-    }
+def _months(start: date, end: date):
+    cursor = start
+    while cursor <= end:
+        month_end = (cursor.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        yield cursor, min(month_end, end)
+        cursor = min(month_end, end) + timedelta(days=1)
 
 
 def run(db: Session, params: RegimeScoreParams, dataset: dict | None = None) -> ScoreTable:
-    from scripts.regime_score import market_regime
+    """One month at a time, through the script's own `load_dataset`.
 
-    panels = {code: _factor_panel(db, code, params.start, params.end) for code in params.factors}
-    panels = {code: panel for code, panel in panels.items() if not panel.empty}
-    if not panels:
-        return ScoreTable(
-            frame=pd.DataFrame(columns=["trade_date", "ts_code", "score"]),
-            params=params.model_dump(mode="json"),
-            dataset=dataset or {},
+    The whole window in one call is what OOM-killed the API pod; re-implementing the scoring by hand is
+    what made the top-50 disagree with the offline export (48% overlap: that code is Σ(rank−0.5) over
+    the *labelled, non-ST* universe, not a z-score over every code with a factor value). So: same
+    function, smaller slices. The slice is widened past the month end so the label for the month's last
+    days is available, then trimmed back to the month.
+    """
+    from scripts.regime_score import market_regime, score
+    from scripts.scorecard import load_dataset
+
+    lookahead = timedelta(days=params.horizon * 2)
+    regime = market_regime(db, params.benchmark, params.start, params.end + lookahead, params.ma_window)
+
+    frames: list[pd.DataFrame] = []
+    for month_start, month_end in _months(params.start, params.end):
+        chunk = load_dataset(
+            db,
+            start=month_start,
+            end=month_end + lookahead,
+            horizon=params.horizon,
+            label="benchmark",
+            benchmark=params.benchmark,
+            exclude_st=params.exclude_st,
         )
-
-    days = sorted(set().union(*[set(panel.index) for panel in panels.values()]))
-    # The script indexes regime by **string** dates; keep that, or every lookup misses and every day
-    # silently takes the trend branch.
-    regime = market_regime(db, params.benchmark, params.start, params.end, params.ma_window)
-    excluded = _st_codes(db) if params.exclude_st else set()
-
-    rows: list[pd.DataFrame] = []
-    for offset in range(0, len(days), CHUNK_DAYS):
-        chunk = days[offset : offset + CHUNK_DAYS]
-        frame = pd.DataFrame(index=chunk)
-        columns = {}
-        for code, panel in panels.items():
-            sliced = panel.reindex(chunk)
-            if excluded:
-                sliced = sliced.drop(columns=[c for c in sliced.columns if c in excluded], errors="ignore")
-            columns[code] = sliced
-        if any(sliced.empty for sliced in columns.values()):
+        frame = chunk.frame
+        if frame.empty:
             continue
-        # The script's arithmetic: each factor is already a cross-sectional percentile rank (that is
-        # what `load_dataset` produces), so the composite is Σ(rank − 0.5), not a z-score sum.
-        for code in columns:
-            columns[code] = columns[code].rank(axis=1, pct=True) - 0.5
-        composite = sum(columns.values())
-        signs = pd.Series(
-            {day: 1.0 if regime.get(str(day)) is True else -1.0 for day in chunk}
+        factors = [code for code in params.factors if code in frame.columns]
+        if not factors:
+            break
+        days = pd.to_datetime(frame["trade_date"]).dt.strftime("%Y-%m-%d")
+        inside = (days >= month_start.isoformat()) & (days <= month_end.isoformat())
+        frame = frame[inside]
+        if frame.empty:
+            continue
+        frame = frame.copy()
+        frame["trade_date"] = days[inside]
+        values = score(frame, factors, regime, flip=True)
+        frames.append(
+            pd.DataFrame(
+                {
+                    "trade_date": frame["trade_date"].to_numpy(),
+                    "ts_code": frame["ts_code"].to_numpy(),
+                    "score": values,
+                }
+            ).dropna(subset=["score"])
         )
-        composite = composite.mul(signs, axis=0)
-        long = composite.stack().rename("score").reset_index()
-        long.columns = ["trade_date", "ts_code", "score"]
-        rows.append(long.dropna(subset=["score"]))
-        del frame, composite, long
+        del chunk, frame
 
-    if not rows:
+    if not frames:
         return ScoreTable(
             frame=pd.DataFrame(columns=["trade_date", "ts_code", "score"]),
             params=params.model_dump(mode="json"),
@@ -113,7 +99,7 @@ def run(db: Session, params: RegimeScoreParams, dataset: dict | None = None) -> 
         )
 
     return ScoreTable(
-        frame=pd.concat(rows, ignore_index=True),
+        frame=pd.concat(frames, ignore_index=True),
         params=params.model_dump(mode="json"),
         label={"kind": "benchmark", "horizon": params.horizon, "benchmark": params.benchmark},
         dataset=dataset or {},

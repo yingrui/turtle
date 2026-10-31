@@ -59,7 +59,7 @@ def _policy_params(db: Session, portfolio_id: str) -> tuple[dict, dict]:
     policy = db.scalar(
         select(PortfolioPolicy)
         .where(PortfolioPolicy.portfolio_id == portfolio_id)
-        .order_by(PortfolioPolicy.policy_index)
+        .order_by(PortfolioPolicy.id)
     )
     risk = db.scalar(select(PortfolioRiskControl).where(PortfolioRiskControl.portfolio_id == portfolio_id))
     policy_params = dict(policy.params or {}) if policy else {}

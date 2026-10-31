@@ -42,6 +42,10 @@ class CreateJobRequest(BaseModel):
     #: `ic_weights` swaps the scorecard for an IC-weight table (no training involved).
     ranking_source: str | None = None
     ranking_weights: str | None = None
+    #: The online path: a registered `ranking_sources.id`. Replaces `ranking_weights`' free-text path.
+    ranking_source_id: str | None = None
+    #: `policy` = pool → policy → trades (the strategy); omitted = the mechanical ranking diagnostic.
+    buy_rule: str | None = None
 
 
 def _job_to_dict(job) -> dict:
