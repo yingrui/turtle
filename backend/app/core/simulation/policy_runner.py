@@ -95,6 +95,14 @@ def run_policy_simulation(
     positions: dict[str, int] = {}
     engine = StockTradeDataEngine()
     params_all, _ = _policy_params(db, run.portfolio_id)
+    # Record the parameters that actually drove the signals. Whether a policy run traded 29 times or
+    # 6,492 is a question about these values; a run record that omits them cannot be audited.
+    import json as _json
+
+    snapshot = run.config_snapshot
+    snapshot = dict(snapshot) if isinstance(snapshot, dict) else _json.loads(snapshot or "{}")
+    snapshot["policy_params"] = params_all
+    run.config_snapshot = _json.dumps(snapshot, ensure_ascii=False)
     days = 0
     trades = 0
 
