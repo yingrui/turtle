@@ -49,7 +49,7 @@
     "jobs": "Jobs",
     "settings": "Settings",
     "indexes": "Indexes",
-    "analyses": "Analyses",
+    "analyses": "Cross-section",
     "rankings": "Ranking sources",
     "experiments": "Experiments"
   },
@@ -570,8 +570,8 @@
     "loadFailed": "Could not load index data"
   },
   "analyses": {
-    "title": "Analyses",
-    "subtitle": "Run analyses in the product: parameters come from the method's schema, and the output is registered as a ranking source or a model.",
+    "title": "Cross-sectional analysis",
+    "subtitle": "Score the cross-section day by day with a method (or train a model); the output is registered as a ranking source or a model, and backtests reference it.",
     "method": "Method",
     "run": "Run",
     "running": "Running…",
@@ -612,7 +612,8 @@
     "runFailed": "Computation failed",
     "method": "Method",
     "sourceName": "Source name",
-    "sourceNamePlaceholder": "Leave blank to name it from the method"
+    "sourceNamePlaceholder": "Leave blank to name it from the method",
+    "generateElsewhere": "Produce a new ranking source → cross-sectional analysis"
   },
   "experiments": {
     "title": "Experiments",

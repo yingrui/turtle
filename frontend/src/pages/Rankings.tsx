@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
@@ -22,89 +23,23 @@ type Source = {
 
 type RankRow = { ts_code: string; score: number; rank: number };
 
-type Method = {
-  name: string;
-  display_name: string;
-  description: string;
-  output_kind: string;
-  params_schema: { properties?: Record<string, { default?: unknown; title?: string; description?: string }> };
-};
-
-function defaultsFor(method: Method): Record<string, string> {
-  const values: Record<string, string> = {};
-  Object.entries(method.params_schema.properties ?? {}).forEach(([key, property]) => {
-    values[key] = property.default == null ? '' : String(property.default);
-  });
-  return values;
-}
-
-function paramsPayload(values: Record<string, string>): Record<string, unknown> {
-  const payload: Record<string, unknown> = {};
-  Object.entries(values).forEach(([key, raw]) => {
-    if (raw === '') return;
-    const asNumber = Number(raw);
-    payload[key] = Number.isNaN(asNumber) ? raw : asNumber;
-  });
-  return payload;
-}
-
 export function Rankings() {
   const { t } = useTranslation();
   const [sources, setSources] = useState<Source[]>([]);
   const [selected, setSelected] = useState<string>('');
   const [day, setDay] = useState<string>('');
   const [rows, setRows] = useState<RankRow[]>([]);
-  // Generating a source happens here rather than on a separate "analyses" page: the page that owns the
-  // output owns the button that produces it.
-  const [methods, setMethods] = useState<Method[]>([]);
-  const [methodName, setMethodName] = useState('');
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [sourceName, setSourceName] = useState('');
-  const [busy, setBusy] = useState(false);
+
 
   const load = useCallback(async () => {
     try {
-      const [res, methodRes] = await Promise.all([
-        apiFetch<{ sources: Source[] }>('/api/rankings'),
-        apiFetch<{ methods: Method[] }>('/api/analyses'),
-      ]);
+      const res = await apiFetch<{ sources: Source[] }>('/api/rankings');
       setSources(res.sources);
       setSelected((current) => current || res.sources[0]?.id || '');
-      const scoreTables = methodRes.methods.filter((item) => item.output_kind === 'score_table');
-      setMethods(scoreTables);
-      setMethodName((current) => current || scoreTables[0]?.name || '');
     } catch {
       toast.error(t('rankings.loadFailed'));
     }
   }, [t]);
-
-  const method = methods.find((item) => item.name === methodName);
-
-  useEffect(() => {
-    setValues(method ? defaultsFor(method) : {});
-  }, [method]);
-
-  async function onGenerate() {
-    if (!method) return;
-    setBusy(true);
-    try {
-      await apiFetch(`/api/analyses/${method.name}/runs`, {
-        method: 'POST',
-        body: JSON.stringify({
-          params: paramsPayload(values),
-          source_id: sourceName || undefined,
-          display_name: sourceName || undefined,
-        }),
-      });
-      toast.success(t('rankings.started'));
-      setSourceName('');
-      await load();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('rankings.runFailed'));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   useEffect(() => {
     void load();
@@ -163,44 +98,9 @@ export function Rankings() {
         pageSize={10}
       />
 
-      <div className="rankings-generate">
-        <h2>{t('rankings.generate')}</h2>
-        <p className="rankings-hint">{t('rankings.generateHint')}</p>
-        <div className="form-row">
-          <label htmlFor="rankings-method">{t('rankings.method')}</label>
-          <select id="rankings-method" value={methodName} onChange={(e) => setMethodName(e.target.value)}>
-            {methods.map((item) => (
-              <option key={item.name} value={item.name}>
-                {item.display_name}
-              </option>
-            ))}
-          </select>
-        </div>
-        {method && <p className="rankings-hint">{method.description}</p>}
-        {method &&
-          Object.entries(method.params_schema.properties ?? {}).map(([key, property]) => (
-            <div className="form-row" key={key}>
-              <label htmlFor={`gen-${key}`}>{property.title ?? key}</label>
-              <input
-                id={`gen-${key}`}
-                value={values[key] ?? ''}
-                onChange={(event) => setValues((prev) => ({ ...prev, [key]: event.target.value }))}
-              />
-            </div>
-          ))}
-        <div className="form-row">
-          <label htmlFor="rankings-source-name">{t('rankings.sourceName')}</label>
-          <input
-            id="rankings-source-name"
-            value={sourceName}
-            onChange={(e) => setSourceName(e.target.value)}
-            placeholder={t('rankings.sourceNamePlaceholder')}
-          />
-        </div>
-        <button type="button" className="btn btn-primary" onClick={onGenerate} disabled={busy || !method}>
-          {busy ? t('rankings.running') : t('rankings.generateAction')}
-        </button>
-      </div>
+      <p className="rankings-hint">
+        <Link to="/analyses">{t('rankings.generateElsewhere')}</Link>
+      </p>
 
       <div className="rankings-preview">
         <div className="form-row">

@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
+  Microscope,
   Beaker,
   BarChart3,
   Briefcase,
@@ -34,6 +35,7 @@ const navGroups = [
       { to: '/market', icon: CandlestickChart, key: 'quote', end: true },
       { to: '/indexes', icon: BarChart3, key: 'indexes', end: true },
       { to: '/rankings', icon: ListOrdered, key: 'rankings', end: true },
+      { to: '/analyses', icon: Microscope, key: 'analyses', end: true },
       { to: '/experiments', icon: Beaker, key: 'experiments', end: true },
     ],
   },

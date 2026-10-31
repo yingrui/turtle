@@ -49,7 +49,7 @@
     "jobs": "任务",
     "settings": "设置",
     "indexes": "指数",
-    "analyses": "分析",
+    "analyses": "截面分析",
     "rankings": "排序来源",
     "experiments": "实验"
   },
@@ -570,8 +570,8 @@
     "loadFailed": "指数数据加载失败"
   },
   "analyses": {
-    "title": "分析任务",
-    "subtitle": "在系统里运行分析方法：参数由方法声明生成，产物自动登记为排序来源或模型。",
+    "title": "截面分析",
+    "subtitle": "按某个方法计算每天的股票截面分数（或训练模型），产物自动登记成排序来源 / 模型，回测再引用它。",
     "method": "分析方法",
     "run": "运行",
     "running": "运行中…",
@@ -612,7 +612,8 @@
     "runFailed": "计算失败",
     "method": "计算方法",
     "sourceName": "来源名称",
-    "sourceNamePlaceholder": "留空则按方法自动命名"
+    "sourceNamePlaceholder": "留空则按方法自动命名",
+    "generateElsewhere": "生成新的排序来源 → 截面分析"
   },
   "experiments": {
     "title": "实验",
