@@ -19,6 +19,7 @@ from app.api import (
     screening,
     simulations,
     stock_pick,
+    strategies,
     stocks,
     webhooks,
 )
@@ -66,6 +67,7 @@ app.include_router(data.router)
 app.include_router(models.router)
 app.include_router(portfolios.router)
 app.include_router(screening.router)
+app.include_router(strategies.router)
 app.include_router(factors.router)
 app.include_router(indexes.router)
 app.include_router(jobs.router)
