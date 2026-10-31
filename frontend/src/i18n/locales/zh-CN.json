@@ -214,7 +214,17 @@
     "started": "回测任务已启动",
     "viewResults": "查看结果",
     "tabRun": "运行回测",
-    "tabResults": "历史结果"
+    "tabResults": "历史结果",
+    "mode": "运行方式",
+    "modeSignal": "信号回测（组合自选）",
+    "modeModel": "模型驱动（排序来源 + 策略）",
+    "poolSource": "股票池来源",
+    "strategy": "买卖规则",
+    "retrain": "重训节奏",
+    "retrainNone": "不训练（用已有模型）",
+    "retrainMonthly": "按月重训",
+    "retrainWeekly": "按周重训",
+    "runName": "运行名称（可选）"
   },
   "results": {
     "noTrades": "该回测没有成交记录。",

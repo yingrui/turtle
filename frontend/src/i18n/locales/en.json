@@ -214,7 +214,17 @@
     "started": "Simulation job started",
     "viewResults": "View results",
     "tabRun": "Run",
-    "tabResults": "Results"
+    "tabResults": "Results",
+    "mode": "Run mode",
+    "modeSignal": "Signal backtest (portfolio watchlist)",
+    "modeModel": "Model-driven (ranking source + strategy)",
+    "poolSource": "Pool source",
+    "strategy": "Trade rule",
+    "retrain": "Retraining",
+    "retrainNone": "Never train (reuse existing)",
+    "retrainMonthly": "Monthly",
+    "retrainWeekly": "Weekly",
+    "runName": "Run name (optional)"
   },
   "results": {
     "noTrades": "No trades for this run.",

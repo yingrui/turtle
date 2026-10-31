@@ -6,6 +6,9 @@ import { apiFetch } from '../utils/api';
 import { useJobPoll } from '../hooks/useJobPoll';
 import './Simulation.scss';
 
+type RankingSource = { id: string; display_name: string; kind: string; date_from: string | null; date_to: string | null };
+type Strategy = { name: string; display_name: string; description: string };
+
 type PortfolioConfig = {
   policies?: unknown[];
   start_date?: string;
@@ -20,6 +23,15 @@ export function Simulation() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10));
   const [selectedPolicies, setSelectedPolicies] = useState<number[]>([]);
+  // Two ways to run: the classic signal backtest on the portfolio's own watchlist, or a model-driven
+  // run whose pool comes from a published ranking source and whose trades follow a registered strategy.
+  const [mode, setMode] = useState<'signal' | 'model'>('signal');
+  const [sources, setSources] = useState<RankingSource[]>([]);
+  const [sourceId, setSourceId] = useState('');
+  const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [strategyName, setStrategyName] = useState('pool_entry');
+  const [retrain, setRetrain] = useState<'monthly' | 'weekly' | 'none'>('none');
+  const [runName, setRunName] = useState('');
   const [jobId, setJobId] = useState<string | null>(searchParams.get('job_id'));
   const job = useJobPoll(jobId);
   const [runs, setRuns] = useState<{ id: string; policy_id: number; started_at: string | null; finished_at: string | null }[]>([]);
@@ -49,6 +61,18 @@ export function Simulation() {
   }, []);
 
   useEffect(() => {
+    apiFetch<{ sources: RankingSource[] }>('/api/rankings')
+      .then((d) => {
+        setSources(d.sources ?? []);
+        setSourceId((current) => current || d.sources?.[0]?.id || '');
+      })
+      .catch(() => setSources([]));
+    apiFetch<{ strategies: Strategy[] }>('/api/strategies')
+      .then((d) => setStrategies(d.strategies ?? []))
+      .catch(() => setStrategies([]));
+  }, []);
+
+  useEffect(() => {
     if (!portfolio) return;
     apiFetch<PortfolioConfig>(`/api/portfolios/${portfolio}`)
       .then((cfg) => {
@@ -67,20 +91,29 @@ export function Simulation() {
   }
 
   async function onRun() {
-    if (!selectedPolicies.length) {
+    if (mode === 'signal' && !selectedPolicies.length) {
       toast.error('Select at least one policy');
       return;
     }
     try {
+      const body =
+        mode === 'model'
+          ? {
+              type: 'simulation',
+              mode: 'model',
+              portfolio,
+              start_date: startDate,
+              end_date: endDate,
+              buy_rule: strategyName,
+              ranking_source_id: sourceId,
+              retrain,
+              name: runName || undefined,
+              description: runName || undefined,
+            }
+          : { type: 'simulation', portfolio, start_date: startDate, end_date: endDate, policy_ids: selectedPolicies };
       const res = await apiFetch<{ id: string }>('/api/jobs', {
         method: 'POST',
-        body: JSON.stringify({
-          type: 'simulation',
-          portfolio,
-          start_date: startDate,
-          end_date: endDate,
-          policy_ids: selectedPolicies,
-        }),
+        body: JSON.stringify(body),
       });
       setJobId(res.id);
       setSearchParams({ job_id: res.id }, { replace: true });
@@ -103,6 +136,49 @@ export function Simulation() {
           ))}
         </select>
       </div>
+      <div className="form-row field-wide">
+        <label htmlFor="run-mode">{t('simulation.mode')}</label>
+        <select id="run-mode" value={mode} onChange={(e) => setMode(e.target.value as 'signal' | 'model')}>
+          <option value="signal">{t('simulation.modeSignal')}</option>
+          <option value="model">{t('simulation.modeModel')}</option>
+        </select>
+      </div>
+      {mode === 'model' && (
+        <div>
+          <div className="form-row field-wide">
+            <label htmlFor="ranking-source">{t('simulation.poolSource')}</label>
+            <select id="ranking-source" value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
+              {sources.map((source) => (
+                <option key={source.id} value={source.id}>
+                  {source.display_name} · {source.kind}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-row field-wide">
+            <label htmlFor="strategy">{t('simulation.strategy')}</label>
+            <select id="strategy" value={strategyName} onChange={(e) => setStrategyName(e.target.value)}>
+              {strategies.map((strategy) => (
+                <option key={strategy.name} value={strategy.name}>
+                  {strategy.display_name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-row field-wide">
+            <label htmlFor="retrain">{t('simulation.retrain')}</label>
+            <select id="retrain" value={retrain} onChange={(e) => setRetrain(e.target.value as 'monthly' | 'weekly' | 'none')}>
+              <option value="none">{t('simulation.retrainNone')}</option>
+              <option value="monthly">{t('simulation.retrainMonthly')}</option>
+              <option value="weekly">{t('simulation.retrainWeekly')}</option>
+            </select>
+          </div>
+          <div className="form-row field-wide">
+            <label htmlFor="run-name">{t('simulation.runName')}</label>
+            <input id="run-name" value={runName} onChange={(e) => setRunName(e.target.value)} />
+          </div>
+        </div>
+      )}
       <div className="toolbar">
         <div className="form-row field-medium">
           <label htmlFor="start-date">Start date</label>
@@ -113,7 +189,7 @@ export function Simulation() {
           <input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </div>
       </div>
-      {policyCount > 0 && (
+      {mode === 'signal' && policyCount > 0 && (
         <div>
           <p className="text-hint mb-2">
             Policies to run ({selectedPolicies.length}/{policyCount})

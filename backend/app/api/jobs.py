@@ -46,6 +46,8 @@ class CreateJobRequest(BaseModel):
     ranking_source_id: str | None = None
     #: `policy` = pool → policy → trades (the strategy); omitted = the mechanical ranking diagnostic.
     buy_rule: str | None = None
+    #: `monthly` / `weekly` / `none` — whether a model-driven run may train what it is missing.
+    retrain: str | None = None
 
 
 def _job_to_dict(job) -> dict:
