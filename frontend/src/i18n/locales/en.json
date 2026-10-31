@@ -588,7 +588,7 @@
   },
   "rankings": {
     "title": "Ranking sources",
-    "subtitle": "A simulation may only rank by a published source; each one records its dataset version and artifact fingerprint.",
+    "subtitle": "Ranking sources: a backtest can only use one of these. Produce a new one right here — pick a method, fill in the parameters, run it.",
     "colName": "Name",
     "colKind": "Kind",
     "colCoverage": "Coverage",
@@ -603,7 +603,16 @@
     "previewEmpty": "This source has no ranking for that day.",
     "previewFailed": "Could not read the ranking",
     "empty": "No published sources yet.",
-    "loadFailed": "Could not load ranking sources"
+    "loadFailed": "Could not load ranking sources",
+    "generate": "Produce a new ranking source",
+    "generateHint": "Pick a method, fill the parameters, run it. The result is registered below and can be picked by a backtest.",
+    "generateAction": "Run and register",
+    "running": "Computing…",
+    "started": "Started; it will appear in the list when done",
+    "runFailed": "Computation failed",
+    "method": "Method",
+    "sourceName": "Source name",
+    "sourceNamePlaceholder": "Leave blank to name it from the method"
   },
   "experiments": {
     "title": "Experiments",

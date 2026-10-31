@@ -23,3 +23,21 @@
   border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
 }
+
+// Producing a source belongs on the page that lists them.
+.rankings-generate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  max-width: 720px;
+}
+
+.rankings-hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}

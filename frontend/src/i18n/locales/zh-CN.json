@@ -588,7 +588,7 @@
   },
   "rankings": {
     "title": "排序来源",
-    "subtitle": "仿真只能引用这里已发布的来源；每个来源都记录了数据集版本与产物指纹。",
+    "subtitle": "这里放「排序来源」：回测只能选这里已发布的来源。也可以在本页生成新的来源 —— 选计算方法、填参数、运行。",
     "colName": "名称",
     "colKind": "类型",
     "colCoverage": "覆盖区间",
@@ -603,7 +603,16 @@
     "previewEmpty": "该来源当日没有排名。",
     "previewFailed": "读取排名失败",
     "empty": "还没有已发布的排序来源。",
-    "loadFailed": "加载排序来源失败"
+    "loadFailed": "加载排序来源失败",
+    "generate": "生成新的排序来源",
+    "generateHint": "选一个计算方法、填参数、运行；产物登记后会出现在下面的列表里，回测即可选它。",
+    "generateAction": "运行并登记",
+    "running": "计算中…",
+    "started": "已开始计算，完成后会出现在列表里",
+    "runFailed": "计算失败",
+    "method": "计算方法",
+    "sourceName": "来源名称",
+    "sourceNamePlaceholder": "留空则按方法自动命名"
   },
   "experiments": {
     "title": "实验",
