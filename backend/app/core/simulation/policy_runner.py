@@ -173,6 +173,7 @@ def run_policy_simulation(
                     continue
                 cash -= amount + fee
                 positions[code] = shares
+                last_seen.setdefault(code, price)   # a session without a close still has this price
                 trades += 1
                 db.add(
                     SimulationTrade(
@@ -202,6 +203,7 @@ def run_policy_simulation(
                     continue
                 cash -= amount + fee
                 positions[code] = shares
+                last_seen.setdefault(code, price)   # a session without a close still has this price
                 trades += 1
                 db.add(
                     SimulationTrade(
@@ -249,6 +251,7 @@ def run_policy_simulation(
         if on_day:
             on_day(day, equity, cash, len(positions))
 
-    return {"days": days, "trades": trades, "final_equity": cash + sum(
-        held * 0.0 for held in positions.values()
-    ), "holdings": len(positions)}
+    # Cash alone is not the ending value — the book still holds positions. `held * 0.0` here reported
+    # 249,926 for an account that closed at 962,155 and made a −5.6% run look like a −75% one.
+    final_equity = equity_now()
+    return {"days": days, "trades": trades, "final_equity": final_equity, "holdings": len(positions)}
