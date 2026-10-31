@@ -1,14 +1,16 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Home,
+  BarChart3,
+  Briefcase,
+  CandlestickChart,
   Filter,
   FlaskConical,
-  Play,
-  BarChart3,
-  CandlestickChart,
-  Briefcase,
+  Home,
+  ListOrdered,
+  Microscope,
   Moon,
+  Play,
   Settings as SettingsIcon,
   Sun,
 } from 'lucide-react';
@@ -31,6 +33,8 @@ const navGroups = [
       { to: '/factor', icon: FlaskConical, key: 'factor', end: false },
       { to: '/market', icon: CandlestickChart, key: 'quote', end: true },
       { to: '/indexes', icon: BarChart3, key: 'indexes', end: true },
+      { to: '/analyses', icon: Microscope, key: 'analyses', end: true },
+      { to: '/rankings', icon: ListOrdered, key: 'rankings', end: true },
     ],
   },
   {

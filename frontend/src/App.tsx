@@ -9,6 +9,8 @@ import { Portfolio } from './pages/Portfolio';
 import { Screening } from './pages/Screening';
 import { FactorList } from './pages/FactorList';
 import { Indexes } from './pages/Indexes';
+import { Analyses } from './pages/Analyses';
+import { Rankings } from './pages/Rankings';
 import { FactorDetail } from './pages/FactorDetail';
 import { Simulation } from './pages/Simulation';
 import { SimulationLayout } from './pages/SimulationLayout';
@@ -36,6 +38,8 @@ export function App() {
         <Route path="/data" element={<DataCollection />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/screening" element={<Screening />} />
+        <Route path="/analyses" element={<Analyses />} />
+        <Route path="/rankings" element={<Rankings />} />
         <Route path="/factor" element={<FactorList />} />
         <Route path="/factor/:code" element={<FactorDetail />} />
         <Route path="/watchlist" element={<Navigate to="/portfolio?tab=holdings&status=watching" replace />} />

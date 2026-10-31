@@ -1,0 +1,32 @@
+@use '../styles/design-system/local-tokens' as lt;
+@use '../styles/design-system/mixins' as *;
+
+// Analyses: a form generated from the method's parameter schema, above its run history.
+.analyses-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.analyses-subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.analyses-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  max-width: 720px;
+}
+
+.analyses-hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}

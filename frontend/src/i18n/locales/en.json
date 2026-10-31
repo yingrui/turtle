@@ -48,7 +48,9 @@
     "forecast": "Forecast",
     "jobs": "Jobs",
     "settings": "Settings",
-    "indexes": "Indexes"
+    "indexes": "Indexes",
+    "analyses": "Analyses",
+    "rankings": "Ranking sources"
   },
   "home": {
     "dashboardTitle": "Dashboard",
@@ -543,5 +545,41 @@
     "noData": "No bars in this range.",
     "pick": "Pick an index to see its chart.",
     "loadFailed": "Could not load index data"
+  },
+  "analyses": {
+    "title": "Analyses",
+    "subtitle": "Run analyses in the product: parameters come from the method's schema, and the output is registered as a ranking source or a model.",
+    "method": "Method",
+    "run": "Run",
+    "running": "Running…",
+    "started": "Started",
+    "runFailed": "Run failed",
+    "history": "Run history",
+    "colMethod": "Method",
+    "colStatus": "Status",
+    "colSource": "Output",
+    "colCreated": "Created",
+    "colError": "Error",
+    "empty": "No runs yet.",
+    "loadFailed": "Could not load analyses"
+  },
+  "rankings": {
+    "title": "Ranking sources",
+    "subtitle": "A simulation may only rank by a published source; each one records its dataset version and artifact fingerprint.",
+    "colName": "Name",
+    "colKind": "Kind",
+    "colCoverage": "Coverage",
+    "colDataset": "Dataset",
+    "colRows": "Rows",
+    "colStatus": "Status",
+    "colCode": "Code",
+    "colScore": "Score",
+    "source": "Source",
+    "day": "Date",
+    "preview": "Preview ranking",
+    "previewEmpty": "This source has no ranking for that day.",
+    "previewFailed": "Could not read the ranking",
+    "empty": "No published sources yet.",
+    "loadFailed": "Could not load ranking sources"
   }
 }

@@ -48,7 +48,9 @@
     "forecast": "预测分析",
     "jobs": "任务",
     "settings": "设置",
-    "indexes": "指数"
+    "indexes": "指数",
+    "analyses": "分析",
+    "rankings": "排序来源"
   },
   "home": {
     "dashboardTitle": "工作台",
@@ -543,5 +545,41 @@
     "noData": "该区间没有数据。",
     "pick": "选择一个指数查看图表。",
     "loadFailed": "指数数据加载失败"
+  },
+  "analyses": {
+    "title": "分析任务",
+    "subtitle": "在系统里运行分析方法：参数由方法声明生成，产物自动登记为排序来源或模型。",
+    "method": "分析方法",
+    "run": "运行",
+    "running": "运行中…",
+    "started": "已开始运行",
+    "runFailed": "运行失败",
+    "history": "运行历史",
+    "colMethod": "方法",
+    "colStatus": "状态",
+    "colSource": "产物",
+    "colCreated": "开始时间",
+    "colError": "错误",
+    "empty": "还没有运行记录。",
+    "loadFailed": "加载分析方法失败"
+  },
+  "rankings": {
+    "title": "排序来源",
+    "subtitle": "仿真只能引用这里已发布的来源；每个来源都记录了数据集版本与产物指纹。",
+    "colName": "名称",
+    "colKind": "类型",
+    "colCoverage": "覆盖区间",
+    "colDataset": "数据集",
+    "colRows": "行数",
+    "colStatus": "状态",
+    "colCode": "代码",
+    "colScore": "分数",
+    "source": "来源",
+    "day": "日期",
+    "preview": "查看当日排名",
+    "previewEmpty": "该来源当日没有排名。",
+    "previewFailed": "读取排名失败",
+    "empty": "还没有已发布的排序来源。",
+    "loadFailed": "加载排序来源失败"
   }
 }
