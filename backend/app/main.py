@@ -13,6 +13,7 @@ from app.api import (
     factors,
     indexes,
     jobs,
+    models,
     portfolios,
     rankings,
     screening,
@@ -62,6 +63,7 @@ app.include_router(analyses.router)
 app.include_router(rankings.router)
 app.include_router(auth.router)
 app.include_router(data.router)
+app.include_router(models.router)
 app.include_router(portfolios.router)
 app.include_router(screening.router)
 app.include_router(factors.router)
