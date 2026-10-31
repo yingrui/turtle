@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
+import { DataTable, type Column } from '../components/DataTable';
 import { useJobPoll } from '../hooks/useJobPoll';
 import './Simulation.scss';
 
@@ -34,11 +35,25 @@ export function Simulation() {
   const [runName, setRunName] = useState('');
   const [jobId, setJobId] = useState<string | null>(searchParams.get('job_id'));
   const job = useJobPoll(jobId);
-  const [runs, setRuns] = useState<{ id: string; policy_id: number; started_at: string | null; finished_at: string | null }[]>([]);
+  type RunRow = {
+    id: string;
+    name: string | null;
+    mode?: string | null;
+    started_at: string | null;
+    finished_at: string | null;
+    window_start?: string | null;
+    window_end?: string | null;
+    return_rate_pct?: number | null;
+    trade_count?: number | null;
+  };
+  const [runs, setRuns] = useState<RunRow[]>([]);
+  // Running a backtest and reading past ones are different jobs; putting them side by side made the
+  // page hard to use, so they are two views of the same route.
+  const [view, setView] = useState<'run' | 'history'>('run');
 
   useEffect(() => {
-    apiFetch<{ runs: typeof runs }>('/api/simulations')
-      .then((d) => setRuns((d.runs ?? []).slice(0, 8)))
+    apiFetch<{ runs: RunRow[] }>('/api/simulations')
+      .then((d) => setRuns(d.runs ?? []))
       .catch(() => setRuns([]));
   }, [job?.status]);
 
@@ -125,9 +140,79 @@ export function Simulation() {
 
   const policyCount = config?.policies?.length ?? 0;
 
+  const runColumns: Column<RunRow>[] = [
+    {
+      key: 'name',
+      label: t('simulation.colRun'),
+      render: (row) => (
+        <Link to={`/simulation/results?run_id=${encodeURIComponent(row.id)}`}>
+          {row.name || row.id.slice(0, 8)}
+        </Link>
+      ),
+    },
+    { key: 'mode', label: t('simulation.colMode'), render: (row) => row.mode ?? 'signal' },
+    {
+      key: 'window',
+      label: t('simulation.colWindow'),
+      render: (row) =>
+        row.window_start && row.window_end ? `${row.window_start} → ${row.window_end}` : '—',
+    },
+    {
+      key: 'trades',
+      label: t('simulation.colTrades'),
+      render: (row) => (row.trade_count == null ? '—' : row.trade_count.toLocaleString()),
+    },
+    {
+      key: 'return',
+      label: t('simulation.colReturn'),
+      render: (row) =>
+        row.return_rate_pct == null ? '—' : `${row.return_rate_pct.toFixed(2)}%`,
+    },
+    {
+      key: 'status',
+      label: t('simulation.colStatus'),
+      render: (row) => (
+        <span className={row.finished_at ? 'simulation-run-done' : 'simulation-run-open'}>
+          {row.finished_at ? t('simulation.runDone') : t('simulation.runOpen')}
+        </span>
+      ),
+    },
+  ];
+
   return (
-    <div className="simulation-layout">
-      <div className="simulation-config">
+    <div className="simulation-page">
+      <div className="simulation-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'run'}
+          className={`btn ${view === 'run' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => setView('run')}
+        >
+          {t('simulation.tabRun')}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'history'}
+          className={`btn ${view === 'history' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => setView('history')}
+        >
+          {t('simulation.tabHistory')}
+        </button>
+      </div>
+
+      {view === 'history' && (
+        <DataTable<RunRow>
+          columns={runColumns}
+          rows={runs}
+          rowKey={(row) => row.id}
+          empty={t('simulation.noRuns')}
+          pageSize={15}
+        />
+      )}
+
+      <div className={view === 'run' ? 'simulation-config' : 'simulation-config simulation-hidden'}>
       <div className="form-row field-wide">
         <label htmlFor="portfolio">Portfolio</label>
         <select id="portfolio" value={portfolio} onChange={(e) => setPortfolio(e.target.value)}>
@@ -224,27 +309,6 @@ export function Simulation() {
         </div>
       )}
       </div>
-
-      <aside className="simulation-runs">
-        <h2 className="simulation-runs-title">{t('simulation.recentRuns')}</h2>
-        {runs.length === 0 ? (
-          <p className="simulation-runs-empty">{t('simulation.noRuns')}</p>
-        ) : (
-          <ul>
-            {runs.map((run) => (
-              <li key={run.id}>
-                <Link to={`/simulation/results?run_id=${encodeURIComponent(run.id)}`}>
-                  <span>{run.started_at ? run.started_at.slice(0, 16).replace('T', ' ') : '—'}</span>
-                  <span className="simulation-run-policy">Policy {run.policy_id}</span>
-                  <span className={run.finished_at ? 'simulation-run-done' : 'simulation-run-open'}>
-                    {run.finished_at ? t('simulation.runDone') : t('simulation.runOpen')}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </aside>
     </div>
   );
 }

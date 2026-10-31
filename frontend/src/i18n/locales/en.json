@@ -225,7 +225,14 @@
     "retrainNone": "Never train (reuse existing)",
     "retrainMonthly": "Monthly",
     "retrainWeekly": "Weekly",
-    "runName": "Run name (optional)"
+    "runName": "Run name (optional)",
+    "tabHistory": "History",
+    "colRun": "Run",
+    "colMode": "Mode",
+    "colWindow": "Window",
+    "colTrades": "Trades",
+    "colReturn": "Return",
+    "colStatus": "Status"
   },
   "results": {
     "noTrades": "No trades for this run.",

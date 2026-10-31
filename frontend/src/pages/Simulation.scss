@@ -4,3 +4,21 @@
   gap: var(--space-3);
   max-width: 560px;
 }
+
+// Two views: running a backtest, and reading the ones that already ran. Side by side they competed for
+// attention and made the page hard to use.
+.simulation-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.simulation-tabs {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.simulation-hidden {
+  display: none;
+}

@@ -225,7 +225,14 @@
     "retrainNone": "不训练（用已有模型）",
     "retrainMonthly": "按月重训",
     "retrainWeekly": "按周重训",
-    "runName": "运行名称（可选）"
+    "runName": "运行名称（可选）",
+    "tabHistory": "历史运行",
+    "colRun": "运行",
+    "colMode": "方式",
+    "colWindow": "区间",
+    "colTrades": "成交",
+    "colReturn": "收益",
+    "colStatus": "状态"
   },
   "results": {
     "noTrades": "该回测没有成交记录。",
