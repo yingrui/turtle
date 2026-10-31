@@ -85,3 +85,41 @@ def test_retrain_none_refuses_to_train_a_missing_model(db_session):
         assert "retrain=none" in str(exc)
     else:  # pragma: no cover
         raise AssertionError("expected ModelUnavailable")
+
+
+def test_training_is_registered_as_a_model_artifact(db_session):
+    """`scorecard_train` goes through the same runner: stored, hashed, fingerprint-keyed."""
+    from app.analysis import methods  # noqa: F401  (registration)
+    from app.analysis import registry
+    from app.analysis.methods import scorecard_train
+
+    spec = registry.get("scorecard_train")
+    assert spec.output_kind == "model"
+    properties = spec.params_model.model_json_schema()["properties"]
+    assert {"period", "label", "horizon", "bins"} <= set(properties)
+
+    model = {
+        "trained_for_period": "2025-07",
+        "label": {"kind": "benchmark", "horizon": 20},
+        "inputs": {"factors": [{"code": "mom_20d", "version": 1}]},
+        "intercept": -0.1,
+        "factors": [],
+        "metrics": {"train_auc": 0.62},
+    }
+    from app.services.analysis_service import _store_model
+    from app.models.ranking import AnalysisRun
+
+    run = AnalysisRun(id="run-model", method="scorecard_train", status="running", params={})
+    db_session.add(run)
+    db_session.commit()
+    stored, artifact = _store_model(
+        db_session, run=run, spec=spec, params=scorecard_train.ScorecardTrainParams(
+            period="2025-07", start=date(2024, 1, 1), end=date(2025, 6, 30)
+        ), model=model, dataset={"name": "ds", "version": 2}, created_by="t",
+    )
+
+    assert stored.status == "completed"
+    assert artifact.period == "2025-07" and artifact.period_kind == "month"
+    assert artifact.metrics == {"train_auc": 0.62}
+    assert len(artifact.fingerprint) == 64
+    assert artifact.dataset_version == 2

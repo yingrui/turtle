@@ -45,7 +45,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"analysis failed: {type(exc).__name__}: {exc}", file=sys.stderr)
             return 1
         # Read before the session closes: the objects are detached afterwards.
-        summary = f"{run.id} -> {source.id} ({source.row_count:,} rows, {source.artifact_sha256[:12]})"
+        if hasattr(source, "row_count"):
+            summary = f"{run.id} -> {source.id} ({source.row_count:,} rows, {source.artifact_sha256[:12]})"
+        else:
+            summary = f"{run.id} -> model {source.fingerprint[:12]} for {source.period}"
     print(summary)
     return 0
 

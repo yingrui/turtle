@@ -1,5 +1,6 @@
 from app.models.factor import FactorDefinition, FactorValue
 from app.models.job import Job
+from app.models.model_artifact import ModelArtifact
 from app.models.portfolio import (
     Portfolio,
     PortfolioCashFlow,
@@ -9,6 +10,7 @@ from app.models.portfolio import (
     PortfolioStockEvent,
     PortfolioTransaction,
 )
+from app.models.ranking import AnalysisRun, RankingSource
 from app.models.simulation import (
     SimulationDaily,
     SimulationHolding,
@@ -22,6 +24,9 @@ __all__ = [
     "FactorDefinition",
     "FactorValue",
     "Job",
+    "ModelArtifact",
+    "AnalysisRun",
+    "RankingSource",
     "Portfolio",
     "PortfolioCashFlow",
     "PortfolioPolicy",

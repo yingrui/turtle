@@ -65,7 +65,10 @@ def run_analysis(
     db.commit()
 
     try:
-        table = spec.run(db, parsed, dataset or {})  # type: ignore[misc]
+        result = spec.run(db, parsed, dataset or {})  # type: ignore[misc]
+        if spec.output_kind == "model":
+            return _store_model(db, run=run, spec=spec, params=parsed, model=result, dataset=dataset, created_by=created_by)
+        table = result
         if not isinstance(table, ScoreTable):
             raise TypeError(f"{method} returned {type(table).__name__}, expected ScoreTable")
         source_id = source_id or default_source_id(method, parsed.model_dump(mode="json"))
@@ -109,6 +112,58 @@ def run_analysis(
         run.finished_at = datetime.utcnow()
         db.commit()
         raise
+
+
+def _store_model(db: Session, *, run: AnalysisRun, spec, params, model: dict, dataset, created_by):
+    """A model artifact is a parameter file plus its fingerprint — no source, no score table."""
+    import json
+    import os
+    from pathlib import Path
+
+    from app.analysis.artifact import ARTIFACT_ROOT
+    from app.models.model_artifact import ModelArtifact, fingerprint as make_fingerprint
+
+    period_kind = "month" if len(str(model.get("trained_for_period", ""))) == 7 else "week"
+    label = model.get("label") or {}
+    payload = json.dumps(model, ensure_ascii=False, sort_keys=True, default=str)
+    digest = __import__("hashlib").sha256(payload.encode()).hexdigest()
+    key = make_fingerprint(
+        method=spec.name,
+        period=str(model.get("trained_for_period")),
+        period_kind=period_kind,
+        params=params.model_dump(mode="json"),
+        factors=model.get("inputs", {}).get("factors", []),
+        label=label,
+        dataset=dataset or {},
+    )
+    directory = Path(ARTIFACT_ROOT) / "models" / key / digest
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "model.json").write_text(payload, encoding="utf-8")
+
+    artifact = ModelArtifact(
+        fingerprint=key,
+        method=spec.name,
+        period=str(model.get("trained_for_period")),
+        period_kind=period_kind,
+        params=params.model_dump(mode="json"),
+        factors=model.get("inputs", {}).get("factors", []),
+        label=label,
+        dataset_name=(dataset or {}).get("name"),
+        dataset_version=(dataset or {}).get("version"),
+        dataset_sha256=(dataset or {}).get("manifest_sha256") or (dataset or {}).get("sha256"),
+        artifact_key=str(directory),
+        artifact_sha256=digest,
+        metrics=model.get("metrics") or {},
+        status="published",
+        trained_by=created_by,
+    )
+    db.merge(artifact)
+    run.status = "completed"
+    run.artifact_key = str(directory)
+    run.artifact_sha256 = digest
+    run.finished_at = datetime.utcnow()
+    db.commit()
+    return run, artifact
 
 
 def validate(table: ScoreTable, spec) -> dict:
