@@ -20,75 +20,76 @@ with.
 6. **Words come from the domain, not from the code.** `run`, `artifact`, `source`, `registry` never
    appear in the UI.
 
-## 2. Inventory and verdict
+## 2. Concept model
 
-| Current page | What it really is | Verdict |
-|---|---|---|
-| 今天 (home) | status + shortcuts | keep, becomes the daily dashboard |
-| 选股 (screening) | ad-hoc filter over the universe | keep |
-| 我的组合 (portfolio) | holdings, watchlist, transactions, policies | keep — 自选 folds in as a tab |
-| 选股方法 (methods) | produce a selection + list of selections | keep (merged from "截面分析" + "排序来源") |
-| 因子 (factors) | what methods are built from | demote: reachable from 方法, not a top-level item |
-| 回测 (simulation) | run list / new run / result detail | keep; **baselines become an option on the new-run form** |
-| 对照比较 (experiments) | several runs + baselines + verdict | **dissolve**: the comparison is a block on the run result page |
-| 行情 / 指数 | market data browsing | keep, merged into one "市场" group |
-| 数据状态 (data collection) | data freshness and coverage | move under 系统 |
-| 任务 (jobs) | background job log | move under 系统 |
-| 设置 (settings) | preferences, DB admin | keep under 系统 |
+Six concepts, each with exactly one name in the UI. Everything else is a detail view or an archive.
 
-Two pages disappear as top-level items (因子, 对照比较); two move groups (数据状态, 任务); one pair merges
-(截面分析 + 排序来源 → 选股方法).
+| Concept | User-facing word | What it is | Where it lives |
+|---|---|---|---|
+| 打分方法 | **选股方法** | how stocks get scored; produces a daily ranking | 研究 → 选股方法 |
+| 试一次 | **回测** | one method + one window + one strategy → an equity curve | 研究 → 回测 |
+| 参照 | **基线** | the same run with stocks picked at random; stands for luck | an option on 新建回测 |
+| 判断 | **结论** | "beats baselines by ≥2σ" or "no incremental information" | attached to a 回测, archived |
+| 规则 | **策略** | how to trade the ranking: enter on pool, exit on policy, fees | 策略配置, chosen in 新建回测 |
+| 账户 | **我的组合** | holdings, cash, transactions, watchlist | 投资 → 我的组合 |
+
+Two things that are *not* concepts in the menu:
+
+- **因子** — raw material for a method, edited from the method that uses it (and visible on a stock's page).
+- **任务 / 数据状态** — plumbing, under 系统.
 
 ## 3. Target tree
 
 Groups name a **subject**, never a frequency. "每天" was a mistake worth recording: it mixed two axes
-(frequency and subject), so "每天 / 市场" could not be told apart — a screen is used daily, an index is
-looked at daily. Nothing in the industry groups a menu by cadence; the home page carries that idea on
-its own (Home / Overview / 今日概览), and the groups stay object-based.
+(frequency and subject), so "每天 / 市场" could not be told apart — 选股 is used daily, an index is looked at
+daily. Nothing in the industry groups a menu by cadence; the home page carries that idea on its own, and the
+groups stay object-based.
 
 ```
-概览                         (a single entry, not a group) 数据新鲜度、我有哪些方法、今日选出什么、持仓异动
+概览                         (a single entry, not a group)
+                             数据到哪一天 · 我有哪些方法 · 今天各选出什么 · 持仓异动
 
 投资
-├── 选股                    用条件筛一遍全市场（决策：这次买什么）
-└── 我的组合                持仓 / 自选 / 成交 / 策略设置（决策：拿着还是换掉）
+├── 选股                    用条件筛一遍全市场          (决策：这次买什么)
+└── 我的组合                持仓 / 自选 / 成交 / 策略绑定  (决策：拿着还是换掉)
 
-研究                         想验证一个想法时才来
-├── 选股方法                新建一套方法；已有方法列表；某天的前 20 名
-├── 回测                    运行列表 → 新建回测（含"同时跑基线"选项）→ 结果：净值、成交、与基线的 σ
-└── 实验记录                已下过结论的对照（只读档案，从回测结果页"保存为实验"进入）
+研究
+├── 选股方法                新建一套方法 · 已有方法 · 某天的前 20 名
+└── 回测                    运行列表 · 新建回测（可勾选"同时跑基线"）· 结果与结论
 
 数据
-├── 行情                    查一只票：走势、因子、公告（检索，不决策）
+├── 行情                    查一只票：走势、因子、公告      (检索，不决策)
 ├── 指数                    指数列表与走势
 └── 数据状态                数据到哪一天、缺什么
 
 系统
 ├── 任务
-└── 设置
+└── 设置                    含交易费率（佣金、印花税、手数）
 ```
 
-选股 and 行情 are different jobs, which is why they stay apart: **选股 narrows the universe to decide;
-行情 looks one name up.** 行情 is a lookup, 选股 is a decision.
+选股 and 行情 stay apart because they are different jobs: **选股 narrows the universe to decide; 行情 looks one
+name up.** 行情 is a lookup, 选股 is a decision.
 
-Note the asymmetry: 回测 is the page that produces a verdict; 实验记录 is where verdicts are *filed*. The
-comparison itself happens on the run page — that is the change that removes a whole concept from the
-user's head.
+There is no 「对照比较」page. Running baselines is a checkbox on 新建回测; the result page shows
+`本策略 −15.13 | 基线均值 −0.36 ± 9.32 → −1.59σ`; "保存为结论" files the verdict. A verdict is read from the
+run it belongs to, not from a separate list.
 
 ## 4. Page contracts
 
-Each page states its purpose, its single primary action, and what it shows when empty.
+Each page answers, in its first screen: what is this, what do I do here, what is the state of my data.
 
-| Page | Purpose (one line, shown at top) | Primary action | Empty state |
+| Page | Purpose | Primary action | Empty state |
 |---|---|---|---|
-| 今天 | 今天需要你决定的事 | — | "还没有方法：去 选股方法 建一套" |
-| 选股 | 用条件筛一遍全市场 | 保存为观察池 | "没有满足条件的股票，放宽条件试试" |
-| 我的组合 | 你持有的和关注的 | 记录一笔成交 | "还没有持仓，从 选股 里挑几只" |
+| 概览 | 今天需要你决定的事 | — | "还没有方法：去 选股方法 建一套" |
+| 选股 | 用条件筛一遍全市场 | 加入自选 | "没有满足条件的股票，放宽条件试试" |
+| 我的组合 | 你持有的和关注的 | 记一笔成交 | "还没有持仓，从 选股 里挑几只" |
 | 选股方法 | 一套方法 = 怎么给股票打分 | 新建方法 | "还没有方法，用 regime 打分或训练一个评分卡开始" |
-| 回测 | 一套方法在历史上挣了多少 | 新建回测 | "还没有回测，选一套方法跑一次" |
-| 回测结果 | 这次回测的账本与相对基线的位置 | 保存为实验记录 | — |
-| 行情 / 指数 | 市场数据 | 搜索代码 | "数据截至 X，请联系管理员同步" |
-| 数据状态 | 数据到哪一天，缺什么 | — | — |
+| 回测（列表） | 一次回测 = 一套方法 + 一段区间 → 一条净值曲线 | 新建回测 | "还没有回测，选一套方法跑一次" |
+| 新建回测 | 方法 + 区间 + 策略（+ 可选基线） | 开始回测 | — |
+| 回测结果 | 这次回测的账本，以及它相对基线的位置 | 保存为结论 | — |
+| 行情 | 查一只票 | 搜索代码 | "数据截至 X" |
+| 指数 | 指数走势 | 选一个指数 | "暂无数日线数据" |
+| 数据状态 | 数据到哪一天、缺什么 | — | — |
 | 任务 | 后台在跑什么 | — | "没有正在运行的任务" |
 
 ## 5. Vocabulary
@@ -96,11 +97,11 @@ Each page states its purpose, its single primary action, and what it shows when 
 | Internal (never shown) | User-facing | Why |
 |---|---|---|
 | ranking source / artifact | 选股方法 | a person owns methods, not rows |
-| analysis method / registry entry | 计算方法（方法页里的一个选项） | it is a choice, not a place |
-| simulation run | 回测（一次回测 = 一次运行） | one word for the action and its result |
-| experiment / variant / control | 对照比较 / 候选 / 基线 | 变体 and 对照 are lab words; 候选 and 基线 say what they do |
+| analysis method / registry entry | 计算方法（新建方法时的一个选项） | it is a choice, not a place |
+| simulation run | 回测 | one word for the action and its result |
+| experiment / variant / control | 结论 / 候选 / 基线 | lab words replaced by what they do |
+| strategy config / trading rules | 策略 | the thing you pick when starting a backtest |
 | provenance / manifest / sha256 | 用了哪份数据（版本与日期） | hashes belong in the record, not the sentence |
-| dataset version | 数据版本 | fine, but only inside a detail view |
 | job | 后台任务 | and only under 系统 |
 
 ## 6. Migration order
