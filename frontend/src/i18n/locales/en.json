@@ -71,7 +71,7 @@
     "indexes": "Indexes",
     "analyses": "Cross-section",
     "rankings": "Ranking sources",
-    "experiments": "Experiments",
+    "experiments": "Compare",
     "methods": "Methods"
   },
   "home": {
@@ -257,7 +257,7 @@
     "tabList": "Runs",
     "tabNew": "New run",
     "newRun": "New run",
-    "listSubtitle": "Pick a run to inspect it, or start a new one.",
+    "listSubtitle": "One backtest = one method over one window → one equity curve. To tell skill from luck, use Compare.",
     "loadFailed": "Could not load runs"
   },
   "results": {
@@ -637,8 +637,8 @@
     "generateElsewhere": "Produce a new ranking source → cross-sectional analysis"
   },
   "experiments": {
-    "title": "Experiments",
-    "subtitle": "Answers one question: is a ranking method actually useful? The test is to put it in the same backtest as a basket chosen at random.",
+    "title": "Compare against baselines",
+    "subtitle": "A backtest says how much you made; this says whether that counts. Run the same setup several times, some of them on stocks picked at random.",
     "question": "The question",
     "kill": "What result counts as failure",
     "start": "Start",
@@ -671,9 +671,9 @@
     "expand": "Expand into runs (variants + controls)",
     "expanded": "Launched {{count}} runs",
     "expandFailed": "Could not expand",
-    "step1": "The cross-sectional analysis produces candidate methods — different ways of picking stocks — each registered as a ranking source.",
-    "step2": "Here the candidates (variants) and a few baselines (controls, e.g. 50 random stocks) run on the same window with the same trade rule.",
-    "step3": "Only a clear margin over the baselines (≥2σ) counts; otherwise the verdict is \"no incremental information\", and that verdict is recorded."
+    "step1": "Candidates: the methods you built under Methods.",
+    "step2": "Baselines: same window and trade rule, but the stocks are random — they stand for luck.",
+    "step3": "A candidate only counts if it clears the baselines by ≥2σ; otherwise there is no incremental information."
   },
   "methods": {
     "title": "Stock-picking methods",
