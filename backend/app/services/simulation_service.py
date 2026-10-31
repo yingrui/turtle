@@ -27,6 +27,7 @@ class SimulationService:
                 "name": r.name,
                 "description": r.description,
                 "provenance": r.provenance or {},
+                "verdict": r.verdict or {},
                 "mode": r.mode,
                 "pool_mode": r.pool_mode,
                 # The list shows what the detail page shows; an empty column is worse than no column.

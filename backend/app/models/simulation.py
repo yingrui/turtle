@@ -38,6 +38,8 @@ class SimulationRun(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     #: What produced the ranking: `{"ranking": {...}, "dataset": {...}, "label": {...}}`.
     provenance: Mapped[dict] = mapped_column(JSON_TYPE, default=dict, server_default="{}")
+    #: What this run was judged to mean, recorded on the run itself: `{"verdict": "no edge", "note": "…"}`.
+    verdict: Mapped[dict] = mapped_column(JSON_TYPE, default=dict, server_default="{}")
     config_snapshot: Mapped[str] = mapped_column(Text)
     started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

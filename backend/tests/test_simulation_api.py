@@ -89,3 +89,28 @@ def test_the_run_list_carries_what_the_detail_page_shows(auth_token):
     with SessionLocal() as db:
         db.query(SimulationRun).filter_by(id="run-with-metrics").delete()
         db.commit()
+
+
+def test_a_verdict_is_stored_on_the_run_it_judges(auth_token):
+    """A separate record could be re-run and drift; a conclusion on the run cannot."""
+    from app.database import SessionLocal
+    from app.models.simulation import SimulationRun
+
+    with SessionLocal() as db:
+        db.add(SimulationRun(id="run-verdict", portfolio_name="p", policy_id=0, config_snapshot="{}"))
+        db.commit()
+
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    client.patch(
+        "/api/simulations/run-verdict",
+        json={"verdict": {"verdict": "no edge", "note": "−15.13 vs baseline −0.36 ± 9.32"}},
+        headers=headers,
+    )
+
+    runs = client.get("/api/simulations", headers=headers).json()["runs"]
+    row = next(item for item in runs if item["id"] == "run-verdict")
+    assert row["verdict"]["verdict"] == "no edge"
+
+    with SessionLocal() as db:
+        db.query(SimulationRun).filter_by(id="run-verdict").delete()
+        db.commit()
