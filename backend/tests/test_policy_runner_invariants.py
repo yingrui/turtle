@@ -45,6 +45,7 @@ def _run(monkeypatch, *, days, codes, prices, initial_cash=1_000_000, enter_on_p
     monkeypatch.setattr(policy_runner, "_closes", lambda db, day: prices.get(day, {}))
     monkeypatch.setattr(policy_runner, "next_open", lambda db, day: prices.get(day, {}))
     monkeypatch.setattr(policy_runner, "_policy_params", lambda db, pid: ({}, {}))
+    monkeypatch.setattr(policy_runner, "market_context", lambda db, day, codes: {})
 
     class NoSignals:
         def __init__(self, *args, **kwargs):

@@ -227,6 +227,13 @@ class RankingSourceService:
 
     def preview(self, db: Session, source_id: str, day, limit: int = 20) -> list[dict]:
         source = self.get(db, source_id)
+        if source.kind == "model":
+            from app.core.simulation.ranking import RankingSourceProvider
+
+            ranked = RankingSourceProvider(source_id).rankings(db, day)[:limit]
+            return [
+                {"ts_code": item.ts_code, "score": item.score, "rank": item.rank} for item in ranked
+            ]
         frame = scores_on_or_before(read_scores(source.artifact_key), day)
         ordered = frame.sort_values("score", ascending=False).head(limit)
         return [

@@ -165,6 +165,8 @@ class RankingSourceProvider:
 
         service = RankingSourceService()
         source = service.get(db, self.source_id)
+        if source.kind == "model":
+            return self._score_with_period_model(source, db, day)
         if self._cache is None:
             from app.analysis.artifact import read_scores
 
@@ -180,8 +182,47 @@ class RankingSourceProvider:
             for position, row in enumerate(ordered.itertuples())
         ]
 
+    def _score_with_period_model(self, source, db, day: date) -> list[Ranked]:
+        """Pick the month's model by period, then score today's cross-section with it."""
+        import json
+        from pathlib import Path
+
+        from app.core.factor.score import rank_cross_section
+        from app.core.simulation.model_runner import ModelUnavailable
+        from app.services.model_artifact_service import period_of
+
+        directory = Path(source.artifact_key)
+        period = period_of(day, "month")
+        path = directory / f"{period}.json"
+        if not path.exists():
+            candidates = sorted(p.stem for p in directory.glob("*.json") if p.stem <= period)
+            if not candidates:
+                raise ModelUnavailable(f"no model for {period} in {source.id}")
+            path = directory / f"{candidates[-1]}.json"
+        model = json.loads(path.read_text())
+        codes = [factor["code"] for factor in model.get("factors", [])]
+        if not codes:
+            return []
+        ranks = rank_cross_section(db, day, codes)
+        if ranks.empty:
+            return []
+        scores = _score_with_model(model, ranks)
+        ordered = sorted(
+            zip(ranks["ts_code"].to_numpy(), scores), key=lambda pair: pair[1], reverse=True
+        )
+        return [
+            Ranked(ts_code=str(code), score=float(score), rank=index + 1)
+            for index, (code, score) in enumerate(ordered)
+        ]
+
     def describe(self) -> dict:
         return {"source": "ranking_source", "source_id": self.source_id}
+
+
+def _score_with_model(model: dict, ranks):
+    from app.core.factor.score import score_frame
+
+    return score_frame(model, ranks.drop(columns=["ts_code"]))
 
 
 class StaticRankingProvider:

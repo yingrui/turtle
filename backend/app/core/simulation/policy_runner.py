@@ -31,6 +31,7 @@ from app.core.simulation.model_runner import (
     next_open,
     summarise,
 )
+from app.core.market.tradability import judge, market_context
 from app.core.simulation.ranking import RankingProvider
 from app.models.portfolio import PortfolioPolicy
 from app.models.simulation import SimulationDaily, SimulationHolding, SimulationPool, SimulationTrade
@@ -110,6 +111,7 @@ def run_policy_simulation(
     run.config_snapshot = _json.dumps(snapshot, ensure_ascii=False)
     days = 0
     trades = 0
+    rejected: dict[str, int] = {}
 
     last_seen: dict[str, float] = {}
 
@@ -136,6 +138,18 @@ def run_policy_simulation(
                 held * closes.get(code, last_seen.get(code, 0.0)) for code, held in positions.items()
             )
         fills = next_open(db, day)          # execute at the next open, value at today's close
+        context = market_context(db, day, sorted(set(pool) | set(positions)))
+
+        def tradable(code: str, side: str, price: float | None) -> bool:
+            info = context.get(code, {})
+            verdict = judge(
+                side=side, ts_code=code, price=price,
+                pre_close=info.get("pre_close"), listed_days=info.get("listed_days"),
+                name=info.get("name"),
+            )
+            if not verdict.ok:
+                rejected[verdict.reason] = rejected.get(verdict.reason, 0) + 1
+            return verdict.ok
         # The policy watches the pool **and** what is already held: a position that fell out of the
         # pool still needs its sell signal.
         watch = sorted(set(pool) | set(positions))
@@ -146,7 +160,7 @@ def run_policy_simulation(
             price = fills.get(code)
             if price is None:
                 continue
-            if signal.status == "sell" and positions.get(code):
+            if signal.status == "sell" and positions.get(code) and tradable(code, "sell", price):
                 shares = positions.pop(code)
                 amount = price * shares
                 fee = max(COMMISSION_MIN, amount * COMMISSION_RATE)
@@ -161,7 +175,12 @@ def run_policy_simulation(
                         tax=Decimal(str(round(tax, 2))), reason=f"policy:{signal.status}",
                     )
                 )
-            elif signal.status == "buy" and code not in positions and not config.enter_on_pool:
+            elif (
+                signal.status == "buy"
+                and code not in positions
+                and not config.enter_on_pool
+                and tradable(code, "buy", price)
+            ):
                 equity = equity_now()
                 target = equity * (1 - config.cash_buffer) / config.top_n
                 shares = int(target // (price * LOT)) * LOT
@@ -190,7 +209,7 @@ def run_policy_simulation(
                 if code in positions or len(positions) >= config.top_n:
                     continue
                 price = fills.get(code)
-                if price is None:
+                if price is None or not tradable(code, "buy", price):
                     continue
                 equity = equity_now()
                 target = equity * (1 - config.cash_buffer) / config.top_n
@@ -254,4 +273,10 @@ def run_policy_simulation(
     # Cash alone is not the ending value — the book still holds positions. `held * 0.0` here reported
     # 249,926 for an account that closed at 962,155 and made a −5.6% run look like a −75% one.
     final_equity = equity_now()
-    return {"days": days, "trades": trades, "final_equity": final_equity, "holdings": len(positions)}
+    return {
+        "days": days,
+        "trades": trades,
+        "final_equity": final_equity,
+        "holdings": len(positions),
+        "rejected_fills": rejected,
+    }
