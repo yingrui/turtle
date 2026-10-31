@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import {
   Database,
   ListChecks,
-  Beaker,
   BarChart3,
   Briefcase,
   CandlestickChart,
@@ -41,7 +40,6 @@ const navGroups = [
       { to: '/methods', icon: ListOrdered, key: 'methods', end: true },
       { to: '/factor', icon: FlaskConical, key: 'factor', end: false },
       { to: '/simulation', icon: Play, key: 'simulation', end: false },
-      { to: '/experiments', icon: Beaker, key: 'experiments', end: true },
     ],
   },
   {

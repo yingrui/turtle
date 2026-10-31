@@ -70,7 +70,8 @@ groups stay object-based.
 选股 and 行情 stay apart because they are different jobs: **选股 narrows the universe to decide; 行情 looks one
 name up.** 行情 is a lookup, 选股 is a decision.
 
-There is no 「对照比较」page. Running baselines is a checkbox on 新建回测; the result page shows
+The menu item 「对照比较」 is gone; `/experiments` survives only as a deep link to legacy records until verdicts
+move onto runs (feature list E8). There is no 「对照比较」page. Running baselines is a checkbox on 新建回测; the result page shows
 `本策略 −15.13 | 基线均值 −0.36 ± 9.32 → −1.59σ`; "保存为结论" files the verdict. A verdict is read from the
 run it belongs to, not from a separate list.
 
