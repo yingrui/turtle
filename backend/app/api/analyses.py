@@ -6,8 +6,6 @@ hand-written — a new method needs no frontend work.
 
 from __future__ import annotations
 
-import threading
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -18,28 +16,6 @@ from app.models.user import User
 from app.services.analysis_service import run_analysis
 
 router = APIRouter(prefix="/api/analyses", tags=["analyses"], dependencies=[Depends(get_current_user)])
-
-
-def _run_in_background(
-    method: str, params: dict, dataset: dict, source_id, display_name, user: str, run_id: str
-) -> None:
-    def work() -> None:
-        with SessionLocal() as session:
-            try:
-                run_analysis(
-                    session,
-                    method=method,
-                    params=params,
-                    dataset=dataset,
-                    source_id=source_id,
-                    display_name=display_name,
-                    created_by=user,
-                    run_id=run_id,
-                )
-            except Exception:  # noqa: BLE001 — the run record already carries the error
-                pass
-
-    threading.Thread(target=work, daemon=True).start()
 
 
 @router.get("")
@@ -80,16 +56,20 @@ def start_run(
     )
     db.add(run)
     db.commit()
-    _run_in_background(
-        method,
-        parsed.model_dump(mode="json"),
-        body.get("dataset") or {},
-        body.get("source_id"),
-        body.get("display_name"),
-        user.login if hasattr(user, "login") else "",
-        run.id,
-    )
-    return {"run_id": run.id, "status": "pending"}
+    # Not in this process: a full-window run needs more memory than the API pod has (see
+    # app/analysis/run.py). The command is returned so a worker/Job can execute it.
+    command = [
+        "python", "-m", "app.analysis.run",
+        "--method", method,
+        "--run-id", run.id,
+        "--params", __import__("json").dumps(parsed.model_dump(mode="json")),
+        "--dataset", __import__("json").dumps(body.get("dataset") or {}),
+    ]
+    if body.get("source_id"):
+        command += ["--source-id", str(body["source_id"])]
+    if body.get("display_name"):
+        command += ["--display-name", str(body["display_name"])]
+    return {"run_id": run.id, "status": "pending", "command": command}
 
 
 @router.get("/runs")

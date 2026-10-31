@@ -32,7 +32,7 @@ def run(db: Session, params: ConstantPoolParams, dataset: dict | None = None) ->
     import random
 
     from app.core.simulation.model_runner import _trade_days
-    from app.core.util.tables import tushare_table
+    from app.core.tushare_schema import tushare_table
 
     days = _trade_days(db, params.start, params.end)
     codes = list(params.codes)

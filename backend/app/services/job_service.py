@@ -121,7 +121,11 @@ class JobService:
                 portfolio_name = payload["portfolio"]
                 # A ranking source other than the scorecard: an IC-weight table written offline.
                 provider = None
-                if payload.get("ranking_source") == "score_table":
+                if payload.get("ranking_source_id"):
+                    from app.core.simulation.ranking import RankingSourceProvider
+
+                    provider = RankingSourceProvider(payload["ranking_source_id"])
+                elif payload.get("ranking_source") == "score_table":
                     from app.core.simulation.ranking import ScoreTableRankingProvider
 
                     provider = ScoreTableRankingProvider(payload["ranking_weights"])

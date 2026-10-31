@@ -149,6 +149,41 @@ class ScoreTableRankingProvider:
         ]
 
 
+class RankingSourceProvider:
+    """Rank by a registered `ranking_sources` row — the online path.
+
+    The job payload names a source id; the artifact it points at was validated when it was published,
+    and the run records its sha256. No path is ever typed by a user.
+    """
+
+    def __init__(self, source_id: str) -> None:
+        self.source_id = source_id
+        self._cache: dict | None = None
+
+    def rankings(self, db, day: date) -> list[Ranked]:
+        from app.services.analysis_service import RankingSourceService
+
+        service = RankingSourceService()
+        source = service.get(db, self.source_id)
+        if self._cache is None:
+            from app.analysis.artifact import read_scores
+
+            self._cache = read_scores(source.artifact_key)
+        from app.analysis.artifact import scores_on_or_before
+
+        frame = scores_on_or_before(self._cache, day)
+        if frame.empty:
+            return []
+        ordered = frame.sort_values("score", ascending=False)
+        return [
+            Ranked(ts_code=str(row.ts_code), score=float(row.score), rank=position + 1)
+            for position, row in enumerate(ordered.itertuples())
+        ]
+
+    def describe(self) -> dict:
+        return {"source": "ranking_source", "source_id": self.source_id}
+
+
 class StaticRankingProvider:
     """A fixed order per day — the "fixed pool" case, and the seam a test uses."""
 
@@ -169,5 +204,6 @@ __all__ = [
     "Ranked",
     "RankingProvider",
     "ScoreTableRankingProvider",
+    "RankingSourceProvider",
     "StaticRankingProvider",
 ]

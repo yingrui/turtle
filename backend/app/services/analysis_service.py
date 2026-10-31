@@ -13,6 +13,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
+from app.analysis import methods  # noqa: F401  (registration side effect)
 from app.analysis import registry
 from app.analysis.artifact import ScoreTable, read_scores, scores_on_or_before, write_score_table
 from app.models.ranking import AnalysisRun, RankingSource
