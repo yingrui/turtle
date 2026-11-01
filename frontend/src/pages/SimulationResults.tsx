@@ -76,6 +76,9 @@ export function SimulationResults() {
   const [benchmarkCode, setBenchmarkCode] = useState('000300.SH');
   const [benchmarks, setBenchmarks] = useState<{ ts_code: string; name: string }[]>([]);
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
+  const [poolDates, setPoolDates] = useState<string[]>([]);
+  const [poolDay, setPoolDay] = useState<string>('');
+  const [pool, setPool] = useState<{ ts_code: string; rank: number | null; score: number | null; held: boolean | null }[]>([]);
   const [comparison, setComparison] = useState<{
     excess_pct: number | null;
     baselines: { run_id: string | null; name: string | null; excess_pct: number | null; finished: boolean }[];
@@ -130,6 +133,29 @@ export function SimulationResults() {
       .then((d) => setBenchmarks((d.indexes ?? []).slice(0, 8)))
       .catch(() => setBenchmarks([]));
   }, []);
+
+  // The pool belongs to the run: it is what the run was allowed to buy on each day.
+  useEffect(() => {
+    if (!selectedRunId) {
+      setPoolDates([]);
+      setPool([]);
+      return;
+    }
+    apiFetch<{ dates: string[] }>(`/api/simulations/${selectedRunId}/pool-dates`)
+      .then((d) => {
+        setPoolDates(d.dates ?? []);
+        setPoolDay((current) => current || (d.dates?.[d.dates.length - 1] ?? ''));
+      })
+      .catch(() => setPoolDates([]));
+  }, [selectedRunId]);
+
+  useEffect(() => {
+    if (!selectedRunId) return;
+    const query = poolDay ? `?day=${encodeURIComponent(poolDay)}` : '';
+    apiFetch<{ pool: typeof pool; count?: number }>(`/api/simulations/${selectedRunId}/pool${query}`)
+      .then((d) => setPool(d.pool ?? []))
+      .catch(() => setPool([]));
+  }, [selectedRunId, poolDay]);
 
   useEffect(() => {
     if (!selectedRunId) {
@@ -278,7 +304,34 @@ export function SimulationResults() {
 
       {compare.length > 1 && (
         <div className="mb-6">
-          <h2 className="panel-title">{t('results.compareTitle')}</h2>
+          <section className="simulation-pool">
+        <h2 className="panel-title">{t('results.poolTitle')}</h2>
+        <p className="portfolio-panel-desc">{t('results.poolDesc')}</p>
+        {poolDates.length > 0 && (
+          <div className="form-row field-medium">
+            <label htmlFor="pool-day">{t('results.poolDay')}</label>
+            <select id="pool-day" value={poolDay} onChange={(e) => setPoolDay(e.target.value)}>
+              {poolDates.slice().reverse().map((day) => (
+                <option key={day} value={day}>{day}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        <DataTable<{ ts_code: string; rank: number | null; score: number | null; held: boolean | null }>
+          columns={[
+            { key: 'rank', label: '#', align: 'right', render: (row) => row.rank ?? '—' },
+            { key: 'code', label: t('results.poolCode'), render: (row) => row.ts_code },
+            { key: 'score', label: t('results.poolScore'), align: 'right', render: (row) => (row.score == null ? '—' : row.score.toFixed(3)) },
+            { key: 'held', label: t('results.poolHeld'), render: (row) => (row.held ? t('results.poolYes') : '—') },
+          ]}
+          rows={pool}
+          rowKey={(row) => row.ts_code}
+          empty={t('results.poolEmpty')}
+          pageSize={10}
+        />
+      </section>
+
+      <h2 className="panel-title">{t('results.compareTitle')}</h2>
           <table className="data-table">
             <thead>
               <tr>

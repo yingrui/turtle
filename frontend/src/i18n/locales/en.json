@@ -271,7 +271,15 @@
     "benchmark": "Benchmark",
     "noBenchmark": "None",
     "excessVsBenchmark": "vs benchmark: {{value}} pts",
-    "comparison": "This run {{mine}} pts ｜ random baselines {{mean}} ± {{sd}} ({{sigma}}σ)"
+    "comparison": "This run {{mine}} pts ｜ random baselines {{mean}} ± {{sd}} ({{sigma}}σ)",
+    "poolTitle": "Stock pool",
+    "poolDesc": "What the run was allowed to hold that day, from the method's ranking.",
+    "poolDay": "Date",
+    "poolCode": "Symbol",
+    "poolScore": "Score",
+    "poolHeld": "Held",
+    "poolYes": "held",
+    "poolEmpty": "No pool recorded for that day."
   },
   "watchlist": {
     "subtitle": "Select a portfolio to view its watchlist stocks and latest quotes.",

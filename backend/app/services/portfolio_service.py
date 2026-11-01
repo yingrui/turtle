@@ -523,7 +523,9 @@ class PortfolioService:
         """
         from app.core.engine import stock_universe
 
-        codes = [s["ts_code"] for s in stocks if s["hold_shares"] and s["status"] == "holding"]
+        # Rows that came from a run carry the shares but not always the `holding` status; the price is
+        # what matters here, so decide on shares alone.
+        codes = [s["ts_code"] for s in stocks if s.get("hold_shares")]
         if not codes:
             return
         quotes = {q["ts_code"]: q.get("quote") or {} for q in stock_universe.get_quotes_for_codes(codes)}
@@ -539,6 +541,15 @@ class PortfolioService:
             stock["market_value"] = round(float(price) * shares, 2)
             stock["unrealized_pnl"] = round((float(price) - avg_cost) * shares, 2)
             stock["unrealized_pct"] = round((float(price) / avg_cost - 1) * 100, 2) if avg_cost else None
+            opened = stock.get("opened_at") or stock.get("joined_at")
+            if opened:
+                from datetime import date as _date
+
+                try:
+                    start = opened if isinstance(opened, _date) else _date.fromisoformat(str(opened)[:10])
+                    stock["holding_days"] = (_date.today() - start).days
+                except ValueError:
+                    stock["holding_days"] = None
 
     def get_stock(self, name: str, ts_code: str) -> dict:
         row = self._get_row(name)

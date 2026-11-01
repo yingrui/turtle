@@ -32,3 +32,11 @@
   gap: var(--space-2);
   color: var(--color-text-muted);
 }
+
+// The pool belongs to the run, so it is shown here rather than on the portfolio page.
+.simulation-pool {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}

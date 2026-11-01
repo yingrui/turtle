@@ -99,6 +99,8 @@ def run_policy_simulation(
     """Pool from the ranking, entries/exits from the policy, sizing and books here."""
     cash = float(initial_cash)
     positions: dict[str, int] = {}
+    #: Average cost per share, buy fees included — what a sale is measured against.
+    cost_basis: dict[str, float] = {}
     engine = StockTradeDataEngine()
     params_all, _ = _policy_params(db, run.portfolio_id)
     # Record the parameters that actually drove the signals. Whether a policy run traded 29 times or
@@ -166,13 +168,16 @@ def run_policy_simulation(
                 fee = max(COMMISSION_MIN, amount * COMMISSION_RATE)
                 tax = amount * STAMP_DUTY_RATE
                 cash += amount - fee - tax
+                realised = (price - cost_basis.pop(code, price)) * shares - fee - tax
                 trades += 1
                 db.add(
                     SimulationTrade(
                         id=str(uuid.uuid4()), run_id=run.id, ts_code=code, trade_date=day,
                         side="sell", shares=shares, price=Decimal(str(price)),
                         amount=Decimal(str(round(amount, 2))), fee=Decimal(str(round(fee, 2))),
-                        tax=Decimal(str(round(tax, 2))), reason=f"policy:{signal.status}",
+                        tax=Decimal(str(round(tax, 2))),
+                        realized_pnl=Decimal(str(round(realised, 2))),
+                        reason=f"policy:{signal.status}",
                     )
                 )
             elif (
@@ -191,6 +196,10 @@ def run_policy_simulation(
                 if amount + fee > cash:
                     continue
                 cash -= amount + fee
+                previous = positions.get(code, 0)
+                cost_basis[code] = (
+                    (cost_basis.get(code, price) * previous + amount + fee) / (previous + shares)
+                )
                 positions[code] = shares
                 last_seen.setdefault(code, price)   # a session without a close still has this price
                 trades += 1
@@ -221,6 +230,10 @@ def run_policy_simulation(
                 if amount + fee > cash:
                     continue
                 cash -= amount + fee
+                previous = positions.get(code, 0)
+                cost_basis[code] = (
+                    (cost_basis.get(code, price) * previous + amount + fee) / (previous + shares)
+                )
                 positions[code] = shares
                 last_seen.setdefault(code, price)   # a session without a close still has this price
                 trades += 1

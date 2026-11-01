@@ -271,7 +271,15 @@
     "benchmark": "对比基准",
     "noBenchmark": "不对比",
     "excessVsBenchmark": "相对基准：{{value}} 点",
-    "comparison": "本策略超额 {{mine}} 点 ｜ 随机对照 {{mean}} ± {{sd}}（{{sigma}} 个标准差）"
+    "comparison": "本策略超额 {{mine}} 点 ｜ 随机对照 {{mean}} ± {{sd}}（{{sigma}} 个标准差）",
+    "poolTitle": "股票池",
+    "poolDesc": "这一天的池子：这次回测当天可以买的股票（来自方法排名）。",
+    "poolDay": "日期",
+    "poolCode": "股票",
+    "poolScore": "分数",
+    "poolHeld": "当天持有",
+    "poolYes": "持有",
+    "poolEmpty": "这天没有股票池记录。"
   },
   "watchlist": {
     "subtitle": "选择投资组合，查看该组合下的自选股票与最新行情。",
