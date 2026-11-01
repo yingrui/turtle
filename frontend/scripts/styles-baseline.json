@@ -1,8 +1,4 @@
 {
  "_comment": "Frozen design-system debt. The check only ratchets down: fix a line and re-run with --update-baseline to lower it; never add.",
- "files": {
-  "src/pages/Portfolio.tsx": {
-   "inline-style-dynamic": 5
-  }
- }
+ "files": {}
 }

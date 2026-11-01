@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -610,76 +610,6 @@ export function Portfolio() {
                       <strong>{summary.initial_investment?.toLocaleString() ?? '—'}</strong>
                     </div>
                   </div>
-                  {stocks.length > 0 && totalMarketValue > 0 && (
-                    <>
-                      <h2 className="portfolio-panel-title">{t('portfolio.weightsTitle')}</h2>
-                      <ul className="portfolio-weights">
-                        {holdings.map((s) => (
-                          <li key={s.ts_code}>
-                            <span className="portfolio-weight-code">{s.ts_code}</span>
-                            <span className="portfolio-weight-bar">
-                              {/* Geometry comes from the stylesheet; only the number crosses over. */}
-                              <span
-                                className="portfolio-weight-fill"
-                                style={{ '--fill': `${(((s.market_value ?? 0) / totalMarketValue) * 100).toFixed(1)}%` } as CSSProperties}
-                              />
-                            </span>
-                            <span className="portfolio-weight-pct">
-                              {(((s.market_value ?? 0) / totalMarketValue) * 100).toFixed(1)}%
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-
-                      <h2 className="portfolio-panel-title">{t('portfolio.pnlTitle')}</h2>
-                      <p className="portfolio-panel-desc">{t('portfolio.pnlDesc')}</p>
-                      <ul className="portfolio-bullets">
-                        {holdings.map((s) => {
-                          const price = s.current_price ?? s.avg_cost;
-                          const cost = s.avg_cost;
-                          const stop = s.stop_loss_point;
-                          const values = [cost, price, ...(stop != null ? [stop] : [])];
-                          const lo = Math.min(...values);
-                          const hi = Math.max(...values);
-                          const span = hi - lo || 1;
-                          const pos = (v: number) => ((v - lo) / span) * 100;
-                          const fillLeft = Math.min(pos(cost), pos(price));
-                          const fillWidth = Math.abs(pos(price) - pos(cost));
-                          const gain = (s.unrealized_pnl ?? 0) >= 0;
-                          return (
-                            <li key={s.ts_code}>
-                              <span className="portfolio-weight-code">{s.ts_code}</span>
-                              <span className="portfolio-bullet">
-                                <span
-                                  className={`portfolio-bullet-fill ${gain ? 'price-up-bg' : 'price-down-bg'}`}
-                                  style={{ '--from': `${fillLeft}%`, '--width': `${fillWidth}%` } as CSSProperties}
-                                />
-                                <span
-                                  className="portfolio-bullet-mark portfolio-bullet-mark--cost"
-                                  style={{ '--at': `${pos(cost)}%` } as CSSProperties}
-                                />
-                                {stop != null && (
-                                  <span
-                                    className="portfolio-bullet-mark portfolio-bullet-mark--stop"
-                                    style={{ '--at': `${pos(stop)}%` } as CSSProperties}
-                                  />
-                                )}
-                                <span
-                                  className="portfolio-bullet-mark portfolio-bullet-mark--price"
-                                  style={{ '--at': `${pos(price)}%` } as CSSProperties}
-                                />
-                              </span>
-                              <span className={`portfolio-weight-pct ${gain ? 'price-up' : 'price-down'}`}>
-                                {money(s.unrealized_pnl)}
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                      <p className="portfolio-legend">{t('portfolio.bulletLegend')}</p>
-                    </>
-                  )}
-
                   <div className="portfolio-save-row">
                     <Link className="btn btn-secondary" to={`/simulation?portfolio=${encodeURIComponent(name)}`}>
                       {t('portfolio.runBacktest')}

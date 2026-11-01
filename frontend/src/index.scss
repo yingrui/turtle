@@ -1,4 +1,6 @@
 @use './styles/design-system/css-variables';
 @use './styles/design-system/local-css-variables';
 @use './styles/design-system/global';
+// The pagination bar is rendered by every DataTable; without this import its classes were unstyled.
+@use './styles/design-system/pagination';
 @use './styles/design-system/utilities';
