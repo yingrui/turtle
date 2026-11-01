@@ -386,6 +386,10 @@ export function Portfolio() {
       )
     : stocks.reduce((sum, s) => sum + s.realized_pnl, 0);
   const unrealizedPct = totalCost > 0 ? (unrealized / totalCost) * 100 : null;
+  // What a broker shows as the account's gain this period: the held positions and the closed ones
+  // together. Both are already net of fees (the average cost includes buy fees, the realised figure
+  // subtracts sell fees), so this needs no further adjustment.
+  const cumulative = unrealized + realized;
 
   /** Risk hints per holding: stop-loss distance, holding-period budget, position weight. */
   function riskFlags(stock: PortfolioStock): { level: 'warn' | 'danger'; label: string }[] {
@@ -581,6 +585,10 @@ export function Portfolio() {
                     <div className="stat-card">
                       <span>{t('portfolio.kpiRealized')}</span>
                       <strong className={realized < 0 ? 'price-down' : 'price-up'}>{money(realized)}</strong>
+                    </div>
+                    <div className="stat-card">
+                      <span>{t('portfolio.kpiCumulative')}</span>
+                      <strong className={cumulative < 0 ? 'price-down' : 'price-up'}>{money(cumulative)}</strong>
                     </div>
                     <div className="stat-card">
                       <span>{t('portfolio.statCapital')}</span>

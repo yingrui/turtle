@@ -404,7 +404,7 @@
     "kpiWatching": "Watching",
     "kpiMarketValue": "Market value",
     "kpiCost": "Cost basis",
-    "kpiUnrealized": "Unrealized P&L",
+    "kpiUnrealized": "Open positions",
     "kpiRealized": "Realized P&L",
     "colRisk": "Risk",
     "riskBrokenStop": "Stop hit",
@@ -469,7 +469,8 @@
     "colOpened": "Opened",
     "colHoldingDays": "Days held",
     "noRuns": "No finished backtests yet",
-    "colDate": "Date"
+    "colDate": "Date",
+    "kpiCumulative": "Total gain"
   },
   "auth": {
     "login": "Log in",

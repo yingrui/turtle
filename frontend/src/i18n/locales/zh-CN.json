@@ -404,7 +404,7 @@
     "kpiWatching": "观察中",
     "kpiMarketValue": "总市值",
     "kpiCost": "总成本",
-    "kpiUnrealized": "浮动盈亏",
+    "kpiUnrealized": "持仓盈亏",
     "kpiRealized": "已实现收益",
     "colRisk": "风险",
     "riskBrokenStop": "已破止损",
@@ -469,7 +469,8 @@
     "colOpened": "开始持有",
     "colHoldingDays": "持有天数",
     "noRuns": "还没有跑完的回测",
-    "colDate": "日期"
+    "colDate": "日期",
+    "kpiCumulative": "累计盈亏"
   },
   "auth": {
     "login": "登录",
