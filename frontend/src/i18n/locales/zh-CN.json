@@ -467,7 +467,8 @@
     "colCode": "股票",
     "colWeight": "占比",
     "colOpened": "开始持有",
-    "colHoldingDays": "持有天数"
+    "colHoldingDays": "持有天数",
+    "noRuns": "还没有跑完的回测"
   },
   "auth": {
     "login": "登录",

@@ -467,7 +467,8 @@
     "colCode": "Symbol",
     "colWeight": "Weight",
     "colOpened": "Opened",
-    "colHoldingDays": "Days held"
+    "colHoldingDays": "Days held",
+    "noRuns": "No finished backtests yet"
   },
   "auth": {
     "login": "Log in",

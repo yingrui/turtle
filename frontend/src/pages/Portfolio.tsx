@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { RunHoldingsPanel } from '../components/portfolio/RunHoldingsPanel';
+import { RunHoldingsPanel, type RunHolding } from '../components/portfolio/RunHoldingsPanel';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
@@ -91,6 +91,11 @@ export function Portfolio() {
     (searchParams.get('tab') as 'overview' | 'holdings' | 'trades' | 'risk') ?? 'overview',
   );
   const [detail, setDetail] = useState<PortfolioStock | null>(null);
+  const [runs, setRuns] = useState<{ id: string; name: string | null; window_start: string | null; window_end: string | null }[]>([]);
+  const [runId, setRunId] = useState('');
+  const [runDays, setRunDays] = useState<string[]>([]);
+  const [runDay, setRunDay] = useState('');
+  const [runHoldings, setRunHoldings] = useState<RunHolding[]>([]);
   const [equity, setEquity] = useState<{ dates: string[]; series: { name: string; data: number[] }[] } | null>(null);
 
   function setTab(next: 'overview' | 'holdings' | 'trades' | 'risk') {
@@ -154,7 +159,39 @@ export function Portfolio() {
 
   useEffect(() => {
     setBookDate(null);
+    apiFetch<{ runs: { id: string; name: string | null; window_start: string | null; window_end: string | null; finished_at: string | null }[] }>('/api/simulations')
+      .then((d) => {
+        const mine = (d.runs ?? []).filter((run) => run.finished_at);
+        setRuns(mine);
+        setRunId(mine[0]?.id ?? '');
+      })
+      .catch(() => setRuns([]));
   }, [name]);
+
+  useEffect(() => {
+    if (!runId) {
+      setRunDays([]);
+      setRunHoldings([]);
+      return;
+    }
+    apiFetch<{ dates: string[] }>(`/api/simulations/${runId}/holding-dates`)
+      .then((d) => {
+        const days = d.dates ?? [];
+        setRunDays(days);
+        setRunDay(days[days.length - 1] ?? '');
+      })
+      .catch(() => setRunDays([]));
+  }, [runId]);
+
+  useEffect(() => {
+    if (!runId || !runDay) {
+      setRunHoldings([]);
+      return;
+    }
+    apiFetch<{ holdings: RunHolding[] }>(`/api/simulations/${runId}/holdings?day=${encodeURIComponent(runDay)}`)
+      .then((d) => setRunHoldings(d.holdings ?? []))
+      .catch(() => setRunHoldings([]));
+  }, [runId, runDay]);
 
 
   useEffect(() => {
@@ -309,9 +346,17 @@ export function Portfolio() {
 
 
   const holdings = stocks.filter((s) => s.status === 'holding' && s.hold_shares > 0);
-  const totalMarketValue = holdings.reduce((sum, s) => sum + (s.market_value ?? 0), 0);
-  const totalCost = holdings.reduce((sum, s) => sum + s.total_cost, 0);
-  const unrealized = holdings.reduce((sum, s) => sum + (s.unrealized_pnl ?? 0), 0);
+  // A portfolio with no manual records has nothing to sum; its numbers are the selected run's.
+  const bookRows = runHoldings.length > 0 ? runHoldings : [];
+  const totalMarketValue = bookRows.length
+    ? bookRows.reduce((sum, row) => sum + row.shares * row.price, 0)
+    : holdings.reduce((sum, s) => sum + (s.market_value ?? 0), 0);
+  const totalCost = bookRows.length
+    ? bookRows.reduce((sum, row) => sum + (row.avg_cost ?? row.price) * row.shares, 0)
+    : holdings.reduce((sum, s) => sum + s.total_cost, 0);
+  const unrealized = bookRows.length
+    ? bookRows.reduce((sum, row) => sum + (row.unrealized_pnl ?? 0), 0)
+    : holdings.reduce((sum, s) => sum + (s.unrealized_pnl ?? 0), 0);
   const realized = stocks.reduce((sum, s) => sum + s.realized_pnl, 0);
   const unrealizedPct = totalCost > 0 ? (unrealized / totalCost) * 100 : null;
 
@@ -371,17 +416,38 @@ export function Portfolio() {
         <>
           {/* The portfolio is chosen here, where it means something: other pages read the same value
               from the context but do not need a control of their own. */}
-          <div className="form-row field-wide mb-4">
-            <label htmlFor="portfolio-config-select">{t('portfolio.select')}</label>
-            <select
-              id="portfolio-config-select"
-              value={name}
-              onChange={(e) => choosePortfolio(e.target.value)}
-            >
-              {portfolios.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
+          <div className="toolbar mb-4">
+            <div className="form-row field-wide">
+              <label htmlFor="portfolio-config-select">{t('portfolio.select')}</label>
+              <select
+                id="portfolio-config-select"
+                value={name}
+                onChange={(e) => choosePortfolio(e.target.value)}
+              >
+                {portfolios.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-row field-wide">
+              <label htmlFor="portfolio-run-select">{t('portfolio.pickRun')}</label>
+              <select id="portfolio-run-select" value={runId} onChange={(e) => setRunId(e.target.value)}>
+                {runs.length === 0 && <option value="">{t('portfolio.noRuns')}</option>}
+                {runs.map((run) => (
+                  <option key={run.id} value={run.id}>
+                    {run.name || run.id.slice(0, 8)} · {run.window_start ?? '—'} → {run.window_end ?? '—'}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-row field-medium">
+              <label htmlFor="portfolio-day-select">{t('portfolio.pickDay')}</label>
+              <select id="portfolio-day-select" value={runDay} onChange={(e) => setRunDay(e.target.value)}>
+                {runDays.slice().reverse().map((day) => (
+                  <option key={day} value={day}>{day}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {name && summary && (
@@ -462,7 +528,7 @@ export function Portfolio() {
                   <div className="stat-grid">
                     <div className="stat-card">
                       <span>{t('portfolio.kpiHoldings')}</span>
-                      <strong>{holdings.length}</strong>
+                      <strong>{bookRows.length || holdings.length}</strong>
                     </div>
                     <div className="stat-card">
                       <span>{t('portfolio.kpiWatching')}</span>
@@ -503,7 +569,7 @@ export function Portfolio() {
                 </>
               )}
 
-              {tab === 'holdings' && <RunHoldingsPanel portfolio={name} />}
+              {tab === 'holdings' && <RunHoldingsPanel rows={runHoldings} day={runDay} />}
 
               {tab === 'trades' && (
                 <>
