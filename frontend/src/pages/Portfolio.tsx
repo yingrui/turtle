@@ -377,8 +377,13 @@ export function Portfolio() {
     ? bookRows.reduce((sum, row) => sum + (row.unrealized_pnl ?? 0), 0)
     : holdings.reduce((sum, s) => sum + (s.unrealized_pnl ?? 0), 0);
   // Realised profit lives in the run's sell fills; the manual ledger has none for a research portfolio.
+  // Realised is cumulative **up to the selected day**: summing the whole run would count sales that
+  // have not happened yet at the date being looked at, and the two numbers would never tie out.
   const realized = bookRows.length
-    ? runTrades.reduce((sum, trade) => sum + (trade.side === 'sell' ? trade.benefit : 0), 0)
+    ? runTrades.reduce(
+        (sum, trade) => sum + (trade.side === 'sell' && trade.date <= runDay ? trade.benefit : 0),
+        0,
+      )
     : stocks.reduce((sum, s) => sum + s.realized_pnl, 0);
   const unrealizedPct = totalCost > 0 ? (unrealized / totalCost) * 100 : null;
 
