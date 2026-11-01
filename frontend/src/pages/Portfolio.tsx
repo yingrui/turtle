@@ -49,23 +49,7 @@ type PortfolioTransaction = {
   source: string;
 };
 
-type PoolEntry = {
-  ts_code: string;
-  rank: number | null;
-  score: number | null;
-  held: boolean | null;
-};
 
-type PortfolioPool = {
-  portfolio: string;
-  source: 'run' | 'portfolio';
-  run_id: string | null;
-  pool_mode: 'fixed' | 'dynamic';
-  mode: string | null;
-  trade_date: string | null;
-  pool: PoolEntry[];
-  count: number;
-};
 
 type PortfolioBenchmark = {
   portfolio: string;
@@ -76,14 +60,6 @@ type PortfolioBenchmark = {
   excess_pct: number | null;
 };
 
-type RunSummary = {
-  id: string;
-  portfolio_name: string;
-  mode?: string;
-  pool_mode?: string;
-  started_at?: string;
-  finished_at?: string | null;
-};
 
 type TradeDraft = {
   side: 'buy' | 'sell';
@@ -102,23 +78,18 @@ export function Portfolio() {
     setPortfolio: setName,
     reload: reloadPortfolios,
   } = usePortfolioContext();
-  const [yaml, setYaml] = useState('');
   const [summary, setSummary] = useState<PortfolioConfig | null>(null);
   const [stocks, setStocks] = useState<PortfolioStock[]>([]);
   const [stocksSource, setStocksSource] = useState<'portfolio' | 'run'>('portfolio');
   const [bookDate, setBookDate] = useState<string | null>(null);
   const [bookDates, setBookDates] = useState<string[]>([]);
   const [trades, setTrades] = useState<PortfolioTransaction[]>([]);
-  const [pool, setPool] = useState<PortfolioPool | null>(null);
-  const [poolDates, setPoolDates] = useState<string[]>([]);
-  const [poolDay, setPoolDay] = useState<string | null>(null);
-  const [runs, setRuns] = useState<RunSummary[]>([]);
   const [benchmarkCode, setBenchmarkCode] = useState('000300.SH');
   const [benchmarks, setBenchmarks] = useState<{ ts_code: string; name: string }[]>([]);
   const [benchmark, setBenchmark] = useState<PortfolioBenchmark | null>(null);
   const [draft, setDraft] = useState<TradeDraft | null>(null);
-  const [tab, setTabState] = useState<'overview' | 'holdings' | 'pool' | 'trades' | 'risk' | 'advanced'>(
-    (searchParams.get('tab') as 'overview' | 'holdings' | 'trades' | 'risk' | 'advanced') ?? 'overview',
+  const [tab, setTabState] = useState<'overview' | 'holdings' | 'trades' | 'risk'>(
+    (searchParams.get('tab') as 'overview' | 'holdings' | 'trades' | 'risk') ?? 'overview',
   );
   const [statusFilter, setStatusFilter] = useState<'watching' | 'holding' | 'closed'>(
     (searchParams.get('status') as 'watching' | 'holding' | 'closed') ?? 'holding',
@@ -126,7 +97,7 @@ export function Portfolio() {
   const [detail, setDetail] = useState<PortfolioStock | null>(null);
   const [equity, setEquity] = useState<{ dates: string[]; series: { name: string; data: number[] }[] } | null>(null);
 
-  function setTab(next: 'overview' | 'holdings' | 'pool' | 'trades' | 'risk' | 'advanced') {
+  function setTab(next: 'overview' | 'holdings' | 'trades' | 'risk') {
     setTabState(next);
     const params = new URLSearchParams(searchParams);
     params.set('tab', next);
@@ -153,7 +124,6 @@ export function Portfolio() {
   const [risk, setRisk] = useState<Record<string, number | boolean> | null>(null);
   const [riskDraft, setRiskDraft] = useState<Record<string, string | boolean>>({});
   const [savingRisk, setSavingRisk] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
 
   useEffect(() => {
@@ -196,37 +166,11 @@ export function Portfolio() {
     );
   }, [name, bookDate]);
 
-  const loadPool = useCallback(
-    async (day?: string | null) => {
-      if (!name) return;
-      const query = day ? `?day=${encodeURIComponent(day)}` : '';
-      const data = await apiFetch<PortfolioPool>(
-        `/api/portfolios/${encodeURIComponent(name)}/pool${query}`,
-      );
-      setPool(data);
-      setPoolDay(data.trade_date);
-      if (data.pool_mode === 'dynamic' && data.run_id) {
-        const dates = await apiFetch<{ dates: string[] }>(
-          `/api/simulations/${encodeURIComponent(data.run_id)}/pool-dates`,
-        );
-        setPoolDates(dates.dates);
-      } else {
-        setPoolDates([]);
-      }
-    },
-    [name],
-  );
 
   useEffect(() => {
     setBookDate(null);
   }, [name]);
 
-  useEffect(() => {
-    if (!name) return;
-    apiFetch<{ runs: RunSummary[] }>('/api/simulations')
-      .then((d) => setRuns(d.runs.filter((run) => run.portfolio_name === name)))
-      .catch(() => setRuns([]));
-  }, [name]);
 
   useEffect(() => {
     apiFetch<{ indexes: { ts_code: string; name: string }[] }>('/api/indexes')
@@ -247,34 +191,18 @@ export function Portfolio() {
   }, [name, benchmarkCode]);
 
   useEffect(() => {
-    if (tab === 'pool') loadPool().catch(() => toast.error(t('portfolio.poolError')));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, name]);
 
-  async function activateRun(runId: string | null) {
-    try {
-      await apiFetch(`/api/portfolios/${encodeURIComponent(name)}/active-run`, {
-        method: 'POST',
-        body: JSON.stringify({ run_id: runId }),
-      });
-      await loadPool();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('portfolio.poolError'));
-    }
-  }
 
   useEffect(() => {
     if (!name) {
-      setYaml('');
       setSummary(null);
       setStocks([]);
       setTrades([]);
       setDraft(null);
       return;
     }
-    apiFetch<{ yaml: string }>(`/api/portfolios/${encodeURIComponent(name)}/yaml`)
-      .then((d) => setYaml(d.yaml))
-      .catch(() => toast.error(t('portfolio.loadError')));
     apiFetch<PortfolioConfig>(`/api/portfolios/${encodeURIComponent(name)}`)
       .then(setSummary)
       .catch(() => setSummary(null));
@@ -477,37 +405,6 @@ export function Portfolio() {
     },
   ];
 
-  const poolColumns: Column<PoolEntry>[] = [
-    {
-      key: 'ts_code',
-      label: t('quote.col.ts_code'),
-      sortable: true,
-      sortValue: (row) => row.ts_code,
-      render: (row) => <Link to={`/stocks/${encodeURIComponent(row.ts_code)}`}>{row.ts_code}</Link>,
-    },
-    {
-      key: 'rank',
-      label: t('portfolio.poolColRank'),
-      align: 'right',
-      sortable: true,
-      sortValue: (row) => row.rank ?? 0,
-      render: (row) => (row.rank ? row.rank : '—'),
-    },
-    {
-      key: 'score',
-      label: t('portfolio.poolColScore'),
-      align: 'right',
-      sortable: true,
-      sortValue: (row) => row.score ?? 0,
-      render: (row) => (row.score == null ? '—' : row.score.toFixed(3)),
-    },
-    {
-      key: 'held',
-      label: t('portfolio.poolColHeld'),
-      render: (row) =>
-        row.held == null ? '—' : row.held ? t('portfolio.poolHeld') : t('portfolio.poolWatching'),
-    },
-  ];
 
   const holdings = stocks.filter((s) => s.status === 'holding' && s.hold_shares > 0);
   const totalMarketValue = holdings.reduce((sum, s) => sum + (s.market_value ?? 0), 0);
@@ -568,22 +465,6 @@ export function Portfolio() {
   const money = (v: number | null | undefined) =>
     v === null || v === undefined ? '—' : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
 
-  async function onSave() {
-    setSaving(true);
-    try {
-      await apiFetch(`/api/portfolios/${encodeURIComponent(name)}/yaml`, {
-        method: 'PUT',
-        body: JSON.stringify({ yaml }),
-      });
-      toast.success(t('portfolio.saved'));
-      const cfg = await apiFetch<PortfolioConfig>(`/api/portfolios/${encodeURIComponent(name)}`);
-      setSummary(cfg);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('portfolio.saveFailed'));
-    } finally {
-      setSaving(false);
-    }
-  }
 
   return (
     <div className="page-card portfolio-page">
@@ -628,10 +509,8 @@ export function Portfolio() {
                   [
                     ['overview', t('portfolio.tabOverview')],
                     ['holdings', t('portfolio.tabHoldings')],
-                    ['pool', t('portfolio.tabPool')],
                     ['trades', t('portfolio.tabTrades')],
                     ['risk', t('portfolio.tabRisk')],
-                    ['advanced', t('portfolio.tabAdvanced')],
                   ] as const
                 ).map(([key, label]) => (
                   <button
@@ -864,58 +743,6 @@ export function Portfolio() {
                 </>
               )}
 
-              {tab === 'pool' && (
-                <>
-                  <h2 className="portfolio-panel-title">{t('portfolio.poolTitle')}</h2>
-                  <p className="portfolio-panel-desc">{t('portfolio.poolDesc')}</p>
-                  <div className="form-row field-xwide">
-                    <label>{t('portfolio.poolRun')}</label>
-                    <select
-                      value={pool?.run_id ?? ''}
-                      onChange={(e) => activateRun(e.target.value || null)}
-                    >
-                      <option value="">{t('portfolio.poolFromWatchlist')}</option>
-                      {runs.map((run) => (
-                        <option key={run.id} value={run.id}>
-                          {(run.finished_at ?? run.started_at ?? '').slice(0, 10)} · {run.mode ?? 'signal'}/
-                          {run.pool_mode ?? 'fixed'} · {run.id.slice(0, 8)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {pool && (
-                    <>
-                      <p className="text-hint">
-                        {t('portfolio.poolMeta', {
-                          source: pool.source === 'run' ? t('portfolio.poolSourceRun') : t('portfolio.poolSourceList'),
-                          mode: pool.pool_mode,
-                          date: pool.trade_date ?? '—',
-                          count: pool.count,
-                        })}
-                      </p>
-                      {pool.pool_mode === 'dynamic' && poolDates.length > 0 && (
-                        <div className="form-row field-medium">
-                          <label>{t('portfolio.poolDate')}</label>
-                          <select value={poolDay ?? ''} onChange={(e) => loadPool(e.target.value)}>
-                            {poolDates.map((d) => (
-                              <option key={d} value={d}>{d}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                      <DataTable
-                        pageSize={25}
-                        columns={poolColumns}
-                        rows={pool.pool}
-                        rowKey={(row) => row.ts_code}
-                        empty={t('portfolio.poolEmpty')}
-                        defaultSortCol="rank"
-                      />
-                    </>
-                  )}
-                </>
-              )}
-
               {tab === 'trades' && (
                 <>
               <h2 className="portfolio-panel-title">{t('portfolio.tradesTitle')}</h2>
@@ -993,29 +820,6 @@ export function Portfolio() {
                 </>
               )}
 
-              {tab === 'advanced' && (
-                <>
-              <h2 className="portfolio-panel-title">{t('portfolio.configTitle')}</h2>
-              <p className="portfolio-panel-desc">{t('portfolio.configDesc')}</p>
-              <textarea
-                className="yaml-editor"
-                value={yaml}
-                onChange={(e) => setYaml(e.target.value)}
-                spellCheck={false}
-                aria-label={t('portfolio.configTitle')}
-              />
-              <div className="portfolio-save-row">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={onSave}
-                  disabled={saving || !yaml}
-                >
-                  {saving ? t('portfolio.saving') : t('portfolio.save')}
-                </button>
-              </div>
-                </>
-              )}
             </section>
           )}
         </>
