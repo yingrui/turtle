@@ -340,3 +340,18 @@
 .portfolio-weight-code {
   font-variant-numeric: tabular-nums;
 }
+
+// The risk form's inputs sat unstyled next to design-system controls, which read as "no styles".
+.portfolio-risk-field input {
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+}

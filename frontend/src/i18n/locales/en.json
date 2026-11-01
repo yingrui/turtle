@@ -347,7 +347,7 @@
     "colMarketValue": "Market value",
     "colUnrealized": "Unrealised",
     "colTotalCost": "Cost",
-    "colRealized": "Realized P&L",
+    "colRealized": "Realised",
     "colHolding": "Held (days)",
     "colFirstBuy": "First buy",
     "colLastTrade": "Last trade",
@@ -468,7 +468,8 @@
     "colWeight": "Weight",
     "colOpened": "Opened",
     "colHoldingDays": "Days held",
-    "noRuns": "No finished backtests yet"
+    "noRuns": "No finished backtests yet",
+    "colDate": "Date"
   },
   "auth": {
     "login": "Log in",

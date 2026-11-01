@@ -102,6 +102,9 @@ export function Portfolio() {
   const [runDays, setRunDays] = useState<string[]>([]);
   const [runDay, setRunDay] = useState('');
   const [runHoldings, setRunHoldings] = useState<RunHolding[]>([]);
+  const [runTrades, setRunTrades] = useState<
+    { id: string; date: string; ts_code: string; side: string; shares: number; price: number; amount: number; benefit: number }[]
+  >([]);
   const [equity, setEquity] = useState<{ dates: string[]; series: { name: string; data: number[] }[] } | null>(null);
 
   function setTab(next: 'overview' | 'holdings' | 'trades' | 'risk') {
@@ -198,6 +201,15 @@ export function Portfolio() {
     apiFetch<{ holdings: RunHolding[] }>(`/api/simulations/${runId}/holdings?day=${encodeURIComponent(runDay)}`)
       .then((d) => setRunHoldings(d.holdings ?? []))
       .catch(() => setRunHoldings([]));
+    apiFetch<{ trades: { date: string; ts_code: string; side: string; shares: number; price: number; amount: number; benefit: number }[] }>(
+      `/api/simulations/${runId}/trades?limit=500`,
+    )
+      .then((d) =>
+        setRunTrades(
+          (d.trades ?? []).map((trade, index) => ({ id: `${trade.date}-${trade.ts_code}-${index}`, ...trade })),
+        ),
+      )
+      .catch(() => setRunTrades([]));
   }, [runId, runDay]);
 
 
@@ -364,7 +376,10 @@ export function Portfolio() {
   const unrealized = bookRows.length
     ? bookRows.reduce((sum, row) => sum + (row.unrealized_pnl ?? 0), 0)
     : holdings.reduce((sum, s) => sum + (s.unrealized_pnl ?? 0), 0);
-  const realized = stocks.reduce((sum, s) => sum + s.realized_pnl, 0);
+  // Realised profit lives in the run's sell fills; the manual ledger has none for a research portfolio.
+  const realized = bookRows.length
+    ? runTrades.reduce((sum, trade) => sum + (trade.side === 'sell' ? trade.benefit : 0), 0)
+    : stocks.reduce((sum, s) => sum + s.realized_pnl, 0);
   const unrealizedPct = totalCost > 0 ? (unrealized / totalCost) * 100 : null;
 
   /** Risk hints per holding: stop-loss distance, holding-period budget, position weight. */
@@ -582,15 +597,43 @@ export function Portfolio() {
 
               {tab === 'trades' && (
                 <>
-              <h2 className="portfolio-panel-title">{t('portfolio.tradesTitle')}</h2>
-              <p className="portfolio-panel-desc">{t('portfolio.tradesDesc')}</p>
-              <DataTable
-                pageSize={25}
-                columns={tradeColumns}
-                rows={trades}
-                rowKey={(row) => row.id}
-                empty={t('portfolio.emptyTrades')}
-              />
+                  <h2 className="portfolio-panel-title">{t('portfolio.tradesTitle')}</h2>
+                  <p className="portfolio-panel-desc">{t('portfolio.tradesDesc')}</p>
+                  {runTrades.length > 0 ? (
+                    <DataTable
+                      pageSize={25}
+                      columns={[
+                        { key: 'date', label: t('portfolio.colDate'), render: (row) => row.date },
+                        { key: 'code', label: t('portfolio.colCode'), render: (row) => row.ts_code },
+                        {
+                          key: 'side',
+                          label: t('portfolio.colSide'),
+                          render: (row) => (row.side === 'buy' ? t('portfolio.sideBuy') : t('portfolio.sideSell')),
+                        },
+                        { key: 'shares', label: t('portfolio.colShares'), align: 'right', render: (row) => row.shares },
+                        { key: 'price', label: t('portfolio.colPrice'), align: 'right', render: (row) => money(row.price) },
+                        { key: 'amount', label: t('portfolio.colAmount'), align: 'right', render: (row) => money(row.amount) },
+                        {
+                          key: 'benefit',
+                          label: t('portfolio.colRealized'),
+                          align: 'right',
+                          cellClassName: (row) => (row.benefit < 0 ? 'price-down' : 'price-up'),
+                          render: (row) => (row.side === 'sell' ? money(row.benefit) : '—'),
+                        },
+                      ]}
+                      rows={runTrades}
+                      rowKey={(row) => row.id}
+                      empty={t('portfolio.emptyTrades')}
+                    />
+                  ) : (
+                    <DataTable
+                      pageSize={25}
+                      columns={tradeColumns}
+                      rows={trades}
+                      rowKey={(row) => row.id}
+                      empty={t('portfolio.emptyTrades')}
+                    />
+                  )}
                 </>
               )}
 
