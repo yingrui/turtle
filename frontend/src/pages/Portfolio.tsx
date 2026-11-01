@@ -595,6 +595,7 @@ export function Portfolio() {
                       <strong>{summary.initial_investment?.toLocaleString() ?? '—'}</strong>
                     </div>
                   </div>
+                  <p className="portfolio-panel-desc">{t('portfolio.statNote')}</p>
                   <div className="portfolio-save-row">
                     <Link className="btn btn-secondary" to={`/simulation?portfolio=${encodeURIComponent(name)}`}>
                       {t('portfolio.runBacktest')}

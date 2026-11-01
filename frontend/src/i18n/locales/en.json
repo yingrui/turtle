@@ -400,7 +400,7 @@
     "equityDesc": "Rebuilt from the trade ledger and daily closes — no snapshot table.",
     "equityMarketValue": "Market value",
     "equityCost": "Cost basis",
-    "kpiHoldings": "Held",
+    "kpiHoldings": "Positions",
     "kpiWatching": "Watching",
     "kpiMarketValue": "Market value",
     "kpiCost": "Cost basis",
@@ -470,7 +470,8 @@
     "colHoldingDays": "Days held",
     "noRuns": "No finished backtests yet",
     "colDate": "Date",
-    "kpiCumulative": "Total gain"
+    "kpiCumulative": "Total gain",
+    "statNote": "Market value = shares × that day's close; cost basis = what those shares cost including buy fees; open P&L = value − cost; total gain = open + realised, i.e. value + cash − initial capital."
   },
   "auth": {
     "login": "Log in",

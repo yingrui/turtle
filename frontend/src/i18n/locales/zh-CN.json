@@ -400,10 +400,10 @@
     "equityDesc": "由成交流水与日收盘价重算，不依赖快照表。",
     "equityMarketValue": "市值",
     "equityCost": "成本",
-    "kpiHoldings": "持仓",
+    "kpiHoldings": "持仓只数",
     "kpiWatching": "观察中",
-    "kpiMarketValue": "总市值",
-    "kpiCost": "总成本",
+    "kpiMarketValue": "持仓市值",
+    "kpiCost": "持仓成本",
     "kpiUnrealized": "持仓盈亏",
     "kpiRealized": "已实现收益",
     "colRisk": "风险",
@@ -470,7 +470,8 @@
     "colHoldingDays": "持有天数",
     "noRuns": "还没有跑完的回测",
     "colDate": "日期",
-    "kpiCumulative": "累计盈亏"
+    "kpiCumulative": "累计盈亏",
+    "statNote": "持仓市值 = 当前持股数 × 当日收盘价；持仓成本 = 这些股票的买入成本合计（含买入费用）；持仓盈亏 = 市值 − 成本；累计盈亏 = 持仓盈亏 + 已实现收益，等于当前市值 + 现金 − 初始资金。"
   },
   "auth": {
     "login": "登录",
