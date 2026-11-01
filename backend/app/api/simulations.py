@@ -318,6 +318,8 @@ def simulation_holdings(
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
     rows = holdings_on(db, run_id, date.fromisoformat(day))
+    opened, costs = _holding_context(db, run_id, [row.ts_code for row in rows])
+    when = date.fromisoformat(day)
     return {
         "run_id": run_id,
         "trade_date": day,
@@ -326,16 +328,61 @@ def simulation_holdings(
             {
                 "ts_code": row.ts_code,
                 "shares": row.shares,
+                # The run's own close for that day: viewing 2026-03-31 must not show today's price.
                 "price": float(row.price),
                 "market_value": float(row.market_value),
                 "weight": None if row.weight is None else float(row.weight),
                 "rank": row.rank,
                 "score": None if row.score is None else float(row.score),
+                "opened_at": opened.get(row.ts_code).isoformat() if opened.get(row.ts_code) else None,
+                "holding_days": (when - opened[row.ts_code]).days if opened.get(row.ts_code) else None,
+                "avg_cost": costs.get(row.ts_code),
+                "unrealized_pnl": (
+                    None if costs.get(row.ts_code) is None
+                    else round((float(row.price) - costs[row.ts_code]) * row.shares, 2)
+                ),
+                "unrealized_pct": (
+                    None if not costs.get(row.ts_code)
+                    else round((float(row.price) / costs[row.ts_code] - 1) * 100, 2)
+                ),
             }
             for row in rows
         ],
         "count": len(rows),
     }
+
+
+def _holding_context(db, run_id: str, codes: list[str]) -> tuple[dict, dict]:
+    """When each name was bought and at what average cost, from the run's own fills.
+
+    Both answers live in the trade log: the first buy is the opening date, and buys up to now give the
+    average cost. Storing them on every daily row would be the same numbers repeated 300 times.
+    """
+    from app.models.simulation import SimulationTrade
+
+    opened: dict = {}
+    average: dict = {}
+    shares: dict = {}
+    trades = (
+        db.query(SimulationTrade)
+        .filter(SimulationTrade.run_id == run_id, SimulationTrade.ts_code.in_(codes))
+        .order_by(SimulationTrade.trade_date)
+        .all()
+    )
+    for trade in trades:
+        code = trade.ts_code
+        if trade.side == "buy":
+            qty = float(trade.shares)
+            total = average.get(code, 0.0) * shares.get(code, 0.0) + float(trade.amount) + float(trade.fee or 0)
+            shares[code] = shares.get(code, 0.0) + qty
+            average[code] = total / shares[code] if shares[code] else None
+            opened.setdefault(code, trade.trade_date)
+        else:
+            shares[code] = max(0.0, shares.get(code, 0.0) - float(trade.shares))
+            if shares[code] == 0:
+                average.pop(code, None)
+                opened.pop(code, None)
+    return opened, average
 
 
 @router.get("/{run_id}/holding-dates")
