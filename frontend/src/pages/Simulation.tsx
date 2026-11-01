@@ -32,6 +32,9 @@ export function Simulation() {
   const [strategyName, setStrategyName] = useState('pool_entry');
   const [retrain, setRetrain] = useState<'monthly' | 'weekly' | 'none'>('none');
   const [runName, setRunName] = useState('');
+  // Ticking this runs the same window three more times with stocks picked at random, so the result
+  // page can say whether the return is skill or luck.
+  const [withBaselines, setWithBaselines] = useState(true);
   const [jobId, setJobId] = useState<string | null>(searchParams.get('job_id'));
   const job = useJobPoll(jobId);
 
@@ -109,6 +112,10 @@ export function Simulation() {
         method: 'POST',
         body: JSON.stringify(body),
       });
+      // Baselines are launched once the main run exists, because they repeat its window and strategy.
+      if (mode === 'model' && withBaselines) {
+        void launchBaselinesAfter(res.id);
+      }
       setJobId(res.id);
       setSearchParams({ job_id: res.id }, { replace: true });
       toast.success(t('simulation.started'));
@@ -118,6 +125,23 @@ export function Simulation() {
   }
 
   const policyCount = config?.policies?.length ?? 0;
+
+  async function launchBaselinesAfter(jobId: string) {
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      try {
+        const job = await apiFetch<{ status: string; result?: string }>(`/api/jobs/${jobId}`);
+        if (job.status !== 'completed' || !job.result) continue;
+        const runId = JSON.parse(job.result).run_id as string | undefined;
+        if (!runId) return;
+        await apiFetch(`/api/simulations/${runId}/baselines?count=3`, { method: 'POST', body: '{}' });
+        toast.success(t('simulation.baselinesStarted'));
+        return;
+      } catch {
+        return;
+      }
+    }
+  }
 
   return (
     <div className="simulation-form-page">
@@ -171,6 +195,14 @@ export function Simulation() {
             <label htmlFor="run-name">{t('simulation.runName')}</label>
             <input id="run-name" value={runName} onChange={(e) => setRunName(e.target.value)} />
           </div>
+          <label className="simulation-checkbox">
+            <input
+              type="checkbox"
+              checked={withBaselines}
+              onChange={(e) => setWithBaselines(e.target.checked)}
+            />
+            {t('simulation.withBaselines')}
+          </label>
         </div>
       )}
       <div className="toolbar">

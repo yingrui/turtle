@@ -241,7 +241,9 @@
     "tabNew": "New run",
     "newRun": "New run",
     "listSubtitle": "One backtest = one method over one window → one equity curve. To tell skill from luck, use Compare.",
-    "loadFailed": "Could not load runs"
+    "loadFailed": "Could not load runs",
+    "withBaselines": "Also run 3 random baselines (to tell skill from luck)",
+    "baselinesStarted": "3 random baselines started"
   },
   "results": {
     "noTrades": "No trades for this run.",
@@ -268,7 +270,8 @@
     "colReason": "Reason",
     "benchmark": "Benchmark",
     "noBenchmark": "None",
-    "excessVsBenchmark": "vs benchmark: {{value}} pts"
+    "excessVsBenchmark": "vs benchmark: {{value}} pts",
+    "comparison": "This run {{mine}} pts ｜ random baselines {{mean}} ± {{sd}} ({{sigma}}σ)"
   },
   "watchlist": {
     "subtitle": "Select a portfolio to view its watchlist stocks and latest quotes.",

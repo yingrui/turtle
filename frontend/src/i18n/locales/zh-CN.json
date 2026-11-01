@@ -241,7 +241,9 @@
     "tabNew": "新建回测",
     "newRun": "新建回测",
     "listSubtitle": "一次回测 = 一套方法 + 一段区间 → 一条净值曲线。想知道这套方法是不是运气，用「对照比较」。",
-    "loadFailed": "加载运行列表失败"
+    "loadFailed": "加载运行列表失败",
+    "withBaselines": "同时跑 3 个随机对照（用来看是不是运气）",
+    "baselinesStarted": "3 个随机对照已开始运行"
   },
   "results": {
     "noTrades": "该回测没有成交记录。",
@@ -268,7 +270,8 @@
     "colReason": "原因",
     "benchmark": "对比基准",
     "noBenchmark": "不对比",
-    "excessVsBenchmark": "相对基准：{{value}} 点"
+    "excessVsBenchmark": "相对基准：{{value}} 点",
+    "comparison": "本策略超额 {{mine}} 点 ｜ 随机对照 {{mean}} ± {{sd}}（{{sigma}} 个标准差）"
   },
   "watchlist": {
     "subtitle": "选择投资组合，查看该组合下的自选股票与最新行情。",

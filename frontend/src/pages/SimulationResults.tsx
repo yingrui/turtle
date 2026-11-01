@@ -76,6 +76,12 @@ export function SimulationResults() {
   const [benchmarkCode, setBenchmarkCode] = useState('000300.SH');
   const [benchmarks, setBenchmarks] = useState<{ ts_code: string; name: string }[]>([]);
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
+  const [comparison, setComparison] = useState<{
+    excess_pct: number | null;
+    baselines: { run_id: string | null; name: string | null; excess_pct: number | null; finished: boolean }[];
+    spread: { mean: number; sd: number; n: number } | null;
+    sigma: number | null;
+  } | null>(null);
 
   useEffect(() => {
     apiFetch<{ jobs: JobRow[] }>('/api/jobs')
@@ -124,6 +130,16 @@ export function SimulationResults() {
       .then((d) => setBenchmarks((d.indexes ?? []).slice(0, 8)))
       .catch(() => setBenchmarks([]));
   }, []);
+
+  useEffect(() => {
+    if (!selectedRunId) {
+      setComparison(null);
+      return;
+    }
+    apiFetch<typeof comparison>(`/api/simulations/${selectedRunId}/comparison?ts_code=${encodeURIComponent(benchmarkCode)}`)
+      .then(setComparison)
+      .catch(() => setComparison(null));
+  }, [selectedRunId, benchmarkCode]);
 
   useEffect(() => {
     if (!selectedRunId || !benchmarkCode) {
@@ -211,6 +227,17 @@ export function SimulationResults() {
       <p className="text-muted mb-4">
         {t('results.subtitle')}
       </p>
+
+      {comparison && comparison.spread && (
+        <p className="simulation-comparison" role="status">
+          {t('results.comparison', {
+            mine: comparison.excess_pct?.toFixed(2) ?? '—',
+            mean: comparison.spread.mean.toFixed(2),
+            sd: comparison.spread.sd.toFixed(2),
+            sigma: comparison.sigma?.toFixed(2) ?? '—',
+          })}
+        </p>
+      )}
 
       <div className="toolbar mb-4">
         <div className="form-row field-xwide field-xwide--min">
