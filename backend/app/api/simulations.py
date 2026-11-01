@@ -184,6 +184,7 @@ def launch_baselines(
     import uuid
 
     from app.models.job import Job
+    from app.models.ranking import RankingSource
     from app.services.analysis_service import run_analysis
 
     run = db.get(SimulationRun, run_id)
@@ -192,8 +193,20 @@ def launch_baselines(
     if not run.ranking_source_id:
         raise HTTPException(status_code=422, detail="This run has no ranking source to randomise")
     source = db.get(RankingSource, run.ranking_source_id)
-    start = run.window_start or (run.started_at.date() if run.started_at else None)
-    end = run.window_end or (run.finished_at.date() if run.finished_at else None)
+    # A finished run records its window; an older one only has the equity rows, so read those.
+    from sqlalchemy import func, select
+
+    from app.models.simulation import SimulationDaily
+
+    start = run.window_start
+    end = run.window_end
+    if not start or not end:
+        first, last = db.execute(
+            select(func.min(SimulationDaily.trade_date), func.max(SimulationDaily.trade_date))
+            .where(SimulationDaily.run_id == run_id)
+        ).one()
+        start = start or first
+        end = end or last
     if not start or not end:
         raise HTTPException(status_code=422, detail="This run has no window to repeat")
 
@@ -221,17 +234,17 @@ def launch_baselines(
             "name": f"{run.name or run.id[:8]} · 随机对照 {index + 1}",
             "description": f"主结果 {run.id} 的对照",
         }
-        job = Job(id=str(uuid.uuid4()), type="simulation", status="pending",
-                  payload=_json.dumps(payload, ensure_ascii=False), log="")
-        db.add(job)
-        db.commit()
+        # Jobs run as threads owned by the service; inserting a row directly would leave it pending
+        # forever, because nothing polls the table.
+        from app.services.job_service import JobService
+
+        job = JobService().create_job(db, "simulation", payload)
         created.append({"source_id": source_id, "job_id": job.id})
 
     provenance = dict(run.provenance or {})
-    provenance["baselines"] = [
-        *(provenance.get("baselines") or []),
-        *[item["job_id"] for item in created],
-    ]
+    # A launch replaces the previous set: measuring against two generations of baselines would mix
+    # different windows' luck into one spread.
+    provenance["baselines"] = [item["job_id"] for item in created]
     run.provenance = provenance
     db.commit()
     return {"run_id": run_id, "created": created}
@@ -253,18 +266,21 @@ def simulation_comparison(
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
     provenance = run.provenance or {}
-    baseline_ids = provenance.get("baselines") or []
+    # `baselines` holds job ids: a run row only exists once the job has started.
+    baseline_jobs = provenance.get("baselines") or []
     mine = _excess_of(db, run_id, ts_code)
     rows = []
-    for baseline_id in baseline_ids:
-        baseline = db.get(SimulationRun, baseline_id)
+    for job_id in baseline_jobs:
+        baseline = db.query(SimulationRun).filter(SimulationRun.job_id == job_id).first()
         if not baseline:
+            rows.append({"run_id": None, "job_id": job_id, "name": None, "excess_pct": None, "finished": False})
             continue
         rows.append(
             {
-                "run_id": baseline_id,
+                "run_id": baseline.id,
+                "job_id": job_id,
                 "name": baseline.name,
-                "excess_pct": _excess_of(db, baseline_id, ts_code),
+                "excess_pct": _excess_of(db, baseline.id, ts_code),
                 "finished": baseline.finished_at is not None,
             }
         )
