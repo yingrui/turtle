@@ -192,6 +192,16 @@ class JobService:
                         db, run=run, start=start_date, end=end_date,
                         initial_cash=initial_cash, config=config, provider=provider, on_day=report,
                     )
+                # A portfolio with no run attached shows empty holdings and an empty pool, even though
+                # its runs have both. Attach the first finished run so the page has something to show.
+                if run.finished_at is not None:
+                    from app.models.portfolio import Portfolio
+
+                    portfolio_row = db.get(Portfolio, run.portfolio_id) if run.portfolio_id else None
+                    if portfolio_row is not None and portfolio_row.active_run_id is None:
+                        portfolio_row.active_run_id = run.id
+                        db.commit()
+
                 summary = summarise(db, run.id)
                 for field_name, value in summary.items():
                     setattr(run, field_name, value)
