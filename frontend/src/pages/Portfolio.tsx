@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { RunHoldingsPanel } from '../components/portfolio/RunHoldingsPanel';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
@@ -80,9 +81,7 @@ export function Portfolio() {
   } = usePortfolioContext();
   const [summary, setSummary] = useState<PortfolioConfig | null>(null);
   const [stocks, setStocks] = useState<PortfolioStock[]>([]);
-  const [stocksSource, setStocksSource] = useState<'portfolio' | 'run'>('portfolio');
   const [bookDate, setBookDate] = useState<string | null>(null);
-  const [bookDates, setBookDates] = useState<string[]>([]);
   const [trades, setTrades] = useState<PortfolioTransaction[]>([]);
   const [benchmarkCode, setBenchmarkCode] = useState('000300.SH');
   const [benchmarks, setBenchmarks] = useState<{ ts_code: string; name: string }[]>([]);
@@ -91,9 +90,6 @@ export function Portfolio() {
   const [tab, setTabState] = useState<'overview' | 'holdings' | 'trades' | 'risk'>(
     (searchParams.get('tab') as 'overview' | 'holdings' | 'trades' | 'risk') ?? 'overview',
   );
-  const [statusFilter, setStatusFilter] = useState<'watching' | 'holding' | 'closed'>(
-    (searchParams.get('status') as 'watching' | 'holding' | 'closed') ?? 'holding',
-  );
   const [detail, setDetail] = useState<PortfolioStock | null>(null);
   const [equity, setEquity] = useState<{ dates: string[]; series: { name: string; data: number[] }[] } | null>(null);
 
@@ -101,8 +97,6 @@ export function Portfolio() {
     setTabState(next);
     const params = new URLSearchParams(searchParams);
     params.set('tab', next);
-    if (next === 'holdings') params.set('status', statusFilter);
-    else params.delete('status');
     setSearchParams(params, { replace: true });
   }
 
@@ -114,13 +108,6 @@ export function Portfolio() {
     setSearchParams(params, { replace: true });
   }
 
-  function setStatus(next: 'watching' | 'holding' | 'closed') {
-    setStatusFilter(next);
-    const params = new URLSearchParams(searchParams);
-    params.set('tab', 'holdings');
-    params.set('status', next);
-    setSearchParams(params, { replace: true });
-  }
   const [risk, setRisk] = useState<Record<string, number | boolean> | null>(null);
   const [riskDraft, setRiskDraft] = useState<Record<string, string | boolean>>({});
   const [savingRisk, setSavingRisk] = useState(false);
@@ -156,8 +143,6 @@ export function Portfolio() {
       apiFetch<Record<string, number | boolean>>(`/api/portfolios/${encodeURIComponent(name)}/risk-control`),
     ]);
     setStocks(stockRows.stocks);
-    setStocksSource(stockRows.source === 'run' ? 'run' : 'portfolio');
-    setBookDates(stockRows.available_dates ?? []);
     if (stockRows.source === 'run') setBookDate(stockRows.trade_date ?? null);
     setTrades(tradeRows.transactions);
     setRisk(riskRow);
@@ -296,89 +281,6 @@ export function Portfolio() {
     },
   ];
 
-  const holdingColumns: Column<PortfolioStock>[] = [
-    {
-      key: 'ts_code',
-      label: t('quote.col.ts_code'),
-      render: (row) => <Link to={`/stocks/${encodeURIComponent(row.ts_code)}`}>{row.ts_code}</Link>,
-    },
-    {
-      key: 'status',
-      label: t('portfolio.colStatus'),
-      render: (row) => statusLabel[row.status] ?? row.status,
-    },
-    { key: 'shares', label: t('portfolio.colShares'), align: 'right', render: (row) => row.hold_shares },
-    { key: 'avg_cost', label: t('portfolio.colAvgCost'), align: 'right', render: (row) => money(row.avg_cost) },
-    { key: 'price', label: t('portfolio.colLastPrice'), align: 'right', render: (row) => money(row.current_price) },
-    {
-      key: 'market_value',
-      label: t('portfolio.colMarketValue'),
-      align: 'right',
-      render: (row) => money(row.market_value),
-    },
-    {
-      key: 'unrealized',
-      label: t('portfolio.colUnrealized'),
-      align: 'right',
-      cellClassName: (row) => ((row.unrealized_pnl ?? 0) < 0 ? 'price-down' : 'price-up'),
-      render: (row) => (
-        <>
-          {money(row.unrealized_pnl)}
-          {row.unrealized_pct != null ? ` (${row.unrealized_pct}%)` : ''}
-        </>
-      ),
-    },
-    { key: 'total_cost', label: t('portfolio.colTotalCost'), align: 'right', render: (row) => money(row.total_cost) },
-    {
-      key: 'holding_days',
-      label: t('portfolio.colHolding'),
-      align: 'right',
-      render: (row) => row.holding_days ?? '—',
-    },
-    {
-      key: 'risk',
-      label: t('portfolio.colRisk'),
-      render: (row) => (
-        <span className="portfolio-risk-flags">
-          {riskFlags(row).map((flag) => (
-            <span key={flag.label} className={`portfolio-flag portfolio-flag--${flag.level}`}>
-              {flag.label}
-            </span>
-          ))}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      label: t('portfolio.colActions'),
-      className: 'portfolio-row-actions',
-      render: (row) => (
-        <>
-          <button type="button" className="btn btn-sm" onClick={() => openTrade('buy', row)}>
-            {t('portfolio.actionBuy')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm"
-            onClick={() => openTrade('sell', row)}
-            disabled={row.hold_shares <= 0}
-            title={row.hold_shares <= 0 ? t('portfolio.actionSellDisabled') : undefined}
-          >
-            {t('portfolio.actionSell')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm btn-secondary"
-            onClick={() => removeStock(row)}
-            disabled={row.hold_shares > 0}
-            title={row.hold_shares > 0 ? t('portfolio.removeStockBlocked') : undefined}
-          >
-            {t('portfolio.actionRemove')}
-          </button>
-        </>
-      ),
-    },
-  ];
 
   const tradeColumns: Column<PortfolioTransaction>[] = [
     { key: 'date', label: t('portfolio.colTradeDate'), render: (row) => row.trade_date },
@@ -437,26 +339,6 @@ export function Portfolio() {
     return flags;
   }
 
-  async function removeStock(stock: PortfolioStock) {
-    if (!name) return;
-    if (!window.confirm(t('portfolio.removeStockConfirm', { code: stock.ts_code }))) return;
-    try {
-      await apiFetch(
-        `/api/portfolios/${encodeURIComponent(name)}/stocks/${encodeURIComponent(stock.ts_code)}`,
-        { method: 'DELETE' },
-      );
-      toast.success(t('portfolio.removeStockDone', { code: stock.ts_code }));
-      await loadPositions();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('portfolio.removeStockFailed'));
-    }
-  }
-
-  const statusLabel: Record<string, string> = {
-    watching: t('portfolio.statusWatching'),
-    holding: t('portfolio.statusHolding'),
-    closed: t('portfolio.statusClosed'),
-  };
   const sourceLabel: Record<string, string> = {
     manual: t('portfolio.sourceManual'),
     simulation: t('portfolio.sourceSimulation'),
@@ -621,57 +503,7 @@ export function Portfolio() {
                 </>
               )}
 
-              {tab === 'holdings' && (
-                <>
-              <h2 className="portfolio-panel-title">{t('portfolio.holdingsTitle')}</h2>
-              <p className="portfolio-panel-desc">{t('portfolio.holdingsDesc')}</p>
-              {stocksSource === 'run' && (
-                <div className="form-row field-medium">
-                  <label>{t('portfolio.poolDate')}</label>
-                  <select
-                    value={bookDate ?? ''}
-                    onChange={(e) => {
-                      setBookDate(e.target.value);
-                      loadPositions().catch(() => toast.error(t('portfolio.loadError')));
-                    }}
-                  >
-                    {bookDates.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              {stocksSource === 'run' ? null : (
-              <div className="portfolio-segments" role="group" aria-label={t('portfolio.colStatus')}>
-                {(['watching', 'holding', 'closed'] as const).map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={statusFilter === key ? 'portfolio-segment portfolio-segment--active' : 'portfolio-segment'}
-                    onClick={() => setStatus(key)}
-                  >
-                    {statusLabel[key]}
-                    <span className="portfolio-segment-count">
-                      {stocks.filter((row) => row.status === key).length}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              )}
-              <DataTable
-                pageSize={25}
-                columns={holdingColumns}
-                rows={stocksSource === 'run' ? stocks : stocks.filter((row) => row.status === statusFilter)}
-                onRowClick={(row) => setDetail(row)}
-                rowKey={(row) => row.ts_code}
-                empty={
-                  <>
-                    {t('portfolio.emptyHoldings')} <Link to="/screening">{t('portfolio.emptyHoldingsCta')}</Link>
-                  </>
-                }
-              />
-                </>
-              )}
+              {tab === 'holdings' && <RunHoldingsPanel portfolio={name} />}
 
               {tab === 'trades' && (
                 <>

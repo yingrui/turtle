@@ -1,0 +1,9 @@
+@use '../../styles/design-system/local-tokens' as lt;
+@use '../../styles/design-system/mixins' as *;
+
+// A backtest's book on one day: the run and the date are part of the question, so they sit above the table.
+.run-holdings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

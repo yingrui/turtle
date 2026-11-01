@@ -342,7 +342,7 @@
     "emptyTrades": "暂无成交记录。",
     "colStatus": "状态",
     "colShares": "股数",
-    "colAvgCost": "成本价",
+    "colAvgCost": "成本",
     "colLastPrice": "现价",
     "colMarketValue": "市值",
     "colUnrealized": "浮动盈亏",
@@ -459,7 +459,15 @@
     "tradeInsufficient": "最多可卖 {{available}} 股",
     "benchmarkTitle": "组合 vs 基准",
     "benchmarkDesc": "两条线都以曲线首日 = 100 归一化 —— 这组合有没有跑赢指数。",
-    "benchmarkEquity": "组合"
+    "benchmarkEquity": "组合",
+    "pickRun": "回测",
+    "pickDay": "日期",
+    "runHoldingsTitle": "回测持仓 · {{day}}",
+    "runHoldingsDesc": "这些是那次回测在那一天持有的股票，价格用的也是那一天的收盘价。",
+    "colCode": "股票",
+    "colWeight": "占比",
+    "colOpened": "开始持有",
+    "colHoldingDays": "持有天数"
   },
   "auth": {
     "login": "登录",
