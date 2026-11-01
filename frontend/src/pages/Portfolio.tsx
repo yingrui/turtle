@@ -91,7 +91,13 @@ export function Portfolio() {
     (searchParams.get('tab') as 'overview' | 'holdings' | 'trades' | 'risk') ?? 'overview',
   );
   const [detail, setDetail] = useState<PortfolioStock | null>(null);
-  const [runs, setRuns] = useState<{ id: string; name: string | null; window_start: string | null; window_end: string | null }[]>([]);
+  const [runs, setRuns] = useState<{
+    id: string;
+    name: string | null;
+    portfolio_name: string;
+    window_start: string | null;
+    window_end: string | null;
+  }[]>([]);
   const [runId, setRunId] = useState('');
   const [runDays, setRunDays] = useState<string[]>([]);
   const [runDay, setRunDay] = useState('');
@@ -159,9 +165,10 @@ export function Portfolio() {
 
   useEffect(() => {
     setBookDate(null);
-    apiFetch<{ runs: { id: string; name: string | null; window_start: string | null; window_end: string | null; finished_at: string | null }[] }>('/api/simulations')
+    apiFetch<{ runs: { id: string; name: string | null; portfolio_name: string; window_start: string | null; window_end: string | null; finished_at: string | null }[] }>('/api/simulations')
       .then((d) => {
-        const mine = (d.runs ?? []).filter((run) => run.finished_at);
+        // Only this portfolio's finished runs: the list is global, the question is not.
+        const mine = (d.runs ?? []).filter((run) => run.finished_at && run.portfolio_name === name);
         setRuns(mine);
         setRunId(mine[0]?.id ?? '');
       })
@@ -432,7 +439,9 @@ export function Portfolio() {
             <div className="form-row field-wide">
               <label htmlFor="portfolio-run-select">{t('portfolio.pickRun')}</label>
               <select id="portfolio-run-select" value={runId} onChange={(e) => setRunId(e.target.value)}>
-                {runs.length === 0 && <option value="">{t('portfolio.noRuns')}</option>}
+                {runs.length === 0 && (
+                  <option value="">{t('portfolio.noRuns')}</option>
+                )}
                 {runs.map((run) => (
                   <option key={run.id} value={run.id}>
                     {run.name || run.id.slice(0, 8)} · {run.window_start ?? '—'} → {run.window_end ?? '—'}
