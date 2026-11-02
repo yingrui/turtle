@@ -63,7 +63,12 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
     {
       key: 'rows',
       label: t('rankings.colRows'),
-      render: (row) => row.row_count?.toLocaleString() ?? '—',
+      // 打分表存的是"每天每只股票一条"，所以条数 = 交易日 × 股票数；
+      // 逐月模型不存分数，是当天现算的，没有条数可报。
+      render: (row) =>
+        row.kind === 'model'
+          ? t('rankings.onTheFly', { periods: (row as { params?: { periods?: unknown[] } }).params?.periods?.length ?? '—' })
+          : (row.row_count?.toLocaleString() ?? '—'),
     },
     { key: 'status', label: t('rankings.colStatus'), render: (row) => row.status },
   ];

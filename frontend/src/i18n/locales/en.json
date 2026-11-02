@@ -623,7 +623,7 @@
     "colKind": "Kind",
     "colCoverage": "Coverage",
     "colDataset": "Dataset",
-    "colRows": "Rows",
+    "colRows": "Scores",
     "colStatus": "Status",
     "colCode": "Code",
     "colScore": "Score",
@@ -646,7 +646,8 @@
     "generateElsewhere": "Produce a new ranking source → cross-sectional analysis",
     "backToList": "← Back to the list",
     "previewToggle": "See its top 20 for a day",
-    "showControls": "Show control pools (for statistical checks, not for picking stocks)"
+    "showControls": "Show control pools (for statistical checks, not for picking stocks)",
+    "onTheFly": "Scored on the fly ({{periods}} monthly models)"
   },
   "experiments": {
     "title": "Compare against baselines",
@@ -707,7 +708,10 @@
     "factParams": "Parameters",
     "detailPreview": "Top 20 on a day",
     "pickDay": "Date",
-    "previewEmpty": "No scores for that day."
+    "previewEmpty": "No scores for that day.",
+    "rowsExplain": "{{rows}} scores (one per stock per trading day)",
+    "delete": "Delete this model",
+    "deleteConfirm": "Delete? A model used by a backtest cannot be removed."
   },
   "overview": {
     "title": "Overview",

@@ -40,6 +40,16 @@ export function MethodDetail() {
       .catch(() => setSource(null));
   }, [id]);
 
+  async function onDelete() {
+    if (!window.confirm(t('methods.deleteConfirm'))) return;
+    try {
+      await apiFetch(`/api/rankings/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      window.location.href = '/methods';
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   const preview = useCallback(async () => {
     if (!id) return;
     try {
@@ -77,6 +87,9 @@ export function MethodDetail() {
         <p className="methods-hint">
           <Link to="/methods">{t('methods.backToList')}</Link>
         </p>
+        <button type="button" className="btn btn-secondary" onClick={onDelete}>
+          {t('methods.delete')}
+        </button>
       </header>
 
       <section className="methods-section">
@@ -86,7 +99,11 @@ export function MethodDetail() {
           <dt>{t('methods.factCoverage')}</dt>
           <dd>{`${source.date_from ?? '—'} → ${source.date_to ?? '—'}`}</dd>
           <dt>{t('methods.factRows')}</dt>
-          <dd>{source.row_count?.toLocaleString() ?? '—'}</dd>
+          <dd>
+            {source.kind === 'model'
+              ? t('rankings.onTheFly', { periods: (source.params?.periods as unknown[] | undefined)?.length ?? '—' })
+              : t('methods.rowsExplain', { rows: source.row_count?.toLocaleString() ?? '—' })}
+          </dd>
           <dt>{t('methods.factDataset')}</dt>
           <dd>{source.dataset?.name ? `${source.dataset.name} v${source.dataset.version ?? '?'}` : '—'}</dd>
           <dt>{t('methods.factParams')}</dt>

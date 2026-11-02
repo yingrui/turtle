@@ -623,7 +623,7 @@
     "colKind": "类型",
     "colCoverage": "覆盖区间",
     "colDataset": "数据集",
-    "colRows": "行数",
+    "colRows": "评分条数",
     "colStatus": "状态",
     "colCode": "代码",
     "colScore": "分数",
@@ -646,7 +646,8 @@
     "generateElsewhere": "生成新的排序来源 → 截面分析",
     "backToList": "← 返回评分模型列表",
     "previewToggle": "看某一天它排出的前 20 名",
-    "showControls": "显示对照池（统计检验用，不是给人选股的）"
+    "showControls": "显示对照池（统计检验用，不是给人选股的）",
+    "onTheFly": "在线打分（{{periods}} 期模型）"
   },
   "experiments": {
     "title": "对照比较",
@@ -707,7 +708,10 @@
     "factParams": "参数",
     "detailPreview": "某一天的前 20 名",
     "pickDay": "日期",
-    "previewEmpty": "这天没有评分。"
+    "previewEmpty": "这天没有评分。",
+    "rowsExplain": "{{rows}} 条（每个交易日每只股票一条）",
+    "delete": "删除这个模型",
+    "deleteConfirm": "确定删除？被回测使用过的模型不能删除。"
   },
   "overview": {
     "title": "概览",
