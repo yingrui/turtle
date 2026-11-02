@@ -19,6 +19,26 @@ from app.analysis.artifact import ScoreTable, read_scores, scores_on_or_before, 
 from app.models.ranking import AnalysisRun, RankingSource
 
 
+def mark_interrupted(db: Session) -> int:
+    """把上次进程留下的 running 记录标记为失败。
+
+    分析在后台线程里跑；进程重启（部署、OOM、崩溃）会让线程消失，但记录一直显示"运行中"，
+    界面上看起来像卡住了。启动时统一收尾一次。
+    """
+    from datetime import datetime as _dt
+
+    from app.models.ranking import AnalysisRun
+
+    stuck = db.query(AnalysisRun).filter(AnalysisRun.status.in_(("running", "pending"))).all()
+    for run in stuck:
+        run.status = "failed"
+        run.error = "运行被中断（服务重启）；请重新发起"
+        run.finished_at = _dt.utcnow()
+    if stuck:
+        db.commit()
+    return len(stuck)
+
+
 def code_revision() -> str | None:
     try:
         return subprocess.run(

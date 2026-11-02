@@ -45,6 +45,9 @@ async def lifespan(_: FastAPI):
     db = SessionLocal()
     try:
         interrupted = JobService().mark_interrupted(db)
+        from app.services.analysis_service import mark_interrupted as mark_analysis_interrupted
+
+        interrupted += mark_analysis_interrupted(db)
         if interrupted:
             print(f"Marked {interrupted} interrupted job(s) as failed", flush=True)
     finally:
