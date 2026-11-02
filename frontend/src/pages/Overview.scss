@@ -33,3 +33,11 @@
     margin-left: var(--space-2);
   }
 }
+
+// The point of listing methods on the overview is their picks, not their names.
+.overview-picks {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}

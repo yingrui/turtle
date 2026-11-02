@@ -14,7 +14,7 @@ type Overview = {
     book: { day: string; count: number; market_value: number; cash: number | null; total: number | null } | null;
   } | null;
   alarms: { ts_code: string; reason: string }[];
-  methods: { source_id: string; name: string; top: { ts_code: string; score: number }[] }[];
+  methods: { source_id: string; name: string; day: string | null; top: { ts_code: string; score: number }[] }[];
   failed_jobs: number;
 };
 
@@ -99,8 +99,12 @@ export function Overview() {
           <ul className="overview-list">
             {data.methods.map((method) => (
               <li key={method.source_id}>
-                {method.name}
-                <Link to="/methods">{t('overview.openMethod')}</Link>
+                <Link to={`/methods/${method.source_id}`}>{method.name}</Link>
+                {method.top.length > 0 && (
+                  <span className="overview-picks">
+                    {method.top.map((pick) => pick.ts_code).join(' · ')}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
@@ -87,10 +89,26 @@ def overview(db: Session = Depends(get_db), _: User = Depends(get_current_user))
         holdings_meta = None
 
     picks = []
+    picks_day = None
+    if run is not None and holdings_meta:
+        picks_day = holdings_meta["day"]
+    elif market_day is not None:
+        picks_day = str(market_day)
+    from app.services.analysis_service import RankingSourceService
+
+    service = RankingSourceService()
     for source in db.scalars(
         select(RankingSource).where(RankingSource.status == "published").limit(3)
     ).all():
-        picks.append({"source_id": source.id, "name": source.display_name, "top": []})
+        top: list[dict] = []
+        if picks_day:
+            try:
+                top = service.preview(db, source.id, date.fromisoformat(picks_day), limit=5)
+            except Exception:  # noqa: BLE001 — a broken source must not blank the whole overview
+                top = []
+        picks.append(
+            {"source_id": source.id, "name": source.display_name, "day": picks_day, "top": top}
+        )
 
     failed_jobs = db.scalar(select(func.count()).select_from(Job).where(Job.status == "failed")) or 0
 
