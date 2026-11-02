@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
-import { DataTable, type Column } from '../components/DataTable';
 import './Methods.scss';
 
 type Source = {
@@ -67,12 +66,6 @@ export function MethodDetail() {
     void preview();
   }, [preview]);
 
-  const columns: Column<RankRow>[] = [
-    { key: 'rank', label: '#', align: 'right', render: (row) => row.rank },
-    { key: 'code', label: t('methods.colCode'), render: (row) => row.ts_code },
-    { key: 'score', label: t('methods.colScore'), align: 'right', render: (row) => row.score.toFixed(4) },
-  ];
-
   if (!source) {
     return (
       <div className="methods-page">
@@ -119,13 +112,29 @@ export function MethodDetail() {
           <label htmlFor="md-day">{t('methods.pickDay')}</label>
           <input id="md-day" type="date" value={day} onChange={(e) => setDay(e.target.value)} />
         </div>
-        <DataTable<RankRow>
-          columns={columns}
-          rows={rows}
-          rowKey={(row) => row.ts_code}
-          empty={t('methods.previewEmpty')}
-          pageSize={20}
-        />
+        {rows.length === 0 ? (
+          <p className="methods-hint">{t('methods.previewEmpty')}</p>
+        ) : (
+          <ol className="methods-ranks">
+            {rows.map((row) => (
+              <li key={row.ts_code} className="methods-rank">
+                <span className="methods-rank__no">{row.rank}</span>
+                <span className="methods-rank__code">{row.ts_code}</span>
+                <span className="methods-rank__bar">
+                  <span
+                    className="methods-rank__fill"
+                    style={
+                      {
+                        '--fill': `${((rows[0].score - row.score) / Math.max(1e-9, rows[0].score - rows[rows.length - 1].score)) * 100}%`,
+                      } as React.CSSProperties
+                    }
+                  />
+                </span>
+                <span className="methods-rank__score">{row.score.toFixed(4)}</span>
+              </li>
+            ))}
+          </ol>
+        )}
       </section>
     </div>
   );
