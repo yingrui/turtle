@@ -319,6 +319,11 @@ def simulation_holdings(
         raise HTTPException(status_code=404, detail="Run not found")
     rows = holdings_on(db, run_id, date.fromisoformat(day))
     opened, costs = _holding_context(db, run_id, [row.ts_code for row in rows])
+    from app.models.simulation import SimulationDaily
+
+    equity_row = db.query(SimulationDaily).filter(
+        SimulationDaily.run_id == run_id, SimulationDaily.trade_date == date.fromisoformat(day)
+    ).first()
     when = date.fromisoformat(day)
     return {
         "run_id": run_id,
@@ -349,6 +354,10 @@ def simulation_holdings(
             for row in rows
         ],
         "count": len(rows),
+        # Cash belongs next to the positions: value + cash − initial capital is the account's result,
+        # and without it the number cannot be checked.
+        "cash": None if equity_row is None or equity_row.balance is None else float(equity_row.balance),
+        "total": None if equity_row is None or equity_row.total is None else float(equity_row.total),
     }
 
 

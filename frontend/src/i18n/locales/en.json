@@ -471,7 +471,8 @@
     "noRuns": "No finished backtests yet",
     "colDate": "Date",
     "kpiCumulative": "Total gain",
-    "statNote": "Market value = shares × that day's close; cost basis = what those shares cost including buy fees; open P&L = value − cost; total gain = open + realised, i.e. value + cash − initial capital."
+    "statNote": "Market value = shares × that day's close; cost basis = what those shares cost including buy fees; open P&L = value − cost; total gain = open + realised, i.e. value + cash − initial capital.",
+    "kpiCash": "Cash"
   },
   "auth": {
     "login": "Log in",

@@ -102,6 +102,7 @@ export function Portfolio() {
   const [runDays, setRunDays] = useState<string[]>([]);
   const [runDay, setRunDay] = useState('');
   const [runHoldings, setRunHoldings] = useState<RunHolding[]>([]);
+  const [runCash, setRunCash] = useState<number | null>(null);
   const [runTrades, setRunTrades] = useState<
     { id: string; date: string; ts_code: string; side: string; shares: number; price: number; amount: number; benefit: number }[]
   >([]);
@@ -198,8 +199,11 @@ export function Portfolio() {
       setRunHoldings([]);
       return;
     }
-    apiFetch<{ holdings: RunHolding[] }>(`/api/simulations/${runId}/holdings?day=${encodeURIComponent(runDay)}`)
-      .then((d) => setRunHoldings(d.holdings ?? []))
+    apiFetch<{ holdings: RunHolding[]; cash?: number | null }>(`/api/simulations/${runId}/holdings?day=${encodeURIComponent(runDay)}`)
+      .then((d) => {
+        setRunHoldings(d.holdings ?? []);
+        setRunCash(d.cash ?? null);
+      })
       .catch(() => setRunHoldings([]));
     apiFetch<{ trades: { date: string; ts_code: string; side: string; shares: number; price: number; amount: number; benefit: number }[] }>(
       `/api/simulations/${runId}/trades?limit=500`,
@@ -589,6 +593,10 @@ export function Portfolio() {
                     <div className="stat-card">
                       <span>{t('portfolio.kpiCumulative')}</span>
                       <strong className={cumulative < 0 ? 'price-down' : 'price-up'}>{money(cumulative)}</strong>
+                    </div>
+                    <div className="stat-card">
+                      <span>{t('portfolio.kpiCash')}</span>
+                      <strong>{runCash == null ? '—' : money(runCash)}</strong>
                     </div>
                     <div className="stat-card">
                       <span>{t('portfolio.statCapital')}</span>
