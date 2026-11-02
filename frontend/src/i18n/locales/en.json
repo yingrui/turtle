@@ -600,7 +600,7 @@
   "analyses": {
     "title": "Cross-sectional analysis",
     "subtitle": "Score the cross-section day by day with a method (or train a model); the output is registered as a ranking source or a model, and backtests reference it.",
-    "method": "Method",
+    "method": "Algorithm",
     "run": "Run",
     "running": "Running…",
     "started": "Started",
@@ -612,7 +612,9 @@
     "colCreated": "Created",
     "colError": "Error",
     "empty": "No runs yet.",
-    "loadFailed": "Could not load analyses"
+    "loadFailed": "Could not load analyses",
+    "buildTitle": "New method",
+    "buildHint": "A method = one algorithm plus its parameters. Two algorithms exist: rule-based (weighted factors, optionally flipped by market state) and a cross-sectional scorecard (weights learned from history). Running it adds a new method to the list above."
   },
   "rankings": {
     "title": "Ranking sources",
