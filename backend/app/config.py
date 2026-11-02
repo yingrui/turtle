@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     # --- openKMS (optional; the ontology that hosts this app as a module) ---
     # Shared secret openKMS signs webhook deliveries with (a Function pushing `changes[]`, or an
     # Action webhook posting this app's own REST body). Unset closes the endpoint (503).
+    stock_openkms_base_url: str = Field(default="", alias="STOCK_OPENKMS_BASE_URL")
+    stock_openkms_api_key: str = Field(default="", alias="STOCK_OPENKMS_API_KEY")
     stock_openkms_webhook_secret: str = Field(
         default="", validation_alias="STOCK_OPENKMS_WEBHOOK_SECRET"
     )

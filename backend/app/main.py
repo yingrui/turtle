@@ -10,6 +10,7 @@ from app.api import (
     analyses,
     auth,
     data,
+    datasets,
     experiments,
     factors,
     indexes,
@@ -66,6 +67,7 @@ app.include_router(analyses.router)
 app.include_router(rankings.router)
 app.include_router(auth.router)
 app.include_router(data.router)
+app.include_router(datasets.router)
 app.include_router(models.router)
 app.include_router(overview.router)
 app.include_router(portfolios.router)
