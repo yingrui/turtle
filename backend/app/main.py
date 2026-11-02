@@ -24,6 +24,7 @@ from app.api import (
     stock_pick,
     strategies,
     stocks,
+    tasks,
     webhooks,
 )
 from app.config import settings
@@ -76,6 +77,7 @@ app.include_router(overview.router)
 app.include_router(portfolios.router)
 app.include_router(screening.router)
 app.include_router(strategies.router)
+app.include_router(tasks.router)
 app.include_router(experiments.router)
 app.include_router(factors.router)
 app.include_router(indexes.router)

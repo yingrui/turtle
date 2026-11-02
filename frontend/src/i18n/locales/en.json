@@ -48,7 +48,7 @@
     "quote": "Quotes",
     "stocks": "Stock Analysis",
     "forecast": "Forecast",
-    "jobs": "Jobs",
+    "jobs": "Runs",
     "settings": "Settings",
     "indexes": "Indexes",
     "analyses": "Cross-section",
@@ -787,5 +787,17 @@
     "colBuildTime": "Exported at",
     "colBy": "Triggered by",
     "noBuilds": "No exports recorded yet."
+  },
+  "tasks": {
+    "nav": "Runs",
+    "title": "Runs",
+    "lead": "Backtests, factor computations, score models and exports are all background executions; their status and failures are listed here.",
+    "colTitle": "What",
+    "colStatus": "Status",
+    "colStarted": "Started",
+    "colFinished": "Finished",
+    "colDetail": "Result",
+    "colError": "Failure",
+    "empty": "No runs yet."
   }
 }

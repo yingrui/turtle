@@ -48,7 +48,7 @@
     "quote": "行情",
     "stocks": "股票分析",
     "forecast": "预测分析",
-    "jobs": "任务",
+    "jobs": "运行记录",
     "settings": "设置",
     "indexes": "指数",
     "analyses": "截面分析",
@@ -787,5 +787,17 @@
     "colBuildTime": "导出时间",
     "colBy": "谁触发",
     "noBuilds": "暂无导出记录。"
+  },
+  "tasks": {
+    "nav": "运行记录",
+    "title": "运行记录",
+    "lead": "回测、因子计算、评分模型、导出训练集 —— 都是后台执行，统一在这里查看状态与失败原因。",
+    "colTitle": "内容",
+    "colStatus": "状态",
+    "colStarted": "开始",
+    "colFinished": "结束",
+    "colDetail": "结果",
+    "colError": "失败原因",
+    "empty": "暂无运行记录。"
   }
 }
