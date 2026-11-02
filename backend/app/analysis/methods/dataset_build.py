@@ -24,14 +24,14 @@ DEFAULT_DATASET = "scorecard-training-20d-bench"
 
 
 class DatasetBuildParams(BaseModel):
-    dataset: str = Field(DEFAULT_DATASET, title="目标数据集", description="导出到哪个数据集（不存在会新建）")
-    version: int = Field(1, ge=1, title="写入哪一版", description="往这个版本的草稿里加文件；发布由人决定")
+    dataset: str = Field(DEFAULT_DATASET, title="目标数据集", description="数据集不存在时将新建")
+    version: int = Field(1, ge=1, title="目标版本", description="文件写入该版本的草稿；已发布版本不可写，系统将自动新建版本；发布需单独操作")
     start: date = Field(..., title="起始交易日")
     end: date = Field(..., title="结束交易日")
     label: str = Field("benchmark", title="标签", description="benchmark 跑赢基准 / relative 相对排名 / absolute 绝对上涨")
     horizon: int = Field(20, ge=1, le=60, title="持有期（交易日）")
     benchmark: str = Field("000300.SH", title="基准指数")
-    publish: bool = Field(False, title="导出后立即发布", description="发布后这一版不可再改，谨慎勾选")
+    publish: bool = Field(False, title="导出后立即发布", description="发布后该版本不可修改")
 
 
 def _version_status(dataset_id: str) -> dict[int, str]:

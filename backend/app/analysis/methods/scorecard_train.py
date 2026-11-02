@@ -19,11 +19,11 @@ DEFAULT_FACTORS = ("liq_turn_std_6M", "mom_20d", "MACD", "ma_dev_20", "RSI", "vo
 
 
 class ScorecardTrainParams(BaseModel):
-    period: str = Field(..., title="训练哪一个月", description="格式 2025-07：这个模型用来给 2025 年 7 月打分")
+    period: str = Field(..., title="目标月份", description="格式 2025-07，该模型用于 2025 年 7 月")
     start: date = Field(
         ...,
         title="训练数据起点",
-        description="从库里的行情与因子表取这一段（不是读数据集文件）；训练行数会记进模型",
+        description="数据取自库内行情与因子表，非数据集文件；训练行数将记入模型",
     )
     end: date = Field(
         ..., title="训练数据终点", description="通常取目标月份之前最后一个交易日"
