@@ -12,6 +12,7 @@ from app.models.portfolio import (
     PortfolioTransaction,
 )
 from app.models.ranking import AnalysisRun, RankingSource
+from app.models.run import Run
 from app.models.research import FactorSpec, Label
 from app.models.simulation import (
     SimulationDaily,
@@ -28,6 +29,7 @@ __all__ = [
     "Job",
     "ModelArtifact",
     "AnalysisRun",
+    "Run",
     "RankingSource",
     "FactorSpec",
     "Experiment",

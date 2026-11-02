@@ -62,6 +62,9 @@ class JobService:
         db.add(job)
         db.commit()
         db.refresh(job)
+        from app.services.run_service import start_run
+
+        start_run(db, run_id=job.id, kind=job_type, params=payload)
         thread = threading.Thread(target=self._run_job, args=(job.id,), daemon=True)
         thread.start()
         return job
@@ -77,6 +80,9 @@ class JobService:
         for job in jobs:
             job.status = "failed"
             job.error = "Interrupted: the API process restarted while this job was running."
+            from app.services.run_service import finish_run as _finish_run
+
+            _finish_run(db, job.id, status="failed", error=job.error)
         db.commit()
         return len(jobs)
 
@@ -87,6 +93,9 @@ class JobService:
             if not job:
                 return
             job.status = "running"
+            from app.services.run_service import mark_running
+
+            mark_running(db, job.id)
             db.commit()
             payload = json.loads(job.payload)
             logs: list[str] = []
@@ -308,6 +317,9 @@ class JobService:
                 job.status = "failed"
                 job.error = str(exc)
                 db.commit()
+                from app.services.run_service import finish_run as _finish_run
+
+                _finish_run(db, job.id, status="failed", error=job.error)
         finally:
             db.close()
 

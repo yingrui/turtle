@@ -83,6 +83,16 @@ def run_analysis(
     run.status = "running"
     run.code_revision = code_revision()
     db.commit()
+    from app.services.run_service import start_run
+
+    start_run(
+        db,
+        run_id=run.id,
+        # 参数里可能带 kind，没有就用方法名 —— 括号不能省，否则整个表达式只在 else 分支上 or。
+        kind=(run.params.get("kind") if isinstance(run.params, dict) else None) or method,
+        params=run.params or {},
+        created_by=created_by,
+    )
 
     try:
         result = spec.run(db, parsed, dataset or {})  # type: ignore[misc]
@@ -142,6 +152,12 @@ def run_analysis(
         run.source_id = source_id
         run.finished_at = datetime.utcnow()
         db.commit()
+        from app.services.run_service import finish_run
+
+        finish_run(
+            db, run.id, status="completed",
+            result={"source_id": source_id, "rows": summary["row_count"]},
+        )
         if progress:
             progress(f"{summary['row_count']:,} rows → {source_id}")
         return run, source
@@ -150,6 +166,9 @@ def run_analysis(
         run.error = f"{type(exc).__name__}: {exc}"
         run.finished_at = datetime.utcnow()
         db.commit()
+        from app.services.run_service import finish_run
+
+        finish_run(db, run.id, status="failed", error=run.error)
         raise
 
 
