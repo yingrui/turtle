@@ -23,13 +23,13 @@ DEFAULT_FACTORS = ("mom_20d", "MACD", "ma_dev_20")
 
 
 class RegimeScoreParams(BaseModel):
-    start: date
-    end: date
-    ma_window: int = Field(60, ge=5, le=250, description="状态判别用的均线周期（交易日）")
+    start: date = Field(..., title="计算起点")
+    end: date = Field(..., title="计算终点")
+    ma_window: int = Field(60, ge=5, le=250, title="均线周期（交易日）", description="用多少日均线判别趋势/震荡，常用 60")
     horizon: int = Field(20, ge=1, le=60, description="标签的前瞻持有期，只记录在数据说明里，不影响当日打分")
-    benchmark: str = Field("000300.SH", description="用于判定 regime 的指数")
-    factors: list[str] = Field(default_factory=lambda: list(DEFAULT_FACTORS))
-    exclude_st: bool = Field(True, description="剔除 ST")
+    benchmark: str = Field("000300.SH", title="基准指数", description="用它的均线判别市场状态，通常沪深300")
+    factors: list[str] = Field(default_factory=lambda: list(DEFAULT_FACTORS), title="参与打分的因子")
+    exclude_st: bool = Field(True, title="剔除 ST 股", description="ST 是交易所对异常公司的标记")
 
 
 def _months(start: date, end: date):
