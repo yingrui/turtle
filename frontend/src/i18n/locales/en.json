@@ -711,7 +711,7 @@
     "previewEmpty": "No scores for that day.",
     "rowsExplain": "{{rows}} scores (one per stock per trading day)",
     "delete": "Delete this model",
-    "deleteConfirm": "Delete? A model used by a backtest cannot be removed."
+    "deleteConfirm": "Delete? Backtests that used it can no longer reproduce their scores; their fills and equity remain."
   },
   "overview": {
     "title": "Overview",

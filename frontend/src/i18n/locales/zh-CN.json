@@ -711,7 +711,7 @@
     "previewEmpty": "这天没有评分。",
     "rowsExplain": "{{rows}} 条（每个交易日每只股票一条）",
     "delete": "删除这个模型",
-    "deleteConfirm": "确定删除？被回测使用过的模型不能删除。"
+    "deleteConfirm": "确定删除？用过这个模型的回测将无法再复现分数，但成交与净值还在。"
   },
   "overview": {
     "title": "概览",

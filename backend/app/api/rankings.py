@@ -74,21 +74,20 @@ def preview(
 
 @router.delete("/{source_id}")
 def delete_source(source_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
-    """删掉一个评分模型。被回测引用过的不删 —— 那些回测的结论会失去依据。"""
+    """删掉一个评分模型。
+
+    被回测用过也允许删除：删掉之后那些回测的分数无法再复现，但回测本身的成交与净值还在。这是拿"可复现"
+    换"能清理"，等存储与算力更宽裕时可以再讨论保留策略。
+    """
     from app.models.simulation import SimulationRun
 
     source = db.get(RankingSource, source_id)
     if not source:
         raise HTTPException(status_code=404, detail="Ranking source not found")
     used = db.query(SimulationRun).filter(SimulationRun.ranking_source_id == source_id).count()
-    if used:
-        raise HTTPException(
-            status_code=409,
-            detail=f"已有 {used} 次回测使用过这个模型，不能删除；可以改为停用。",
-        )
     db.delete(source)
     db.commit()
-    return {"id": source_id, "deleted": True}
+    return {"id": source_id, "deleted": True, "used_by_runs": used}
 
 
 @router.post("/{source_id}/deprecate")
