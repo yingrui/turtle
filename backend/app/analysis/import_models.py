@@ -23,6 +23,14 @@ from app.models.model_artifact import ModelArtifact, fingerprint
 from app.models.ranking import RankingSource
 
 
+def _month_end(period: str) -> str:
+    """`2026-09` → `2026-09-30`."""
+    import calendar
+
+    year, month = (int(part) for part in period.split("-")[:2])
+    return f"{period}-{calendar.monthrange(year, month)[1]:02d}"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dir", required=True)
@@ -97,8 +105,9 @@ def main(argv: list[str] | None = None) -> int:
                 params={"periods": periods},
                 artifact_key=str(target),
                 artifact_sha256=hashlib.sha256("".join(periods).encode()).hexdigest(),
-                date_from=min(periods),
-                date_to=max(periods),
+                # 逐月模型的覆盖区间要写成真实日期，否则界面上的日期选择器显示不出来。
+                date_from=f"{min(periods)}-01",
+                date_to=_month_end(max(periods)),
                 dataset_name=args.dataset_name,
                 dataset_version=args.dataset_version,
                 dataset_sha256=args.dataset_sha,

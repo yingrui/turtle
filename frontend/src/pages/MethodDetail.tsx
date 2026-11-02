@@ -35,7 +35,9 @@ export function MethodDetail() {
     apiFetch<Source>(`/api/rankings/${encodeURIComponent(id)}`)
       .then((d) => {
         setSource(d);
-        setDay(d.date_to ?? '');
+        // 老数据的覆盖区间可能只有 "2025-07" 这种月份，日期输入框不接受，退回到今天。
+        const candidate = d.date_to ?? '';
+        setDay(/^\d{4}-\d{2}-\d{2}$/.test(candidate) ? candidate : new Date().toISOString().slice(0, 10));
       })
       .catch(() => setSource(null));
   }, [id]);
