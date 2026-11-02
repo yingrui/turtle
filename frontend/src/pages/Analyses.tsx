@@ -245,6 +245,7 @@ export function Analyses({
   const [busy, setBusy] = useState(false);
   const [factorOptions, setFactorOptions] = useState<string[]>([]);
   const [datasetOptions, setDatasetOptions] = useState<string[]>([]);
+  const [datasetIds, setDatasetIds] = useState<Record<string, string>>({});
   const [benchmarkOptions, setBenchmarkOptions] = useState<{ ts_code: string; name: string }[]>([]);
 
   const load = useCallback(async () => {
@@ -276,8 +277,11 @@ export function Analyses({
     apiFetch<{ factors: { code: string }[] }>('/api/factors')
       .then((d) => setFactorOptions((d.factors ?? []).map((f) => f.code)))
       .catch(() => setFactorOptions([]));
-    apiFetch<{ datasets: { name: string }[] }>('/api/datasets')
-      .then((d) => setDatasetOptions((d.datasets ?? []).map((item) => item.name)))
+    apiFetch<{ datasets: { id: string; name: string }[] }>('/api/datasets')
+      .then((d) => {
+        setDatasetOptions((d.datasets ?? []).map((item) => item.name));
+        setDatasetIds(Object.fromEntries((d.datasets ?? []).map((item) => [item.name, item.id])));
+      })
       .catch(() => setDatasetOptions([]));
     apiFetch<{ indexes: { ts_code: string; name: string }[] }>('/api/indexes')
       .then((d) => setBenchmarkOptions((d.indexes ?? []).slice(0, 8)))
@@ -289,6 +293,25 @@ export function Analyses({
   useEffect(() => {
     setValues(method ? defaultsFor(method.params_schema) : {});
   }, [method]);
+
+  const datasetName = values.dataset ?? '';
+  useEffect(() => {
+    const datasetId = datasetIds[datasetName];
+    if (!datasetId) return;
+    apiFetch<{ versions: { version: number; status: string }[] }>(`/api/datasets/${datasetId}`)
+      .then((d) => {
+        const versions = d.versions ?? [];
+        if (!versions.length) {
+          setValues((prev) => ({ ...prev, version: '1' }));
+          return;
+        }
+        const latest = Math.max(...versions.map((item) => item.version));
+        const draft = versions.find((item) => item.version === latest && item.status === 'draft');
+        // 最新一版还是草稿就继续写它；已经发布则开下一版。
+        setValues((prev) => ({ ...prev, version: String(draft ? latest : latest + 1) }));
+      })
+      .catch(() => undefined);
+  }, [datasetName, datasetIds]);
 
   async function onRun() {
     if (!method) return;
