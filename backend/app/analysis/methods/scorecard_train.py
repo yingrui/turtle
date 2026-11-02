@@ -20,8 +20,14 @@ DEFAULT_FACTORS = ("liq_turn_std_6M", "mom_20d", "MACD", "ma_dev_20", "RSI", "vo
 
 class ScorecardTrainParams(BaseModel):
     period: str = Field(..., title="训练哪一个月", description="格式 2025-07：这个模型用来给 2025 年 7 月打分")
-    start: date = Field(..., title="训练数据起点", description="用哪一段历史训练")
-    end: date = Field(..., title="训练数据终点", description="通常取目标月份之前最后一个交易日")
+    start: date = Field(
+        ...,
+        title="训练数据起点",
+        description="从库里的行情与因子表取这一段（不是读数据集文件）；训练行数会记进模型",
+    )
+    end: date = Field(
+        ..., title="训练数据终点", description="通常取目标月份之前最后一个交易日"
+    )
     label: str = Field("benchmark", title="预测目标", description="模型学的是跑赢基准、相对排名，还是绝对上涨")
     horizon: int = Field(20, ge=1, le=60, title="持有期（交易日）", description="预测未来多少个交易日的表现")
     benchmark: str = Field("000300.SH", title="基准指数", description="判断跑赢与否用的参照")
