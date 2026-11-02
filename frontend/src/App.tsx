@@ -9,6 +9,7 @@ import { Portfolio } from './pages/Portfolio';
 import { Screening } from './pages/Screening';
 import { FactorList } from './pages/FactorList';
 import { Indexes } from './pages/Indexes';
+import { Datasets } from './pages/Datasets';
 import { Methods } from './pages/Methods';
 import { MethodsNew } from './pages/MethodsNew';
 import { MethodDetail } from './pages/MethodDetail';
@@ -42,6 +43,7 @@ export function App() {
         <Route path="/data" element={<DataCollection />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/screening" element={<Screening />} />
+        <Route path="/datasets" element={<Datasets />} />
         <Route path="/methods" element={<Methods />} />
         <Route path="/methods/new" element={<MethodsNew />} />
         <Route path="/methods/:id" element={<MethodDetail />} />

@@ -76,6 +76,7 @@ def source_factors(source_id: str, db: Session = Depends(get_db), _: User = Depe
 
     codes: list[str] = []
     dropped: list[dict] = []
+    trained: dict = {}
     if source.kind == "model":
         directory = Path(source.artifact_key)
         periods = sorted((source.params or {}).get("periods") or [])
@@ -84,6 +85,11 @@ def source_factors(source_id: str, db: Session = Depends(get_db), _: User = Depe
             payload = json.loads(target.read_text())
             codes = [factor["code"] for factor in payload.get("factors", [])]
             dropped = payload.get("dropped_factors") or []
+            # 训练用的是库里哪一段数据、多少行 —— 自动记下来的，不需要人去选"哪份数据集"。
+            trained = {
+                "window": payload.get("train_window"),
+                "rows": (payload.get("metrics") or {}).get("n_train"),
+            }
     else:
         codes = list((source.params or {}).get("factors") or [])
 
@@ -100,6 +106,7 @@ def source_factors(source_id: str, db: Session = Depends(get_db), _: User = Depe
 
     return {
         "source_id": source_id,
+        "trained": trained,
         "dropped": dropped,
         "factors": [
             {

@@ -55,7 +55,8 @@
     "rankings": "排序来源",
     "experiments": "对照比较",
     "methods": "评分模型",
-    "dataStatus": "数据状态"
+    "dataStatus": "数据状态",
+    "datasets": "数据集"
   },
   "home": {
     "dashboardTitle": "工作台",
@@ -728,7 +729,8 @@
     "overviewTitle": "概要",
     "droppedLead": "未采用的候选因子：",
     "droppedLowIv": "IV {{iv}} 低于阈值",
-    "droppedCorrelated": "与 {{with}} 相关性 {{corr}}，超过阈值"
+    "droppedCorrelated": "与 {{with}} 相关性 {{corr}}，超过阈值",
+    "factTrained": "训练数据"
   },
   "overview": {
     "title": "概览",
@@ -751,5 +753,23 @@
     "openJobs": "查看任务 →",
     "loadFailed": "加载概览失败",
     "reasonOutOfPool": "已掉出方法池"
+  },
+  "datasets": {
+    "nav": "数据集",
+    "title": "数据集",
+    "lead": "训练集放在 openKMS，这里只读：有哪些数据集、各有哪几个版本。训练并不读这些文件，它们是导出留档与报告引用用的。",
+    "colName": "名称",
+    "colKind": "类型",
+    "colVersion": "版本",
+    "colStatus": "状态",
+    "colCoverage": "覆盖区间",
+    "colRows": "行数",
+    "colFiles": "文件数",
+    "colPublished": "发布时间",
+    "versionsTitle": "版本",
+    "versionsHint": "新版本只在数据增长或重建时产生；已发布的版本不可改。",
+    "empty": "还没有数据集。",
+    "noVersions": "该数据集没有版本。",
+    "loadFailed": "加载数据集失败"
   }
 }

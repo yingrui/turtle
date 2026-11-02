@@ -1,0 +1,29 @@
+@use '../styles/design-system/local-tokens' as lt;
+@use '../styles/design-system/mixins' as *;
+
+// 数据集列表 + 版本：同一页两级，先看有哪些，再看各版本。
+.datasets-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.datasets-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.datasets-lead {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.datasets-versions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}

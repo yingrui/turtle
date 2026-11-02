@@ -40,6 +40,7 @@ const navGroups = [
       { to: '/methods', icon: ListOrdered, key: 'methods', end: true },
       { to: '/factor', icon: FlaskConical, key: 'factor', end: false },
       { to: '/simulation', icon: Play, key: 'simulation', end: false },
+      { to: '/datasets', icon: Database, key: 'datasets', end: true },
     ],
   },
   {

@@ -40,6 +40,7 @@ export function MethodDetail() {
   const [openCode, setOpenCode] = useState<string | null>(null);
   const [explain, setExplain] = useState<Explain | null>(null);
   const [factors, setFactors] = useState<FactorRow[]>([]);
+  const [trained, setTrained] = useState<{ window?: string[]; rows?: number } | null>(null);
   const [dropped, setDropped] = useState<{ code: string; reason: string; iv?: number; with?: string; correlation?: number }[]>([]);
 
   useEffect(() => {
@@ -83,10 +84,13 @@ export function MethodDetail() {
   }
 
   useEffect(() => {
-    apiFetch<{ factors: FactorRow[]; dropped?: typeof dropped }>(`/api/rankings/${encodeURIComponent(id)}/factors`)
+    apiFetch<{ factors: FactorRow[]; dropped?: typeof dropped; trained?: typeof trained }>(
+      `/api/rankings/${encodeURIComponent(id)}/factors`,
+    )
       .then((d) => {
         setFactors(d.factors ?? []);
         setDropped(d.dropped ?? []);
+        setTrained(d.trained ?? null);
       })
       .catch(() => setFactors([]));
   }, [id]);
@@ -140,6 +144,15 @@ export function MethodDetail() {
               ? t('rankings.onTheFly', { periods: (source.params?.periods as unknown[] | undefined)?.length ?? '—' })
               : t('methods.rowsExplain', { rows: source.row_count?.toLocaleString() ?? '—' })}
           </dd>
+          {trained?.window && (
+            <>
+              <dt>{t('methods.factTrained')}</dt>
+              <dd>
+                {trained.window[0]} → {trained.window[1]}
+                {trained.rows ? `，${trained.rows.toLocaleString()} 行` : ''}
+              </dd>
+            </>
+          )}
           <dt>{t('methods.factDataset')}</dt>
           <dd>{source.dataset?.name ? `${source.dataset.name} v${source.dataset.version ?? '?'}` : '—'}</dd>
           <dt>{t('methods.factParams')}</dt>

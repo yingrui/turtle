@@ -55,7 +55,8 @@
     "rankings": "Ranking sources",
     "experiments": "Compare",
     "methods": "Score models",
-    "dataStatus": "Data status"
+    "dataStatus": "Data status",
+    "datasets": "Datasets"
   },
   "home": {
     "dashboardTitle": "Dashboard",
@@ -728,7 +729,8 @@
     "overviewTitle": "Summary",
     "droppedLead": "Candidate factors not used: ",
     "droppedLowIv": "IV {{iv}} below the threshold",
-    "droppedCorrelated": "correlated {{corr}} with {{with}}, above the threshold"
+    "droppedCorrelated": "correlated {{corr}} with {{with}}, above the threshold",
+    "factTrained": "Trained on"
   },
   "overview": {
     "title": "Overview",
@@ -751,5 +753,23 @@
     "openJobs": "Open jobs →",
     "loadFailed": "Could not load the overview",
     "reasonOutOfPool": "dropped out of the method's pool"
+  },
+  "datasets": {
+    "nav": "Datasets",
+    "title": "Datasets",
+    "lead": "Training sets live in openKMS; this view is read-only. Training does not read these files — they are an archive for provenance and reports.",
+    "colName": "Name",
+    "colKind": "Kind",
+    "colVersion": "Version",
+    "colStatus": "Status",
+    "colCoverage": "Coverage",
+    "colRows": "Rows",
+    "colFiles": "Files",
+    "colPublished": "Published",
+    "versionsTitle": "Versions",
+    "versionsHint": "A new version appears only when the data grows or is rebuilt; published versions are immutable.",
+    "empty": "No datasets yet.",
+    "noVersions": "This dataset has no versions.",
+    "loadFailed": "Could not load datasets"
   }
 }
