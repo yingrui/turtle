@@ -34,6 +34,22 @@ class DatasetBuildParams(BaseModel):
     publish: bool = Field(False, title="导出后立即发布", description="发布后这一版不可再改，谨慎勾选")
 
 
+def _factor_versions(db: Session, columns: list[str]) -> dict[str, int]:
+    """导出的列里哪些是因子，以及它们当时的版本。因子公式一改，导出的含义就变了。"""
+    from sqlalchemy import text
+
+    from app.core.tushare_schema import tushare_table  # noqa: F401  (kept for parity)
+
+    rows = db.execute(
+        text(
+            "SELECT d.code, COALESCE(s.version, 1) FROM factor_definitions d "
+            "LEFT JOIN factor_specs s ON s.code = d.code WHERE d.code = ANY(:codes)"
+        ),
+        {"codes": columns},
+    ).all()
+    return {code: int(version) for code, version in rows}
+
+
 def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) -> dict:
     """导出一段区间，追加到 openKMS 数据集版本的草稿里。"""
     from scripts.export_training_set import _request, build_slice, find_or_create_dataset, upload_slice
@@ -54,7 +70,13 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
     if params.publish:
         _request("POST", f"/dataset-versions/{target['id']}/{params.version}/publish")
 
+    from app.analysis.methods.dataset_build import _factor_versions  # noqa: F401  (defined below)
+    from app.services.analysis_service import code_revision
+
     return {
+        # 这份数据是怎么来的：哪个提交、哪些因子、各自什么版本。
+        "code_revision": code_revision(),
+        "factors": _factor_versions(db, list(frame.columns)),
         "dataset_id": target["id"],
         "dataset_name": params.dataset,
         "version": params.version,

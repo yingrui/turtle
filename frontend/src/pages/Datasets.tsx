@@ -38,7 +38,12 @@ export function Datasets() {
   return (
     <div className="datasets-page">
       <header className="datasets-header">
-        <h1>{t('datasets.title')}</h1>
+        <div className="datasets-head-row">
+          <h1>{t('datasets.title')}</h1>
+          <Link className="btn btn-primary" to="/datasets/new">
+            {t('datasets.buildTitle')}
+          </Link>
+        </div>
         <p className="datasets-lead">{t('datasets.lead')}</p>
       </header>
 

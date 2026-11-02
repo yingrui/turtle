@@ -10,6 +10,7 @@ import { Screening } from './pages/Screening';
 import { FactorList } from './pages/FactorList';
 import { Indexes } from './pages/Indexes';
 import { Datasets } from './pages/Datasets';
+import { DatasetBuild } from './pages/DatasetBuild';
 import { DatasetDetail } from './pages/DatasetDetail';
 import { DatasetVersionFiles } from './pages/DatasetVersionFiles';
 import { Methods } from './pages/Methods';
@@ -46,6 +47,7 @@ export function App() {
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/screening" element={<Screening />} />
         <Route path="/datasets" element={<Datasets />} />
+        <Route path="/datasets/new" element={<DatasetBuild />} />
         <Route path="/datasets/:id" element={<DatasetDetail />} />
         <Route path="/datasets/:id/versions/:version" element={<DatasetVersionFiles />} />
         <Route path="/methods" element={<Methods />} />

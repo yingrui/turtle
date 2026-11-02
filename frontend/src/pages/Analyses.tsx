@@ -200,7 +200,10 @@ function Field({
   );
 }
 
-export function Analyses({ embedded = false }: { embedded?: boolean } = {}) {
+export function Analyses({
+  embedded = false,
+  only,
+}: { embedded?: boolean; only?: 'dataset' | 'model' | 'score_table' } = {}) {
   const { t } = useTranslation();
   const [methods, setMethods] = useState<Method[]>([]);
   const [runs, setRuns] = useState<Run[]>([]);
@@ -217,14 +220,19 @@ export function Analyses({ embedded = false }: { embedded?: boolean } = {}) {
         apiFetch<{ runs: Run[] }>('/api/analyses/runs'),
       ]);
       // Only real analyses: a control basket is declared where controls are, not here.
-      const analyses = methodRes.methods.filter((item) => item.family !== 'control');
+      const analyses = methodRes.methods.filter(
+        (item) => item.family !== 'control' && (!only || item.output_kind === only),
+      );
       setMethods(analyses);
       setRuns(runRes.runs);
-      setSelected((current) => current || methodRes.methods.find((item) => item.family !== 'control')?.name || '');
+      const first = methodRes.methods.find(
+        (item) => item.family !== 'control' && (!only || item.output_kind === only),
+      );
+      setSelected((current) => current || first?.name || '');
     } catch {
       toast.error(t('analyses.loadFailed'));
     }
-  }, [t]);
+  }, [t, only]);
 
   useEffect(() => {
     void load();

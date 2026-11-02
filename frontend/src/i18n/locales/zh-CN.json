@@ -779,6 +779,8 @@
     "colFileDesc": "内容",
     "filesTitle": "文件列表",
     "backToVersions": "← 返回版本列表",
-    "noFiles": "该版本没有文件记录。"
+    "noFiles": "该版本没有文件记录。",
+    "buildTitle": "新建导出",
+    "buildLead": "选目标数据集与版本、一段区间、标签，跑一次任务：把这一段的因子与标签导成 parquet 写进 openKMS。同一段区间重复导出会覆盖同名文件。"
   }
 }
