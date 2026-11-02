@@ -67,3 +67,21 @@ def test_control_helpers_are_not_offered_as_analyses():
 def test_the_api_exposes_the_family_so_the_page_can_filter():
     payload = registry.describe()
     assert all("family" in item for item in payload)
+
+
+def test_export_windows_follow_the_requested_granularity():
+    """导出按月/周/日分块：内存占用与块大小成正比，文件数与之成反比。"""
+    from datetime import date
+
+    from app.analysis.methods.dataset_build import _windows
+
+    months = _windows(date(2026, 1, 5), date(2026, 3, 10), "month")
+    assert months[0] == (date(2026, 1, 5), date(2026, 1, 31))
+    assert months[-1] == (date(2026, 3, 1), date(2026, 3, 10))
+
+    weeks = _windows(date(2026, 1, 5), date(2026, 1, 20), "week")
+    assert weeks[0] == (date(2026, 1, 5), date(2026, 1, 11))
+
+    days = _windows(date(2026, 1, 5), date(2026, 1, 7), "day")
+    assert days == [(date(2026, 1, 5), date(2026, 1, 5)), (date(2026, 1, 6), date(2026, 1, 6)),
+                    (date(2026, 1, 7), date(2026, 1, 7))]
