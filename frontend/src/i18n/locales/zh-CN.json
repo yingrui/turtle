@@ -774,6 +774,11 @@
     "statusPublished": "可用（已发布，不可修改）",
     "statusDeprecated": "已作废（数据已失效，勿引用）",
     "usableNow": "← 现在可用",
-    "backToList": "← 返回数据集列表"
+    "backToList": "← 返回数据集列表",
+    "colFile": "文件",
+    "colFileDesc": "内容",
+    "filesTitle": "文件列表",
+    "backToVersions": "← 返回版本列表",
+    "noFiles": "该版本没有文件记录。"
   }
 }

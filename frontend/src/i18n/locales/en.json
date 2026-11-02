@@ -774,6 +774,11 @@
     "statusPublished": "usable (published, immutable)",
     "statusDeprecated": "deprecated (no longer valid)",
     "usableNow": "← in use",
-    "backToList": "← Back to datasets"
+    "backToList": "← Back to datasets",
+    "colFile": "File",
+    "colFileDesc": "Contents",
+    "filesTitle": "Files",
+    "backToVersions": "← Back to versions",
+    "noFiles": "No files recorded for this version."
   }
 }

@@ -54,6 +54,27 @@ def list_datasets(kind: str = Query("file"), _: User = Depends(get_current_user)
     }
 
 
+@router.get("/{dataset_id}/versions/{version}/files")
+def version_files(dataset_id: str, version: int, _: User = Depends(get_current_user)):
+    """某个版本里到底有哪些文件 —— 知道版本号之后，下一步就是看它包含什么。"""
+    manifest = _openkms(f"/dataset-versions/{dataset_id}/{version}/manifest")
+    files = manifest.get("files") or []
+    return {
+        "dataset_id": dataset_id,
+        "version": version,
+        "files": [
+            {
+                "name": item.get("name"),
+                "rows": item.get("rows") or item.get("row_count"),
+                "description": item.get("description"),
+                "sha256": item.get("sha256"),
+                "bytes": item.get("bytes") or item.get("size"),
+            }
+            for item in files
+        ],
+    }
+
+
 @router.get("/{dataset_id}")
 def get_dataset(dataset_id: str, _: User = Depends(get_current_user)):
     versions = _openkms(f"/dataset-versions/{dataset_id}")

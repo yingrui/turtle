@@ -40,7 +40,7 @@ export function DatasetDetail() {
       label: t('datasets.colVersion'),
       render: (row) => (
         <>
-          {`v${row.version}`}
+          <Link to={`/datasets/${id}/versions/${row.version}`}>{`v${row.version}`}</Link>
           {row.version === usable && <span className="datasets-current">{t('datasets.usableNow')}</span>}
         </>
       ),
