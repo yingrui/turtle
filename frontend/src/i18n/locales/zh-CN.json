@@ -643,7 +643,9 @@
     "method": "计算方法",
     "sourceName": "来源名称",
     "sourceNamePlaceholder": "留空则按方法自动命名",
-    "generateElsewhere": "生成新的排序来源 → 截面分析"
+    "generateElsewhere": "生成新的排序来源 → 截面分析",
+    "backToList": "← 返回评分模型列表",
+    "previewToggle": "看某一天它排出的前 20 名"
   },
   "experiments": {
     "title": "对照比较",
@@ -691,7 +693,9 @@
     "buildHint": "选算法、填参数、运行。同一个算法换一组参数就是另一个模型；参数完全相同时重跑会得到同一份评分。",
     "listTitle": "我的评分模型",
     "listHint": "每行是一个模型：用的哪份数据、覆盖哪些交易日、共多少条评分。展开可以看它某一天排出的前 20 名。",
-    "cancelBuild": "收起"
+    "cancelBuild": "收起",
+    "backToList": "← 返回评分模型列表",
+    "previewToggle": "看某一天它排出的前 20 名"
   },
   "overview": {
     "title": "概览",

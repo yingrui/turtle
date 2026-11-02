@@ -31,3 +31,14 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
+
+// 列表是主体；某一天的排名是点开才看的明细。
+.rankings-preview {
+  matter: 0;
+
+  summary {
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+}

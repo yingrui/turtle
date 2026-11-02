@@ -10,6 +10,7 @@ import { Screening } from './pages/Screening';
 import { FactorList } from './pages/FactorList';
 import { Indexes } from './pages/Indexes';
 import { Methods } from './pages/Methods';
+import { MethodsNew } from './pages/MethodsNew';
 import { Experiments } from './pages/Experiments';
 
 import { FactorDetail } from './pages/FactorDetail';
@@ -41,6 +42,7 @@ export function App() {
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/screening" element={<Screening />} />
         <Route path="/methods" element={<Methods />} />
+        <Route path="/methods/new" element={<MethodsNew />} />
         <Route path="/analyses" element={<Navigate to="/methods" replace />} />
         <Route path="/rankings" element={<Navigate to="/methods" replace />} />
         <Route path="/experiments" element={<Experiments />} />

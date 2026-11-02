@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
@@ -102,11 +101,8 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
         pageSize={10}
       />
 
-      <p className="rankings-hint">
-        <Link to="/analyses">{t('rankings.generateElsewhere')}</Link>
-      </p>
-
-      <div className="rankings-preview">
+      <details className="rankings-preview">
+        <summary>{t('rankings.previewToggle')}</summary>
         <div className="form-row">
           <label htmlFor="rankings-source">{t('rankings.source')}</label>
           <select
@@ -141,7 +137,7 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
           empty={t('rankings.previewEmpty')}
           pageSize={10}
         />
-      </div>
+      </details>
     </div>
   );
 }

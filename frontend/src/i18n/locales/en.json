@@ -643,7 +643,9 @@
     "method": "Method",
     "sourceName": "Source name",
     "sourceNamePlaceholder": "Leave blank to name it from the method",
-    "generateElsewhere": "Produce a new ranking source → cross-sectional analysis"
+    "generateElsewhere": "Produce a new ranking source → cross-sectional analysis",
+    "backToList": "← Back to the list",
+    "previewToggle": "See its top 20 for a day"
   },
   "experiments": {
     "title": "Compare against baselines",
@@ -691,7 +693,9 @@
     "buildHint": "Pick an algorithm, set the parameters, run it. Same algorithm with different parameters is a different model; identical parameters produce the identical scores.",
     "listTitle": "My score models",
     "listHint": "Each row is a model: which data it used, which trading days it covers, how many scores. Expand one to see its top 20 for a day.",
-    "cancelBuild": "Collapse"
+    "cancelBuild": "Collapse",
+    "backToList": "← Back to the list",
+    "previewToggle": "See its top 20 for a day"
   },
   "overview": {
     "title": "Overview",
