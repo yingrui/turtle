@@ -689,5 +689,27 @@
     "buildHint": "选一种计算方式、填参数、运行。产物会出现在下面的列表里，回测可以直接选它。",
     "listTitle": "已有的方法",
     "listHint": "每行是一套方法：覆盖的时间区间、用了哪份数据。可以查看某天它排出的前 20 名。"
+  },
+  "overview": {
+    "title": "概览",
+    "dataTitle": "数据",
+    "dataLine": "行情数据更新到 {{day}}。",
+    "bookTitle": "我的组合",
+    "bookLine": "{{name}}（跟随回测 {{run}}）· {{day}} 持有 {{count}} 只。",
+    "bookValue": "持仓市值 {{value}} · 现金 {{cash}} · 合计 {{total}}。",
+    "openHoldings": "查看持仓明细 →",
+    "noBook": "这个组合还没有跟随任何回测。",
+    "startRun": "去跑一次回测 →",
+    "alarmTitle": "持仓提醒",
+    "noAlarm": "今天没有需要处理的持仓。",
+    "methodsTitle": "我的方法",
+    "noMethod": "还没有选股方法。",
+    "createMethod": "去建一套 →",
+    "openMethod": "查看 →",
+    "todoTitle": "需要你处理",
+    "failedJobs": "有 {{count}} 个任务失败。",
+    "openJobs": "查看任务 →",
+    "loadFailed": "加载概览失败",
+    "reasonOutOfPool": "已掉出方法池"
   }
 }

@@ -1,0 +1,35 @@
+@use '../styles/design-system/local-tokens' as lt;
+@use '../styles/design-system/mixins' as *;
+
+// Four blocks, in the order you read them in the morning.
+.overview-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.overview-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+}
+
+.overview-line {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.overview-list {
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--color-text-secondary);
+
+  a {
+    margin-left: var(--space-2);
+  }
+}

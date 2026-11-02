@@ -14,6 +14,7 @@ from app.api import (
     factors,
     indexes,
     jobs,
+    overview,
     models,
     portfolios,
     rankings,
@@ -66,6 +67,7 @@ app.include_router(rankings.router)
 app.include_router(auth.router)
 app.include_router(data.router)
 app.include_router(models.router)
+app.include_router(overview.router)
 app.include_router(portfolios.router)
 app.include_router(screening.router)
 app.include_router(strategies.router)

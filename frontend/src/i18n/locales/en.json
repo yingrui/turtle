@@ -689,5 +689,27 @@
     "buildHint": "Pick a computation, fill in the parameters, run it. The result lands in the list below and a backtest can use it.",
     "listTitle": "Methods you have",
     "listHint": "Each row is a method: the period it covers and which data it used. You can preview its top 20 for a given day."
+  },
+  "overview": {
+    "title": "Overview",
+    "dataTitle": "Data",
+    "dataLine": "Market data is up to {{day}}.",
+    "bookTitle": "My portfolio",
+    "bookLine": "{{name}} (following backtest {{run}}) · {{count}} positions on {{day}}.",
+    "bookValue": "Value {{value}} · cash {{cash}} · total {{total}}.",
+    "openHoldings": "Open holdings →",
+    "noBook": "This portfolio is not following a backtest yet.",
+    "startRun": "Run one →",
+    "alarmTitle": "Position alerts",
+    "noAlarm": "Nothing to act on today.",
+    "methodsTitle": "My methods",
+    "noMethod": "No methods yet.",
+    "createMethod": "Create one →",
+    "openMethod": "Open →",
+    "todoTitle": "Needs you",
+    "failedJobs": "{{count}} job(s) failed.",
+    "openJobs": "Open jobs →",
+    "loadFailed": "Could not load the overview",
+    "reasonOutOfPool": "dropped out of the method's pool"
   }
 }

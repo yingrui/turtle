@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { MainLayout } from './components/Layout/MainLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { Home } from './pages/Home';
+import { Overview } from './pages/Overview';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { DataCollection } from './pages/DataCollection';
@@ -35,7 +35,7 @@ export function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Overview />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/data" element={<DataCollection />} />
         <Route path="/portfolio" element={<Portfolio />} />
