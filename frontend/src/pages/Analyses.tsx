@@ -64,8 +64,8 @@ function paramsPayload(values: Record<string, string>): Record<string, unknown> 
 
 // 数据集名可以补全；写成列表里没有的名字就是新建一个数据集。
 const t_inline = {
-  existing: '已有的数据集：会往它里面写',
-  willCreate: '这个名字还不存在：会新建一个数据集',
+  existing: '数据集已存在，本次导出将写入该数据集。',
+  willCreate: '数据集不存在，本次导出将新建该数据集。',
 };
 
 const LABEL_CHOICES = [
