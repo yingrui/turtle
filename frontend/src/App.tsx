@@ -11,6 +11,7 @@ import { FactorList } from './pages/FactorList';
 import { Indexes } from './pages/Indexes';
 import { Methods } from './pages/Methods';
 import { MethodsNew } from './pages/MethodsNew';
+import { MethodDetail } from './pages/MethodDetail';
 import { Experiments } from './pages/Experiments';
 
 import { FactorDetail } from './pages/FactorDetail';
@@ -43,6 +44,7 @@ export function App() {
         <Route path="/screening" element={<Screening />} />
         <Route path="/methods" element={<Methods />} />
         <Route path="/methods/new" element={<MethodsNew />} />
+        <Route path="/methods/:id" element={<MethodDetail />} />
         <Route path="/analyses" element={<Navigate to="/methods" replace />} />
         <Route path="/rankings" element={<Navigate to="/methods" replace />} />
         <Route path="/experiments" element={<Experiments />} />

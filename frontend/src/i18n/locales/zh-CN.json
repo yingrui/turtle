@@ -695,7 +695,18 @@
     "listHint": "每行是一个模型：用的哪份数据、覆盖哪些交易日、共多少条评分。展开可以看它某一天排出的前 20 名。",
     "cancelBuild": "收起",
     "backToList": "← 返回评分模型列表",
-    "previewToggle": "看某一天它排出的前 20 名"
+    "previewToggle": "看某一天它排出的前 20 名",
+    "colCode": "股票",
+    "colScore": "分数",
+    "notFound": "没有这个评分模型。",
+    "factAlgorithm": "算法",
+    "factCoverage": "覆盖区间",
+    "factRows": "评分条数",
+    "factDataset": "使用的数据",
+    "factParams": "参数",
+    "detailPreview": "某一天的前 20 名",
+    "pickDay": "日期",
+    "previewEmpty": "这天没有评分。"
   },
   "overview": {
     "title": "概览",

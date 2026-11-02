@@ -42,3 +42,21 @@
   justify-content: space-between;
   gap: var(--space-3);
 }
+
+// Facts about one model: label left, value right — read as a list, not as prose.
+.methods-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+
+  dt {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  dd {
+    margin: 0;
+    word-break: break-all;
+  }
+}

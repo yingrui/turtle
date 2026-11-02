@@ -695,7 +695,18 @@
     "listHint": "Each row is a model: which data it used, which trading days it covers, how many scores. Expand one to see its top 20 for a day.",
     "cancelBuild": "Collapse",
     "backToList": "← Back to the list",
-    "previewToggle": "See its top 20 for a day"
+    "previewToggle": "See its top 20 for a day",
+    "colCode": "Symbol",
+    "colScore": "Score",
+    "notFound": "No such score model.",
+    "factAlgorithm": "Algorithm",
+    "factCoverage": "Coverage",
+    "factRows": "Scores",
+    "factDataset": "Data used",
+    "factParams": "Parameters",
+    "detailPreview": "Top 20 on a day",
+    "pickDay": "Date",
+    "previewEmpty": "No scores for that day."
   },
   "overview": {
     "title": "Overview",
