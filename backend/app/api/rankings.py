@@ -56,6 +56,62 @@ def get_source(source_id: str, db: Session = Depends(get_db), _: User = Depends(
     }
 
 
+@router.get("/{source_id}/factors")
+def source_factors(source_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """这个模型用了哪些因子，以及库里还认不认识它们。
+
+    模型里存的是因子代号和系数。因子库以后会加新因子，这不影响已有模型；但如果某个因子被改名、删掉，
+    或者公式版本变了，这个模型算出来的分数就不再是当初那个意思 —— 这里就是把这件事显示出来。
+    """
+    import json
+    from pathlib import Path
+
+    from sqlalchemy import text
+
+    from app.models.ranking import RankingSource
+
+    source = db.get(RankingSource, source_id)
+    if not source:
+        raise HTTPException(status_code=404, detail="Ranking source not found")
+
+    codes: list[str] = []
+    if source.kind == "model":
+        directory = Path(source.artifact_key)
+        periods = sorted((source.params or {}).get("periods") or [])
+        target = directory / f"{periods[-1]}.json" if periods else None
+        if target and target.exists():
+            payload = json.loads(target.read_text())
+            codes = [factor["code"] for factor in payload.get("factors", [])]
+    else:
+        codes = list((source.params or {}).get("factors") or [])
+
+    if not codes:
+        return {"source_id": source_id, "factors": []}
+
+    rows = db.execute(
+        text(
+            "SELECT code, name, category, direction FROM factor_definitions WHERE code = ANY(:codes)"
+        ),
+        {"codes": codes},
+    ).all()
+    known = {code: {"name": name, "category": category, "direction": direction} for code, name, category, direction in rows}
+
+    return {
+        "source_id": source_id,
+        "factors": [
+            {
+                "code": code,
+                "name": known.get(code, {}).get("name"),
+                "category": known.get(code, {}).get("category"),
+                "direction": known.get(code, {}).get("direction"),
+                # 因子库里找不到 = 这个模型以后算不准了
+                "missing": code not in known,
+            }
+            for code in codes
+        ],
+    }
+
+
 @router.get("/{source_id}/preview")
 def preview(
     source_id: str,

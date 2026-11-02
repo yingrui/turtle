@@ -719,7 +719,12 @@
     "explainPercentile": "当日分位",
     "explainContribution": "对总分贡献",
     "explainIntercept": "截距",
-    "explainNoContribution": "这类方法不保存逐项权重，只能看到取值与分位。"
+    "explainNoContribution": "这类方法不保存逐项权重，只能看到取值与分位。",
+    "factorsTitle": "使用的因子",
+    "factorsHint": "模型存的是因子代号与权重。以后因子库新增因子不影响这个模型；但某个因子改名、删除或改公式后，它就再也算不出当初那个分数。",
+    "factorName": "名称",
+    "factorCategory": "类别",
+    "factorMissing": "（因子库里已找不到，此模型无法再计算）"
   },
   "overview": {
     "title": "概览",

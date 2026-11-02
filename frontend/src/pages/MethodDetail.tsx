@@ -22,6 +22,8 @@ type Source = {
 
 type RankRow = { ts_code: string; score: number; rank: number };
 
+type FactorRow = { code: string; name: string | null; category: string | null; direction: number | null; missing: boolean };
+
 type Explain = {
   kind: string;
   intercept: number | null;
@@ -37,6 +39,7 @@ export function MethodDetail() {
   const [rows, setRows] = useState<RankRow[]>([]);
   const [openCode, setOpenCode] = useState<string | null>(null);
   const [explain, setExplain] = useState<Explain | null>(null);
+  const [factors, setFactors] = useState<FactorRow[]>([]);
 
   useEffect(() => {
     apiFetch<Source>(`/api/rankings/${encodeURIComponent(id)}`)
@@ -77,6 +80,12 @@ export function MethodDetail() {
       window.alert(error instanceof Error ? error.message : String(error));
     }
   }
+
+  useEffect(() => {
+    apiFetch<{ factors: FactorRow[] }>(`/api/rankings/${encodeURIComponent(id)}/factors`)
+      .then((d) => setFactors(d.factors ?? []))
+      .catch(() => setFactors([]));
+  }, [id]);
 
   const preview = useCallback(async () => {
     if (!id) return;
@@ -132,6 +141,36 @@ export function MethodDetail() {
           <dd>{JSON.stringify(source.params ?? {})}</dd>
         </dl>
       </section>
+
+      {factors.length > 0 && (
+        <section className="methods-section">
+          <h2>{t('methods.factorsTitle')}</h2>
+          <p className="methods-hint">{t('methods.factorsHint')}</p>
+          <table className="methods-explain__table">
+            <thead>
+              <tr>
+                <th>{t('methods.explainFactor')}</th>
+                <th>{t('methods.factorName')}</th>
+                <th>{t('methods.factorCategory')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {factors.map((factor) => (
+                <tr key={factor.code}>
+                  <td>{factor.code}</td>
+                  <td>
+                    {factor.name ?? '—'}
+                    {factor.missing && (
+                      <span className="methods-factor-missing"> {t('methods.factorMissing')}</span>
+                    )}
+                  </td>
+                  <td>{factor.category ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       <section className="methods-section">
         <h2>{t('methods.detailPreview')}</h2>

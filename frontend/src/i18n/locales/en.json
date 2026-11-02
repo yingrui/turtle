@@ -719,7 +719,12 @@
     "explainPercentile": "Percentile",
     "explainContribution": "Contribution",
     "explainIntercept": "Intercept",
-    "explainNoContribution": "This kind of method stores no per-factor weights; only values and percentiles are available."
+    "explainNoContribution": "This kind of method stores no per-factor weights; only values and percentiles are available.",
+    "factorsTitle": "Factors used",
+    "factorsHint": "A model stores factor codes and their weights. Adding new factors later does not affect it; renaming, removing or changing a factor's formula does — it will no longer score the way it did.",
+    "factorName": "Name",
+    "factorCategory": "Category",
+    "factorMissing": "(no longer in the factor library — this model cannot be computed)"
   },
   "overview": {
     "title": "Overview",

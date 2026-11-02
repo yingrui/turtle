@@ -157,3 +157,8 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+.methods-factor-missing {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+}
