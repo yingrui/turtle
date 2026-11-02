@@ -98,7 +98,12 @@ def overview(db: Session = Depends(get_db), _: User = Depends(get_current_user))
 
     service = RankingSourceService()
     for source in db.scalars(
-        select(RankingSource).where(RankingSource.status == "published").limit(3)
+        select(RankingSource)
+        .where(
+            RankingSource.status == "published",
+            (RankingSource.method.is_(None)) | (RankingSource.method != "constant_pool"),
+        )
+        .limit(3)
     ).all():
         top: list[dict] = []
         if picks_day:

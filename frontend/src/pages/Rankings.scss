@@ -42,3 +42,12 @@
     font-size: var(--font-size-sm);
   }
 }
+
+// Controls (random pools) are a tool for checking a result, not a method anyone picks from.
+.rankings-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}

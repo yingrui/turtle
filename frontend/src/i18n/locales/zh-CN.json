@@ -645,7 +645,8 @@
     "sourceNamePlaceholder": "留空则按方法自动命名",
     "generateElsewhere": "生成新的排序来源 → 截面分析",
     "backToList": "← 返回评分模型列表",
-    "previewToggle": "看某一天它排出的前 20 名"
+    "previewToggle": "看某一天它排出的前 20 名",
+    "showControls": "显示对照池（统计检验用，不是给人选股的）"
   },
   "experiments": {
     "title": "对照比较",

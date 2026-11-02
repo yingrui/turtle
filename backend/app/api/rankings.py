@@ -18,10 +18,13 @@ router = APIRouter(prefix="/api/rankings", tags=["rankings"], dependencies=[Depe
 @router.get("")
 def list_sources(
     include_deprecated: bool = False,
+    include_controls: bool = False,
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    return {"sources": RankingSourceService().list_sources(db, include_deprecated)}
+    return {
+        "sources": RankingSourceService().list_sources(db, include_deprecated, include_controls)
+    }
 
 
 @router.get("/{source_id}")

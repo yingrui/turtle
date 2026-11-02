@@ -189,10 +189,17 @@ def validate(table: ScoreTable, spec) -> dict:
 class RankingSourceService:
     """Read paths a simulation uses: the list for the picker, and the daily ranking."""
 
-    def list_sources(self, db: Session, include_deprecated: bool = False) -> list[dict]:
+    def list_sources(
+        self, db: Session, include_deprecated: bool = False, include_controls: bool = False
+    ) -> list[dict]:
+        """评分模型列表。对照池（constant_pool 生成的那批）默认不列 —— 它们是统计检验用的，不是给人用的方法。"""
         query = db.query(RankingSource)
         if not include_deprecated:
             query = query.filter(RankingSource.status == "published")
+        if not include_controls:
+            query = query.filter(
+                (RankingSource.method.is_(None)) | (RankingSource.method != "constant_pool")
+            )
         return [
             {
                 "id": source.id,

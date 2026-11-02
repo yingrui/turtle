@@ -645,7 +645,8 @@
     "sourceNamePlaceholder": "Leave blank to name it from the method",
     "generateElsewhere": "Produce a new ranking source → cross-sectional analysis",
     "backToList": "← Back to the list",
-    "previewToggle": "See its top 20 for a day"
+    "previewToggle": "See its top 20 for a day",
+    "showControls": "Show control pools (for statistical checks, not for picking stocks)"
   },
   "experiments": {
     "title": "Compare against baselines",

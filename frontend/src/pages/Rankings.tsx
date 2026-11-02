@@ -25,15 +25,18 @@ type Source = {
 export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
   const { t } = useTranslation();
   const [sources, setSources] = useState<Source[]>([]);
+  const [withControls, setWithControls] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const res = await apiFetch<{ sources: Source[] }>('/api/rankings');
+      const res = await apiFetch<{ sources: Source[] }>(
+        `/api/rankings?include_controls=${withControls}`,
+      );
       setSources(res.sources ?? []);
     } catch {
       toast.error(t('rankings.loadFailed'));
     }
-  }, [t]);
+  }, [t, withControls]);
 
   useEffect(() => {
     void load();
@@ -73,6 +76,15 @@ export function Rankings({ embedded = false }: { embedded?: boolean } = {}) {
           <p className="rankings-subtitle">{t('rankings.subtitle')}</p>
         </>
       )}
+      <label className="rankings-toggle">
+        <input
+          type="checkbox"
+          checked={withControls}
+          onChange={(event) => setWithControls(event.target.checked)}
+        />
+        {t('rankings.showControls')}
+      </label>
+
       <DataTable<Source>
         columns={columns}
         rows={sources}
