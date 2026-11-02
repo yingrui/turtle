@@ -12,17 +12,15 @@ export function Methods() {
   return (
     <div className="methods-page">
       <header className="methods-header">
-        <h1>{t('methods.title')}</h1>
+        <div className="methods-section-head">
+          <h1>{t('methods.title')}</h1>
+          <Link className="btn btn-primary" to="/methods/new">
+            {t('methods.buildTitle')}
+          </Link>
+        </div>
         <p className="methods-lead">{t('methods.lead')}</p>
       </header>
 
-      <div className="methods-section-head">
-        <h2>{t('methods.listTitle')}</h2>
-        <Link className="btn btn-primary" to="/methods/new">
-          {t('methods.buildTitle')}
-        </Link>
-      </div>
-      <p className="methods-hint">{t('methods.listHint')}</p>
 
       <Rankings embedded />
     </div>

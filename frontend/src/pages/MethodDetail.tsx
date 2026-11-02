@@ -124,6 +124,7 @@ export function MethodDetail() {
       </header>
 
       <section className="methods-section">
+        <h2>{t('methods.overviewTitle')}</h2>
         <dl className="methods-facts">
           <dt>{t('methods.factAlgorithm')}</dt>
           <dd>{source.method ?? '—'}</dd>

@@ -690,7 +690,7 @@
   },
   "methods": {
     "title": "Score models",
-    "lead": "A score model = one algorithm + its parameters + a date range. Its output is a cross-sectional score for every trading day, which a backtest uses to decide what to buy.",
+    "lead": "A model = one algorithm + its parameters + a date range; it outputs a cross-sectional score for every trading day.",
     "buildTitle": "New score model",
     "buildHint": "Pick an algorithm, set the parameters, run it. Same algorithm with different parameters is a different model; identical parameters produce the identical scores.",
     "listTitle": "My score models",
@@ -724,7 +724,8 @@
     "factorsHint": "A model stores factor codes and their weights. Adding new factors later does not affect it; renaming, removing or changing a factor's formula does — it will no longer score the way it did.",
     "factorName": "Name",
     "factorCategory": "Category",
-    "factorMissing": "(no longer in the factor library — this model cannot be computed)"
+    "factorMissing": "(no longer in the factor library — this model cannot be computed)",
+    "overviewTitle": "Summary"
   },
   "overview": {
     "title": "Overview",
