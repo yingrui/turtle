@@ -28,7 +28,7 @@ class RegimeScoreParams(BaseModel):
     ma_window: int = Field(60, ge=5, le=250, title="均线周期（交易日）", description="用多少日均线判别趋势/震荡，常用 60")
     horizon: int = Field(20, ge=1, le=60, description="标签的前瞻持有期，只记录在数据说明里，不影响当日打分")
     benchmark: str = Field("000300.SH", title="基准指数", description="用它的均线判别市场状态，通常沪深300")
-    factors: list[str] = Field(default_factory=lambda: list(DEFAULT_FACTORS), title="参与打分的因子")
+    # 因子不开放选择：这个算法就是"对动量类因子按大盘方向改符号"，换成价值因子会得到一个没有意义的负暴露。
     exclude_st: bool = Field(True, title="剔除 ST 股", description="ST 是交易所对异常公司的标记")
 
 
@@ -69,7 +69,7 @@ def run(db: Session, params: RegimeScoreParams, dataset: dict | None = None) -> 
         frame = chunk.frame
         if frame.empty:
             continue
-        factors = [code for code in params.factors if code in frame.columns]
+        factors = [code for code in DEFAULT_FACTORS if code in frame.columns]
         if not factors:
             break
         days = pd.to_datetime(frame["trade_date"]).dt.strftime("%Y-%m-%d")
@@ -109,11 +109,12 @@ def run(db: Session, params: RegimeScoreParams, dataset: dict | None = None) -> 
 METHOD = register(
     MethodSpec(
         name="regime_score",
-        display_name="趋势状态自适应打分（MA60 判别 + 动量/反转切换）",
+        display_name="跟大盘方向切换动量/反转",
         description=(
-            "以沪深300 与 60 日均线的相对位置判别市场状态：指数在均线上方视为趋势市，对动量类因子"
-            "（20 日动量、MACD、20 日乖离率）取正暴露；在均线下方视为震荡市，取负暴露（买前期跌幅大的）。"
-            "三个因子在每个交易日的截面上先做百分位标准化，再等权合成总分，用于排序，不决定买卖。"
+            "看大盘方向决定买强还是买弱。沪深300 在 60 日均线上方时，认为行情在涨，买近期涨得多的；"
+            "在均线下方时，认为行情在跌，反过来买近期跌得多的。"
+            "每天把 20 日动量、MACD、20 日乖离率这三个指标在全市场排一次名，名次越靠前分数越高，三个分数相加就是总分。"
+            "因子固定为这三个，不可更换 —— 换成别的指标（比如估值、财务）这个逻辑就不成立了。"
         ),
         params_model=RegimeScoreParams,
         output_kind="score_table",
