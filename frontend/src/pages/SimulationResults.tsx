@@ -304,32 +304,6 @@ export function SimulationResults() {
 
       {compare.length > 1 && (
         <div className="mb-6">
-          <section className="simulation-pool">
-        <h2 className="panel-title">{t('results.poolTitle')}</h2>
-        <p className="portfolio-panel-desc">{t('results.poolDesc')}</p>
-        {poolDates.length > 0 && (
-          <div className="form-row field-medium">
-            <label htmlFor="pool-day">{t('results.poolDay')}</label>
-            <select id="pool-day" value={poolDay} onChange={(e) => setPoolDay(e.target.value)}>
-              {poolDates.slice().reverse().map((day) => (
-                <option key={day} value={day}>{day}</option>
-              ))}
-            </select>
-          </div>
-        )}
-        <DataTable<{ ts_code: string; rank: number | null; score: number | null; held: boolean | null }>
-          columns={[
-            { key: 'rank', label: '#', align: 'right', render: (row) => row.rank ?? '—' },
-            { key: 'code', label: t('results.poolCode'), render: (row) => row.ts_code },
-            { key: 'score', label: t('results.poolScore'), align: 'right', render: (row) => (row.score == null ? '—' : row.score.toFixed(3)) },
-            { key: 'held', label: t('results.poolHeld'), render: (row) => (row.held ? t('results.poolYes') : '—') },
-          ]}
-          rows={pool}
-          rowKey={(row) => row.ts_code}
-          empty={t('results.poolEmpty')}
-          pageSize={10}
-        />
-      </section>
 
       <h2 className="panel-title">{t('results.compareTitle')}</h2>
           <table className="data-table">
@@ -370,6 +344,7 @@ export function SimulationResults() {
             { id: 'chart', label: t('results.tabChart') },
             { id: 'trades', label: t('results.tabTrades') },
             { id: 'benefit', label: t('results.tabBenefit') },
+            { id: 'pool', label: t('results.poolTitle') },
           ]}
           active={tab}
           onChange={setTab}
@@ -404,6 +379,37 @@ export function SimulationResults() {
               />
             </div>
           )}
+          {tab === 'pool' && (
+            <div>
+              <section className="simulation-pool">
+                <h2 className="panel-title">{t('results.poolTitle')}</h2>
+                <p className="portfolio-panel-desc">{t('results.poolDesc')}</p>
+                {poolDates.length > 0 && (
+          <div className="form-row field-medium">
+            <label htmlFor="pool-day">{t('results.poolDay')}</label>
+            <select id="pool-day" value={poolDay} onChange={(e) => setPoolDay(e.target.value)}>
+                      {poolDates.slice().reverse().map((day) => (
+                <option key={day} value={day}>{day}</option>
+              ))}
+            </select>
+          </div>
+        )}
+                <DataTable<{ ts_code: string; rank: number | null; score: number | null; held: boolean | null }>
+          columns={[
+            { key: 'rank', label: '#', align: 'right', render: (row) => row.rank ?? '—' },
+            { key: 'code', label: t('results.poolCode'), render: (row) => row.ts_code },
+            { key: 'score', label: t('results.poolScore'), align: 'right', render: (row) => (row.score == null ? '—' : row.score.toFixed(3)) },
+            { key: 'held', label: t('results.poolHeld'), render: (row) => (row.held ? t('results.poolYes') : '—') },
+          ]}
+          rows={pool}
+          rowKey={(row) => row.ts_code}
+          empty={t('results.poolEmpty')}
+          pageSize={10}
+                />
+              </section>
+            </div>
+          )}
+
           {tab === 'trades' && (
             <DataTable
               pageSize={25}
