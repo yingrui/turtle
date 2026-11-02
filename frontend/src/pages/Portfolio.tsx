@@ -625,7 +625,12 @@ export function Portfolio() {
                     <DataTable
                       pageSize={25}
                       columns={[
-                        { key: 'date', label: t('portfolio.colDate'), render: (row) => row.date },
+                        {
+                          key: 'date',
+                          label: t('portfolio.colDate'),
+                          // The API hands back a timestamp; a trade happens on a day, not at a time.
+                          render: (row) => String(row.date).slice(0, 10),
+                        },
                         { key: 'code', label: t('portfolio.colCode'), render: (row) => row.ts_code },
                         {
                           key: 'side',
