@@ -22,6 +22,12 @@ type Source = {
 
 type RankRow = { ts_code: string; score: number; rank: number };
 
+type Explain = {
+  kind: string;
+  intercept: number | null;
+  factors: { code: string; value: number | null; percentile: number | null; contribution: number | null }[];
+};
+
 /** 第二层：这一个模型是什么、它某天选了什么。只讲一个模型。 */
 export function MethodDetail() {
   const { t } = useTranslation();
@@ -29,6 +35,8 @@ export function MethodDetail() {
   const [source, setSource] = useState<Source | null>(null);
   const [day, setDay] = useState('');
   const [rows, setRows] = useState<RankRow[]>([]);
+  const [openCode, setOpenCode] = useState<string | null>(null);
+  const [explain, setExplain] = useState<Explain | null>(null);
 
   useEffect(() => {
     apiFetch<Source>(`/api/rankings/${encodeURIComponent(id)}`)
@@ -40,6 +48,25 @@ export function MethodDetail() {
       })
       .catch(() => setSource(null));
   }, [id]);
+
+  async function toggleExplain(code: string) {
+    if (openCode === code) {
+      setOpenCode(null);
+      setExplain(null);
+      return;
+    }
+    setOpenCode(code);
+    setExplain(null);
+    try {
+      setExplain(
+        await apiFetch<Explain>(
+          `/api/rankings/${encodeURIComponent(id)}/explain?day=${encodeURIComponent(day)}&ts_code=${encodeURIComponent(code)}`,
+        ),
+      );
+    } catch {
+      setExplain(null);
+    }
+  }
 
   async function onDelete() {
     if (!window.confirm(t('methods.deleteConfirm'))) return;
@@ -117,7 +144,8 @@ export function MethodDetail() {
         ) : (
           <ol className="methods-ranks">
             {rows.map((row) => (
-              <li key={row.ts_code} className="methods-rank">
+              <li key={row.ts_code} className="methods-rank-item">
+                <button type="button" className="methods-rank" onClick={() => toggleExplain(row.ts_code)} aria-expanded={openCode === row.ts_code}>
                 <span className="methods-rank__no">{row.rank}</span>
                 <span className="methods-rank__code">{row.ts_code}</span>
                 <span className="methods-rank__bar">
@@ -131,6 +159,57 @@ export function MethodDetail() {
                   />
                 </span>
                 <span className="methods-rank__score">{row.score.toFixed(4)}</span>
+                </button>
+
+                {openCode === row.ts_code && (
+                  <div className="methods-explain">
+                    {!explain && <p className="methods-hint">{t('methods.explainLoading')}</p>}
+                    {explain && explain.factors.length === 0 && (
+                      <p className="methods-hint">{t('methods.explainMissing')}</p>
+                    )}
+                    {explain && explain.factors.length > 0 && (
+                      <table className="methods-explain__table">
+                        <thead>
+                          <tr>
+                            <th>{t('methods.explainFactor')}</th>
+                            <th>{t('methods.explainValue')}</th>
+                            <th>{t('methods.explainPercentile')}</th>
+                            {explain.kind === 'model' && <th>{t('methods.explainContribution')}</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {explain.factors.map((factor) => (
+                            <tr key={factor.code}>
+                              <td>{factor.code}</td>
+                              <td className="methods-explain__num">{factor.value == null ? '—' : factor.value.toFixed(4)}</td>
+                              <td className="methods-explain__num">
+                                {factor.percentile == null ? '—' : `${factor.percentile}%`}
+                              </td>
+                              {explain.kind === 'model' && (
+                                <td className="methods-explain__num">
+                                  {factor.contribution == null
+                                    ? '—'
+                                    : `${factor.contribution > 0 ? '+' : ''}${factor.contribution.toFixed(4)}`}
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                          {explain.intercept != null && (
+                            <tr>
+                              <td>{t('methods.explainIntercept')}</td>
+                              <td colSpan={3} className="methods-explain__num">
+                                {explain.intercept.toFixed(4)}
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    )}
+                    {explain && explain.kind !== 'model' && (
+                      <p className="methods-hint">{t('methods.explainNoContribution')}</p>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ol>

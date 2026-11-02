@@ -711,7 +711,15 @@
     "previewEmpty": "这天没有评分。",
     "rowsExplain": "{{rows}} 条（每个交易日每只股票一条）",
     "delete": "删除这个模型",
-    "deleteConfirm": "确定删除？用过这个模型的回测将无法再复现分数，但成交与净值还在。"
+    "deleteConfirm": "确定删除？用过这个模型的回测将无法再复现分数，但成交与净值还在。",
+    "explainLoading": "正在算这个分数由哪些因子组成…",
+    "explainMissing": "这一天没有因子数据，无法分解。",
+    "explainFactor": "因子",
+    "explainValue": "取值",
+    "explainPercentile": "当日分位",
+    "explainContribution": "对总分贡献",
+    "explainIntercept": "截距",
+    "explainNoContribution": "这类方法不保存逐项权重，只能看到取值与分位。"
   },
   "overview": {
     "title": "概览",
