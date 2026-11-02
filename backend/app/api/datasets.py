@@ -84,6 +84,51 @@ def build(body: dict, db: Session = Depends(get_db), user: User = Depends(get_cu
     return {"run_id": run.id}
 
 
+@router.get("/{dataset_id}/builds")
+def build_history(dataset_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """这份数据是哪几次导出的：谁、什么时候、哪段区间、多少行、结果如何。"""
+    import json
+
+    from app.models.ranking import AnalysisRun
+
+    runs = (
+        db.query(AnalysisRun)
+        .filter(AnalysisRun.method == "dataset_build")
+        .order_by(AnalysisRun.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    matched = []
+    for run in runs:
+        params = run.params or {}
+        if params.get("dataset") not in (dataset_id, None):
+            continue
+        rows = None
+        if run.artifact_key:
+            from pathlib import Path
+
+            descriptor = Path(run.artifact_key) / "descriptor.json"
+            if descriptor.exists():
+                try:
+                    rows = json.loads(descriptor.read_text()).get("rows")
+                except Exception:  # noqa: BLE001 — 描述坏掉不该让整页打不开
+                    rows = None
+        matched.append(
+            {
+                "run_id": run.id,
+                "status": run.status,
+                "version": params.get("version"),
+                "window": [params.get("start"), params.get("end")],
+                "label": params.get("label"),
+                "rows": rows,
+                "created_by": run.created_by,
+                "finished_at": run.finished_at.isoformat() if run.finished_at else None,
+                "error": run.error,
+            }
+        )
+    return {"dataset_id": dataset_id, "builds": matched}
+
+
 @router.get("/{dataset_id}/versions/{version}/files")
 def version_files(dataset_id: str, version: int, _: User = Depends(get_current_user)):
     """某个版本里到底有哪些文件 —— 知道版本号之后，下一步就是看它包含什么。"""

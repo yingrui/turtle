@@ -5,6 +5,18 @@ import { apiFetch } from '../utils/api';
 import { DataTable, type Column } from '../components/DataTable';
 import './Datasets.scss';
 
+type Build = {
+  run_id: string;
+  status: string;
+  version: number | null;
+  window: [string | null, string | null];
+  label: string | null;
+  rows: number | null;
+  created_by: string | null;
+  finished_at: string | null;
+  error: string | null;
+};
+
 type Version = {
   version: number;
   status: string;
@@ -21,6 +33,7 @@ export function DatasetDetail() {
   const { id = '' } = useParams();
   const [versions, setVersions] = useState<Version[]>([]);
   const [name, setName] = useState('');
+  const [builds, setBuilds] = useState<Build[]>([]);
 
   useEffect(() => {
     apiFetch<{ versions: Version[]; name: string | null }>(`/api/datasets/${encodeURIComponent(id)}`)
@@ -29,6 +42,9 @@ export function DatasetDetail() {
         setVersions((d.versions ?? []).sort((a, b) => b.version - a.version));
       })
       .catch(() => setVersions([]));
+    apiFetch<{ builds: Build[] }>(`/api/datasets/${encodeURIComponent(id)}/builds`)
+      .then((d) => setBuilds(d.builds ?? []))
+      .catch(() => setBuilds([]));
   }, [id]);
 
   // 没有"当前版本"这种指针：最新一个已发布的版本就是可引用的那个。
@@ -81,6 +97,33 @@ export function DatasetDetail() {
           rows={versions}
           rowKey={(row) => String(row.version)}
           empty={t('datasets.noVersions')}
+          pageSize={10}
+        />
+      </section>
+
+      <section className="datasets-section">
+        <h2>{t('datasets.buildsTitle')}</h2>
+        <p className="datasets-lead">{t('datasets.buildsHint')}</p>
+        <DataTable<Build>
+          columns={[
+            {
+              key: 'finished',
+              label: t('datasets.colBuildTime'),
+              render: (row) => (row.finished_at ? row.finished_at.slice(0, 19).replace('T', ' ') : '—'),
+            },
+            { key: 'version', label: t('datasets.colVersion'), render: (row) => `v${row.version ?? '?'}` },
+            {
+              key: 'window',
+              label: t('datasets.colCoverage'),
+              render: (row) => `${row.window[0] ?? '—'} → ${row.window[1] ?? '—'}`,
+            },
+            { key: 'rows', label: t('datasets.colRows'), align: 'right', render: (row) => row.rows?.toLocaleString() ?? '—' },
+            { key: 'status', label: t('datasets.colStatus'), render: (row) => row.status },
+            { key: 'by', label: t('datasets.colBy'), render: (row) => row.created_by ?? '—' },
+          ]}
+          rows={builds}
+          rowKey={(row) => row.run_id}
+          empty={t('datasets.noBuilds')}
           pageSize={10}
         />
       </section>
