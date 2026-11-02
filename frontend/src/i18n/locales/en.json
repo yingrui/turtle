@@ -770,6 +770,10 @@
     "versionsHint": "A new version appears only when the data grows or is rebuilt; published versions are immutable.",
     "empty": "No datasets yet.",
     "noVersions": "This dataset has no versions.",
-    "loadFailed": "Could not load datasets"
+    "loadFailed": "Could not load datasets",
+    "statusPublished": "usable (published, immutable)",
+    "statusDeprecated": "deprecated (no longer valid)",
+    "usableNow": "← in use",
+    "backToList": "← Back to datasets"
   }
 }

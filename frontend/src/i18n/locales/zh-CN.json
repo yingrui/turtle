@@ -770,6 +770,10 @@
     "versionsHint": "新版本只在数据增长或重建时产生；已发布的版本不可改。",
     "empty": "还没有数据集。",
     "noVersions": "该数据集没有版本。",
-    "loadFailed": "加载数据集失败"
+    "loadFailed": "加载数据集失败",
+    "statusPublished": "可用（已发布，不可修改）",
+    "statusDeprecated": "已作废（数据已失效，勿引用）",
+    "usableNow": "← 现在可用",
+    "backToList": "← 返回数据集列表"
   }
 }

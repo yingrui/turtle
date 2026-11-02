@@ -57,8 +57,18 @@ def list_datasets(kind: str = Query("file"), _: User = Depends(get_current_user)
 @router.get("/{dataset_id}")
 def get_dataset(dataset_id: str, _: User = Depends(get_current_user)):
     versions = _openkms(f"/dataset-versions/{dataset_id}")
+    listing = _openkms("/datasets?kind=file")
+    name = next(
+        (
+            item.get("display_name") or item.get("name")
+            for item in (listing.get("items") or [])
+            if item.get("id") == dataset_id
+        ),
+        None,
+    )
     return {
         "id": dataset_id,
+        "name": name,
         "versions": [
             {
                 "version": version.get("version"),
