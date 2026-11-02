@@ -34,6 +34,15 @@ class DatasetBuildParams(BaseModel):
     publish: bool = Field(False, title="导出后立即发布", description="发布后这一版不可再改，谨慎勾选")
 
 
+def _version_status(dataset_id: str) -> dict[int, str]:
+    """各版本的状态：已发布的版本不能再写。"""
+    from scripts.export_training_set import _request
+
+    versions = _request("GET", f"/dataset-versions/{dataset_id}")
+    items = versions if isinstance(versions, list) else []
+    return {int(item["version"]): item["status"] for item in items if item.get("version")}
+
+
 def _factor_versions(db: Session, columns: list[str]) -> dict[str, int]:
     """导出的列里哪些是因子，以及它们当时的版本。因子公式一改，导出的含义就变了。"""
     from sqlalchemy import text
@@ -63,12 +72,21 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
         benchmark=params.benchmark,
     )
     target = find_or_create_dataset(params.dataset)
+    # 目标版本已经发布就不能再写：自动开一个新版本，并把实际用的版本号回报出去。
+    version = params.version
+    status = _version_status(target["id"])
+    if status.get(version) == "published":
+        version = max(status) + 1 if status else version + 1
+        _request("POST", f"/dataset-versions/{target['id']}", b"{}")
+        note = f"v{params.version} 已发布，改为写入新版本 v{version}"
+    else:
+        note = None
     buffer = io.BytesIO()
     frame.to_parquet(buffer, index=False)
     filename = f"{params.start.isoformat()}_{params.end.isoformat()}.parquet"
-    upload_slice(target["id"], params.version, filename, buffer.getvalue())
+    upload_slice(target["id"], version, filename, buffer.getvalue())
     if params.publish:
-        _request("POST", f"/dataset-versions/{target['id']}/{params.version}/publish")
+        _request("POST", f"/dataset-versions/{target['id']}/{version}/publish")
 
     from app.analysis.methods.dataset_build import _factor_versions  # noqa: F401  (defined below)
     from app.services.analysis_service import code_revision
@@ -79,7 +97,9 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
         "factors": _factor_versions(db, list(frame.columns)),
         "dataset_id": target["id"],
         "dataset_name": params.dataset,
-        "version": params.version,
+        "version": version,
+        "requested_version": params.version,
+        "note": note,
         "file": filename,
         "rows": int(len(frame)),
         "date_from": params.start.isoformat(),

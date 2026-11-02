@@ -40,6 +40,26 @@ def _openkms(path: str) -> dict:
         raise HTTPException(status_code=502, detail=f"读取 openKMS 失败：{exc}") from None
 
 
+def _openkms_post(path: str, body: dict) -> dict:
+    base = (getattr(settings, "stock_openkms_base_url", "") or "").rstrip("/")
+    key = getattr(settings, "stock_openkms_api_key", "") or ""
+    if not base or not key:
+        raise HTTPException(status_code=503, detail="openKMS 未配置（缺少地址或密钥）")
+    request = urllib.request.Request(
+        f"{base}/api{path}",
+        data=json.dumps(body or {}).encode(),
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            return json.loads(response.read().decode())
+    except urllib.error.HTTPError as exc:
+        raise HTTPException(status_code=exc.code, detail=exc.read().decode()[:200]) from None
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"调用 openKMS 失败：{exc}") from None
+
+
 @router.get("")
 def list_datasets(kind: str = Query("file"), _: User = Depends(get_current_user)):
     payload = _openkms(f"/datasets?kind={kind}")
@@ -82,6 +102,13 @@ def build(body: dict, db: Session = Depends(get_db), user: User = Depends(get_cu
     _execute_in_background(run.id, "dataset_build", parsed.model_dump(mode="json"), {},
                            None, None, getattr(user, "login", None))
     return {"run_id": run.id}
+
+
+@router.post("/{dataset_id}/versions")
+def create_version(dataset_id: str, body: dict | None = None, _: User = Depends(get_current_user)):
+    """给数据集开一个新版本（草稿）。已发布的版本不能改，往它里面写之前必须先开新版本。"""
+    payload = _openkms_post(f"/dataset-versions/{dataset_id}", (body or {}))
+    return {"dataset_id": dataset_id, "version": payload.get("version"), "status": payload.get("status")}
 
 
 @router.get("/{dataset_id}/builds")
