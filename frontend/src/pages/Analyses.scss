@@ -30,3 +30,14 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
+
+// Run history is a reference, not the thing you came for: keep it folded.
+.analyses-history {
+  margin-top: var(--space-2);
+
+  summary {
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+}
