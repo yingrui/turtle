@@ -64,8 +64,12 @@ def run(db: Session, params: ScorecardTrainParams, dataset: dict | None = None) 
 METHOD = register(
     MethodSpec(
         name="scorecard_train",
-        display_name="训练评分卡（单期）",
-        description="用给定窗口训练一套 WOE + 逻辑回归评分卡；同输入同周期会复用已有模型，不重复训练。",
+        display_name="横截面评分卡（WOE + 逻辑回归，单期训练）",
+        description=(
+            "用给定窗口训练一个二分类模型：把每个因子按分箱做 WOE 编码，再拟合带 L2 正则的逻辑回归，"
+            "输出每只股票次日到持有期末跑赢基准的概率，按概率排序。因子先按 IV 筛选、再去掉高相关，"
+            "同一份数据与同一期不会重复训练。"
+        ),
         params_model=ScorecardTrainParams,
         output_kind="model",
         needs_factors=DEFAULT_FACTORS,

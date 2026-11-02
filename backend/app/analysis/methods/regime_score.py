@@ -25,8 +25,8 @@ DEFAULT_FACTORS = ("mom_20d", "MACD", "ma_dev_20")
 class RegimeScoreParams(BaseModel):
     start: date
     end: date
-    ma_window: int = Field(60, ge=5, le=250, description="指数均线窗口（交易日）")
-    horizon: int = Field(20, ge=1, le=60, description="标签的前瞻期，只记录在 provenance 里")
+    ma_window: int = Field(60, ge=5, le=250, description="状态判别用的均线周期（交易日）")
+    horizon: int = Field(20, ge=1, le=60, description="标签的前瞻持有期，只记录在数据说明里，不影响当日打分")
     benchmark: str = Field("000300.SH", description="用于判定 regime 的指数")
     factors: list[str] = Field(default_factory=lambda: list(DEFAULT_FACTORS))
     exclude_st: bool = Field(True, description="剔除 ST")
@@ -109,8 +109,12 @@ def run(db: Session, params: RegimeScoreParams, dataset: dict | None = None) -> 
 METHOD = register(
     MethodSpec(
         name="regime_score",
-        display_name="regime 打分（均线切换动量/反转）",
-        description="指数在均线上方时给动量因子正号，下方时反号，合成截面分数；分数只排序，不决定买卖。",
+        display_name="趋势状态自适应打分（MA60 判别 + 动量/反转切换）",
+        description=(
+            "以沪深300 与 60 日均线的相对位置判别市场状态：指数在均线上方视为趋势市，对动量类因子"
+            "（20 日动量、MACD、20 日乖离率）取正暴露；在均线下方视为震荡市，取负暴露（买前期跌幅大的）。"
+            "三个因子在每个交易日的截面上先做百分位标准化，再等权合成总分，用于排序，不决定买卖。"
+        ),
         params_model=RegimeScoreParams,
         output_kind="score_table",
         needs_factors=DEFAULT_FACTORS,
