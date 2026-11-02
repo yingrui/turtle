@@ -66,6 +66,25 @@ def run_analysis(
 
     try:
         result = spec.run(db, parsed, dataset or {})  # type: ignore[misc]
+        if spec.output_kind == "dataset":
+            import json as _json
+
+            from pathlib import Path as _Path
+
+            from app.analysis.artifact import ARTIFACT_ROOT
+
+            descriptor = _json.dumps(result, ensure_ascii=False, indent=2, default=str)
+            digest = __import__("hashlib").sha256(descriptor.encode()).hexdigest()
+            directory = _Path(ARTIFACT_ROOT) / "datasets" / run.id / digest
+            directory.mkdir(parents=True, exist_ok=True)
+            (directory / "descriptor.json").write_text(descriptor, encoding="utf-8")
+            run.status = "completed"
+            run.artifact_key = str(directory)
+            run.artifact_sha256 = digest
+            run.finished_at = datetime.utcnow()
+            db.commit()
+            return run, type("D", (), {"fingerprint": digest, "period": str(result.get("version"))})()
+
         if spec.output_kind == "model":
             return _store_model(db, run=run, spec=spec, params=parsed, model=result, dataset=dataset, created_by=created_by)
         table = result

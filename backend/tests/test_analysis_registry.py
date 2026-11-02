@@ -9,7 +9,7 @@ def test_every_method_declares_params_and_output():
     assert {spec.name for spec in specs} >= {"regime_score", "constant_pool"}
     for spec in specs:
         assert spec.params_model.model_json_schema().get("properties") is not None
-        assert spec.output_kind in {"score_table", "model"}
+        assert spec.output_kind in {"score_table", "model", "dataset"}
         assert spec.display_name, spec.name
 
 
