@@ -54,7 +54,7 @@
     "analyses": "Cross-section",
     "rankings": "Ranking sources",
     "experiments": "Compare",
-    "methods": "Methods",
+    "methods": "Score models",
     "dataStatus": "Data status"
   },
   "home": {
@@ -685,12 +685,12 @@
     "step3": "A candidate only counts if it clears the baselines by ≥2σ; otherwise there is no incremental information."
   },
   "methods": {
-    "title": "Stock-picking methods",
-    "lead": "A method decides which stocks rank highest each day. These are the methods you have; pick a date to see what one picked.",
-    "buildTitle": "New method",
-    "buildHint": "Pick how it scores: rule-based (weighted factors, optionally flipped by market regime) or a trained scorecard. Run it, and it appears in the list above in a few minutes.",
-    "listTitle": "My methods",
-    "listHint": "Each row is a method: the dates it covers and which data it used. Expand one to see its top 20 for a day.",
+    "title": "Score models",
+    "lead": "A score model = one algorithm + its parameters + a date range. Its output is a cross-sectional score for every trading day, which a backtest uses to decide what to buy.",
+    "buildTitle": "New score model",
+    "buildHint": "Pick an algorithm, set the parameters, run it. Same algorithm with different parameters is a different model; identical parameters produce the identical scores.",
+    "listTitle": "My score models",
+    "listHint": "Each row is a model: which data it used, which trading days it covers, how many scores. Expand one to see its top 20 for a day.",
     "cancelBuild": "Collapse"
   },
   "overview": {
