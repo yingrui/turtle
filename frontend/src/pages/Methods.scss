@@ -15,10 +15,12 @@
   gap: var(--space-1);
 }
 
+// One line by design: the lead is a single sentence, wrapping it makes it look like two statements.
 .methods-lead {
   margin: 0;
   color: var(--color-text-muted);
-  max-width: 60ch;
+  white-space: nowrap;
+  overflow-x: auto;
 }
 
 .methods-hint {
