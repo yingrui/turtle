@@ -90,6 +90,109 @@ def delete_source(source_id: str, db: Session = Depends(get_db), _: User = Depen
     return {"id": source_id, "deleted": True, "used_by_runs": used}
 
 
+@router.get("/{source_id}/explain")
+def explain(
+    source_id: str,
+    day: date = Query(..., description="交易日"),
+    ts_code: str = Query(..., description="股票代码"),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """这只股票那天为什么排在这里：每个因子的取值、截面分位，以及它对总分的贡献。
+
+    排名本身只是一个数字，没有分解就无法判断"它是不是靠某一项极端值顶上去的"。
+    """
+    import json
+    from pathlib import Path
+
+    from sqlalchemy import text
+
+    from app.models.ranking import RankingSource
+
+    source = db.get(RankingSource, source_id)
+    if not source:
+        raise HTTPException(status_code=404, detail="Ranking source not found")
+
+    codes: list[str] = []
+    model: dict | None = None
+    if source.kind == "model":
+        directory = Path(source.artifact_key)
+        target = directory / f"{day.year}-{day.month:02d}.json"
+        if not target.exists():
+            candidates = sorted(p.stem for p in directory.glob("*.json") if p.stem <= f"{day.year}-{day.month:02d}")
+            if not candidates:
+                raise HTTPException(status_code=404, detail="No model covers that date")
+            target = directory / f"{candidates[-1]}.json"
+        model = json.loads(target.read_text())
+        codes = [factor["code"] for factor in model.get("factors", [])]
+    else:
+        codes = list((source.params or {}).get("factors") or [])
+
+    if not codes:
+        return {"source_id": source_id, "day": day.isoformat(), "ts_code": ts_code, "factors": []}
+
+    rows = db.execute(
+        text(
+            "SELECT d.code, v.value FROM factor_values v "
+            "JOIN factor_definitions d ON d.id = v.factor_id "
+            "WHERE v.trade_date = :day AND v.ts_code = :code AND d.code = ANY(:codes)"
+        ),
+        {"day": day, "code": ts_code, "codes": codes},
+    ).all()
+    values = {code: float(value) for code, value in rows if value is not None}
+
+    # 同日全市场分位，用来判断"这个数是高还是低"
+    percentile_rows = db.execute(
+        text(
+            "SELECT d.code, v.value FROM factor_values v "
+            "JOIN factor_definitions d ON d.id = v.factor_id "
+            "WHERE v.trade_date = :day AND d.code = ANY(:codes)"
+        ),
+        {"day": day, "codes": codes},
+    ).all()
+    by_factor: dict[str, list[float]] = {}
+    for code, value in percentile_rows:
+        if value is not None:
+            by_factor.setdefault(code, []).append(float(value))
+
+    factors = []
+    for code in codes:
+        value = values.get(code)
+        peers = by_factor.get(code) or []
+        percentile = None
+        if value is not None and peers:
+            below = sum(1 for peer in peers if peer < value)
+            percentile = round(below / len(peers) * 100, 1)
+        contribution = None
+        if model is not None and percentile is not None:
+            spec = next((f for f in model.get("factors", []) if f["code"] == code), None)
+            if spec and spec.get("woe"):
+                contribution = round(_contribution(spec, percentile), 4)
+        factors.append(
+            {"code": code, "value": value, "percentile": percentile, "contribution": contribution}
+        )
+
+    return {
+        "source_id": source_id,
+        "day": day.isoformat(),
+        "ts_code": ts_code,
+        "kind": source.kind,
+        "intercept": None if model is None else model.get("intercept"),
+        "factors": factors,
+    }
+
+
+def _contribution(spec: dict, percentile: float) -> float:
+    """某一项对总分的贡献。
+
+    评分卡不是按原始值分箱，而是按**当日截面分位**分成若干档（模型里只存了每档的 WOE，没有存边界）。
+    所以要先把分位落到档位，再乘系数。
+    """
+    woe = spec["woe"]
+    index = min(int(percentile / 100 * len(woe)), len(woe) - 1)
+    return float(spec.get("coef", 0.0)) * float(woe[index])
+
+
 @router.post("/{source_id}/deprecate")
 def deprecate(source_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     from datetime import datetime
