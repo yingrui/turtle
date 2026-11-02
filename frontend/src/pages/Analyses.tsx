@@ -163,13 +163,14 @@ export function Analyses({ embedded = false }: { embedded?: boolean } = {}) {
 
       <details className="analyses-history">
         <summary>{t('analyses.history')}</summary>
-      <DataTable<Run>
-        columns={columns}
-        rows={runs}
-        rowKey={(row) => row.id}
-        empty={t('analyses.empty')}
-        pageSize={10}
-      />
+        <DataTable<Run>
+          columns={columns}
+          rows={runs}
+          rowKey={(row) => row.id}
+          empty={t('analyses.empty')}
+          pageSize={10}
+        />
+      </details>
     </div>
   );
 }
