@@ -684,11 +684,12 @@
   },
   "methods": {
     "title": "Stock-picking methods",
-    "lead": "A method is how stocks get scored. This page is its whole lifecycle: create, run, and see what it picks each day.",
-    "buildTitle": "Create or refresh a method",
-    "buildHint": "Pick a computation, fill in the parameters, run it. The result lands in the list below and a backtest can use it.",
-    "listTitle": "Methods you have",
-    "listHint": "Each row is a method: the period it covers and which data it used. You can preview its top 20 for a given day."
+    "lead": "A method decides which stocks rank highest each day. These are the methods you have; pick a date to see what one picked.",
+    "buildTitle": "New method",
+    "buildHint": "Pick how it scores: rule-based (weighted factors, optionally flipped by market regime) or a trained scorecard. Run it, and it appears in the list above in a few minutes.",
+    "listTitle": "My methods",
+    "listHint": "Each row is a method: the dates it covers and which data it used. Expand one to see its top 20 for a day.",
+    "cancelBuild": "Collapse"
   },
   "overview": {
     "title": "Overview",

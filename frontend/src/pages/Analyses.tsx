@@ -161,7 +161,8 @@ export function Analyses({ embedded = false }: { embedded?: boolean } = {}) {
         </button>
       </div>
 
-      <h3>{t('analyses.history')}</h3>
+      <details className="analyses-history">
+        <summary>{t('analyses.history')}</summary>
       <DataTable<Run>
         columns={columns}
         rows={runs}
