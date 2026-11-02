@@ -335,6 +335,29 @@ def build_model(
             f"no factor reached IV >= {min_iv}; lower the threshold or widen the window"
         )
 
+    # 被筛掉的因子及原因：勾了 5 个、最后只用了 3 个时，用户需要知道另外两个为什么没进来。
+    dropped: list[dict] = []
+    for code in train.factors:
+        if code in selected:
+            continue
+        iv = float(stats.set_index("code").loc[code, "iv"])
+        if iv < min_iv:
+            dropped.append({"code": code, "reason": "low_iv", "iv": round(iv, 4)})
+            continue
+        blocker = next(
+            (
+                other
+                for other in selected
+                if abs(train.frame[code].corr(train.frame[other], method="spearman")) > max_corr
+            ),
+            None,
+        )
+        if blocker:
+            correlation = float(train.frame[code].corr(train.frame[blocker], method="spearman"))
+            dropped.append(
+                {"code": code, "reason": "correlated", "with": blocker, "correlation": round(correlation, 3)}
+            )
+
     tables = {}
     design = np.ones((len(train.frame), len(selected) + 1))
     for column, code in enumerate(selected, start=1):
@@ -357,6 +380,7 @@ def build_model(
         "label_kind": label,
         "bins": BINS,
         "intercept": float(beta[0]),
+        "dropped_factors": dropped,
         "factors": [
             {
                 "code": code,

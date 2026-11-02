@@ -40,6 +40,7 @@ export function MethodDetail() {
   const [openCode, setOpenCode] = useState<string | null>(null);
   const [explain, setExplain] = useState<Explain | null>(null);
   const [factors, setFactors] = useState<FactorRow[]>([]);
+  const [dropped, setDropped] = useState<{ code: string; reason: string; iv?: number; with?: string; correlation?: number }[]>([]);
 
   useEffect(() => {
     apiFetch<Source>(`/api/rankings/${encodeURIComponent(id)}`)
@@ -82,8 +83,11 @@ export function MethodDetail() {
   }
 
   useEffect(() => {
-    apiFetch<{ factors: FactorRow[] }>(`/api/rankings/${encodeURIComponent(id)}/factors`)
-      .then((d) => setFactors(d.factors ?? []))
+    apiFetch<{ factors: FactorRow[]; dropped?: typeof dropped }>(`/api/rankings/${encodeURIComponent(id)}/factors`)
+      .then((d) => {
+        setFactors(d.factors ?? []);
+        setDropped(d.dropped ?? []);
+      })
       .catch(() => setFactors([]));
   }, [id]);
 
@@ -170,6 +174,20 @@ export function MethodDetail() {
               ))}
             </tbody>
           </table>
+          {dropped.length > 0 && (
+            <p className="methods-hint">
+              {t('methods.droppedLead')}
+              {dropped.map((item) => (
+                <span key={item.code} className="methods-dropped">
+                  {item.code}（
+                  {item.reason === 'low_iv'
+                    ? t('methods.droppedLowIv', { iv: item.iv ?? '—' })
+                    : t('methods.droppedCorrelated', { with: item.with ?? '—', corr: item.correlation ?? 0 })}
+                  ）
+                </span>
+              ))}
+            </p>
+          )}
         </section>
       )}
 

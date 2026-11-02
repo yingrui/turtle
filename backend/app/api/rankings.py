@@ -75,6 +75,7 @@ def source_factors(source_id: str, db: Session = Depends(get_db), _: User = Depe
         raise HTTPException(status_code=404, detail="Ranking source not found")
 
     codes: list[str] = []
+    dropped: list[dict] = []
     if source.kind == "model":
         directory = Path(source.artifact_key)
         periods = sorted((source.params or {}).get("periods") or [])
@@ -82,6 +83,7 @@ def source_factors(source_id: str, db: Session = Depends(get_db), _: User = Depe
         if target and target.exists():
             payload = json.loads(target.read_text())
             codes = [factor["code"] for factor in payload.get("factors", [])]
+            dropped = payload.get("dropped_factors") or []
     else:
         codes = list((source.params or {}).get("factors") or [])
 
@@ -98,6 +100,7 @@ def source_factors(source_id: str, db: Session = Depends(get_db), _: User = Depe
 
     return {
         "source_id": source_id,
+        "dropped": dropped,
         "factors": [
             {
                 "code": code,

@@ -725,7 +725,10 @@
     "factorName": "名称",
     "factorCategory": "类别",
     "factorMissing": "（因子库里已找不到，此模型无法再计算）",
-    "overviewTitle": "概要"
+    "overviewTitle": "概要",
+    "droppedLead": "未采用的候选因子：",
+    "droppedLowIv": "IV {{iv}} 低于阈值",
+    "droppedCorrelated": "与 {{with}} 相关性 {{corr}}，超过阈值"
   },
   "overview": {
     "title": "概览",

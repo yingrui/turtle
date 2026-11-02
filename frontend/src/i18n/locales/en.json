@@ -725,7 +725,10 @@
     "factorName": "Name",
     "factorCategory": "Category",
     "factorMissing": "(no longer in the factor library — this model cannot be computed)",
-    "overviewTitle": "Summary"
+    "overviewTitle": "Summary",
+    "droppedLead": "Candidate factors not used: ",
+    "droppedLowIv": "IV {{iv}} below the threshold",
+    "droppedCorrelated": "correlated {{corr}} with {{with}}, above the threshold"
   },
   "overview": {
     "title": "Overview",
