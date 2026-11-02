@@ -56,8 +56,12 @@ def start_run(
     )
     db.add(run)
     db.commit()
-    # Not in this process: a full-window run needs more memory than the API pod has (see
-    # app/analysis/run.py). The command is returned so a worker/Job can execute it.
+    # 后台跑：参数量级已经在方法内部按块处理，跑起来是几分钟的事，不必让用户去 shell 里执行命令。
+    _execute_in_background(run.id, method, parsed.model_dump(mode="json"), body.get("dataset") or {},
+                           body.get("source_id"), body.get("display_name"),
+                           getattr(user, "login", None))
+    # 需要隔离执行时（内存吃紧），可以把下面的命令交给独立进程/Job 跑。
+
     command = [
         "python", "-m", "app.analysis.run",
         "--method", method,
@@ -70,6 +74,32 @@ def start_run(
     if body.get("display_name"):
         command += ["--display-name", str(body["display_name"])]
     return {"run_id": run.id, "status": "pending", "command": command}
+
+
+def _execute_in_background(run_id, method, params, dataset, source_id, display_name, created_by) -> None:
+    """一次分析在后台线程里跑完，结果写回同一条运行记录。"""
+    import threading
+
+    from app.database import SessionLocal
+    from app.services.analysis_service import run_analysis
+
+    def work() -> None:
+        with SessionLocal() as session:
+            try:
+                run_analysis(
+                    session,
+                    method=method,
+                    params=params,
+                    dataset=dataset,
+                    source_id=source_id,
+                    display_name=display_name,
+                    created_by=created_by,
+                    run_id=run_id,
+                )
+            except Exception:  # noqa: BLE001 — 失败原因已经写在运行记录里
+                pass
+
+    threading.Thread(target=work, daemon=True).start()
 
 
 @router.get("/runs")

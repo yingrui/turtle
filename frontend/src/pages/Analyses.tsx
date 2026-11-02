@@ -257,7 +257,9 @@ export function Analyses({
     if (!method) return;
     setBusy(true);
     try {
-      await apiFetch(`/api/analyses/${method.name}/runs`, {
+      // 语义是"创建一个模型/一次导出"，不是"调一个方法"。
+      const endpoint = method.output_kind === 'dataset' ? '/api/datasets/build' : '/api/rankings';
+      await apiFetch(endpoint, {
         method: 'POST',
         body: JSON.stringify({ params: paramsPayload(values) }),
       });

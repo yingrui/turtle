@@ -28,6 +28,48 @@ def list_sources(
     }
 
 
+@router.post("")
+def create_source(body: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """创建一个评分模型 = 用某个算法跑一次，产物登记成一个新的来源。
+
+    REST 上"被创建的东西"是模型，不是运行；运行只是过程，所以返回运行号，前端轮询它的状态。
+    """
+    from app.analysis import methods, registry  # noqa: F401
+    from app.api.analyses import _execute_in_background
+    from app.models.ranking import AnalysisRun
+
+    method = body.get("method")
+    try:
+        spec = registry.get(method)
+    except (KeyError, TypeError):
+        raise HTTPException(status_code=422, detail=f"unknown method: {method}") from None
+    if spec.output_kind != "score_table":
+        raise HTTPException(
+            status_code=422, detail="这个入口只创建评分模型；导出训练集请用 POST /api/datasets"
+        )
+    try:
+        parsed = spec.params_model(**(body.get("params") or {}))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+
+    run = AnalysisRun(
+        id=__import__("uuid").uuid4().hex,
+        method=method,
+        params=parsed.model_dump(mode="json"),
+        dataset_name=(body.get("dataset") or {}).get("name"),
+        dataset_version=(body.get("dataset") or {}).get("version"),
+        status="pending",
+        created_by=getattr(user, "login", None),
+    )
+    db.add(run)
+    db.commit()
+    _execute_in_background(
+        run.id, method, parsed.model_dump(mode="json"), body.get("dataset") or {},
+        body.get("source_id"), body.get("display_name"), getattr(user, "login", None),
+    )
+    return {"run_id": run.id, "method": method}
+
+
 @router.get("/{source_id}")
 def get_source(source_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     try:

@@ -15,6 +15,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.auth import get_current_user
 from app.config import settings
+from app.database import get_db
+from sqlalchemy.orm import Session
+
 from app.models.user import User
 
 router = APIRouter(prefix="/api/datasets", tags=["datasets"], dependencies=[Depends(get_current_user)])
@@ -52,6 +55,33 @@ def list_datasets(kind: str = Query("file"), _: User = Depends(get_current_user)
             for item in items
         ]
     }
+
+
+@router.post("/build")
+def build(body: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """导出训练集：创建一个构建任务，后台跑，产物写进 openKMS。"""
+    from app.analysis import methods, registry  # noqa: F401
+    from app.api.analyses import _execute_in_background
+    from app.models.ranking import AnalysisRun
+
+    try:
+        spec = registry.get("dataset_build")
+        parsed = spec.params_model(**(body.get("params") or {}))  # type: ignore[misc]
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+
+    run = AnalysisRun(
+        id=__import__("uuid").uuid4().hex,
+        method="dataset_build",
+        params=parsed.model_dump(mode="json"),
+        status="pending",
+        created_by=getattr(user, "login", None),
+    )
+    db.add(run)
+    db.commit()
+    _execute_in_background(run.id, "dataset_build", parsed.model_dump(mode="json"), {},
+                           None, None, getattr(user, "login", None))
+    return {"run_id": run.id}
 
 
 @router.get("/{dataset_id}/versions/{version}/files")
