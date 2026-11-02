@@ -62,6 +62,12 @@ function paramsPayload(values: Record<string, string>): Record<string, unknown> 
   return payload;
 }
 
+// 数据集名可以补全；写成列表里没有的名字就是新建一个数据集。
+const t_inline = {
+  existing: '已有的数据集：会往它里面写',
+  willCreate: '这个名字还不存在：会新建一个数据集',
+};
+
 const LABEL_CHOICES = [
   { value: 'benchmark', label: '跑赢基准（benchmark）' },
   { value: 'relative', label: '横截面相对排名（relative）' },
@@ -79,6 +85,7 @@ function Field({
   onChange,
   factors,
   benchmarks,
+  datasets,
 }: {
   name: string;
   property: Property;
@@ -86,6 +93,7 @@ function Field({
   onChange: (next: string) => void;
   factors: string[];
   benchmarks: { ts_code: string; name: string }[];
+  datasets: string[];
 }) {
   const label = property.title ?? name;
   const hint = property.description;
@@ -140,6 +148,31 @@ function Field({
         {label}
         {hintNode}
       </label>
+    );
+  }
+
+  if (name === 'dataset') {
+    const known = datasets.includes(value);
+    return (
+      <div className="form-row">
+        <label htmlFor={id}>{label}</label>
+        <input
+          id={id}
+          list={`${id}-options`}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-describedby={describedBy}
+        />
+        <datalist id={`${id}-options`}>
+          {datasets.map((item) => (
+            <option key={item} value={item} />
+          ))}
+        </datalist>
+        <span className="analyses-hint">
+          {known ? t_inline.existing : t_inline.willCreate}
+        </span>
+        {hintNode}
+      </div>
     );
   }
 
@@ -211,6 +244,7 @@ export function Analyses({
   const [values, setValues] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [factorOptions, setFactorOptions] = useState<string[]>([]);
+  const [datasetOptions, setDatasetOptions] = useState<string[]>([]);
   const [benchmarkOptions, setBenchmarkOptions] = useState<{ ts_code: string; name: string }[]>([]);
 
   const load = useCallback(async () => {
@@ -242,6 +276,9 @@ export function Analyses({
     apiFetch<{ factors: { code: string }[] }>('/api/factors')
       .then((d) => setFactorOptions((d.factors ?? []).map((f) => f.code)))
       .catch(() => setFactorOptions([]));
+    apiFetch<{ datasets: { name: string }[] }>('/api/datasets')
+      .then((d) => setDatasetOptions((d.datasets ?? []).map((item) => item.name)))
+      .catch(() => setDatasetOptions([]));
     apiFetch<{ indexes: { ts_code: string; name: string }[] }>('/api/indexes')
       .then((d) => setBenchmarkOptions((d.indexes ?? []).slice(0, 8)))
       .catch(() => setBenchmarkOptions([]));
@@ -320,6 +357,7 @@ export function Analyses({
               onChange={(next) => setValues((prev) => ({ ...prev, [key]: next }))}
               factors={factorOptions}
               benchmarks={benchmarkOptions}
+              datasets={datasetOptions}
             />
           ))}
 
