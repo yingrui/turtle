@@ -11,7 +11,6 @@ from app.api import (
     auth,
     data,
     datasets,
-    experiments,
     factors,
     indexes,
     jobs,
@@ -78,7 +77,6 @@ app.include_router(portfolios.router)
 app.include_router(screening.router)
 app.include_router(strategies.router)
 app.include_router(tasks.router)
-app.include_router(experiments.router)
 app.include_router(factors.router)
 app.include_router(indexes.router)
 app.include_router(jobs.router)

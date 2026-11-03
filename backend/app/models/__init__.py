@@ -1,4 +1,3 @@
-from app.models.experiment import Experiment, ExperimentRun
 from app.models.factor import FactorDefinition, FactorValue
 from app.models.model_artifact import ModelArtifact
 from app.models.portfolio import (
@@ -29,8 +28,6 @@ __all__ = [
     "Run",
     "RankingSource",
     "FactorSpec",
-    "Experiment",
-    "ExperimentRun",
     "Label",
     "Portfolio",
     "PortfolioCashFlow",

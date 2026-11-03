@@ -16,7 +16,6 @@ import { DatasetVersionFiles } from './pages/DatasetVersionFiles';
 import { Methods } from './pages/Methods';
 import { MethodsNew } from './pages/MethodsNew';
 import { MethodDetail } from './pages/MethodDetail';
-import { Experiments } from './pages/Experiments';
 
 import { FactorDetail } from './pages/FactorDetail';
 import { Simulation } from './pages/Simulation';
@@ -55,7 +54,6 @@ export function App() {
         <Route path="/methods/:id" element={<MethodDetail />} />
         <Route path="/analyses" element={<Navigate to="/methods" replace />} />
         <Route path="/rankings" element={<Navigate to="/methods" replace />} />
-        <Route path="/experiments" element={<Experiments />} />
         <Route path="/factor" element={<FactorList />} />
         <Route path="/factor/:code" element={<FactorDetail />} />
         <Route path="/watchlist" element={<Navigate to="/portfolio?tab=holdings&status=watching" replace />} />
