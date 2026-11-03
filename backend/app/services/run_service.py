@@ -63,3 +63,15 @@ def finish_run(
     run.error = error
     run.finished_at = datetime.utcnow()
     db.commit()
+
+
+def mark_interrupted(db: Session) -> int:
+    """服务重启时收尾：线程没了，记录不能一直显示"运行中"。"""
+    stuck = db.query(Run).filter(Run.status.in_(("pending", "running"))).all()
+    for run in stuck:
+        run.status = "failed"
+        run.error = "运行被中断（服务重启）；请重新发起"
+        run.finished_at = datetime.utcnow()
+    if stuck:
+        db.commit()
+    return len(stuck)

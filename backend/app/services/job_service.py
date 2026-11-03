@@ -311,6 +311,10 @@ class JobService:
             job.status = "completed"
             job.log = "\n".join(logs)
             db.commit()
+            # 双写：把终态同步到 runs（读路径已经切到它了）
+            from app.services.run_service import finish_run as _finish_ok
+
+            _finish_ok(db, job.id, status="completed")
         except Exception as exc:
             job = db.get(Job, job_id)
             if job:
