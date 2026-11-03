@@ -200,13 +200,18 @@ function Field({
   }
 
   if (property.enum) {
+    const ENUM_LABELS: Record<string, string> = {
+      month: '按月',
+      week: '按周',
+      day: '按日',
+    };
     return (
       <div className="form-row">
         <label htmlFor={id}>{label}</label>
         <select id={id} value={value} onChange={(e) => onChange(e.target.value)} aria-describedby={describedBy}>
           {property.enum.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {ENUM_LABELS[option] ?? option}
             </option>
           ))}
         </select>

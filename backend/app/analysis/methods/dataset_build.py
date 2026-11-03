@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 from datetime import date
+from typing import Literal
 
 import pandas as pd
 from pydantic import BaseModel, Field
@@ -31,7 +32,7 @@ class DatasetBuildParams(BaseModel):
     label: str = Field("benchmark", title="标签", description="benchmark 跑赢基准 / relative 相对排名 / absolute 绝对上涨")
     horizon: int = Field(20, ge=1, le=60, title="持有期（交易日）")
     benchmark: str = Field("000300.SH", title="基准指数")
-    granularity: str = Field(
+    granularity: Literal["month", "week", "day"] = Field(
         "month",
         title="分块粒度",
         description="按月导出时每月一个文件，按周则为每周一个文件；分块越小，内存占用越低，文件数越多",
