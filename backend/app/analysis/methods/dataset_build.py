@@ -65,6 +65,17 @@ def _factor_versions(db: Session, columns: list[str]) -> dict[str, int]:
     return {code: int(version) for code, version in rows}
 
 
+_PROGRESS: list[str] = []
+
+
+def _progress(message: str) -> None:
+    """导出是分钟级的长任务，必须能看到进度 —— 否则卡住时只能靠猜。"""
+    import logging
+
+    _PROGRESS.append(message)
+    logging.getLogger("uvicorn.error").info("dataset_build: %s", message)
+
+
 def _windows(start: date, end: date, granularity: str) -> list[tuple[date, date]]:
     """把区间切成小块：一次只构造一块，内存占用与块大小成正比。"""
     from datetime import timedelta
@@ -109,7 +120,9 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
     files: list[str] = []
     total_rows = 0
     columns: list[str] = []
-    for window_start, window_end in _windows(params.start, params.end, params.granularity):
+    windows = _windows(params.start, params.end, params.granularity)
+    _progress(f"共 {len(windows)} 个分块，粒度 {params.granularity}；目标 {params.dataset} v{version}")
+    for index, (window_start, window_end) in enumerate(windows, start=1):
         frame = build_slice(
             db,
             start=window_start,
@@ -127,6 +140,7 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
         frame.to_parquet(buffer, index=False)
         upload_slice(target["id"], version, filename, buffer.getvalue())
         files.append(filename)
+        _progress(f"[{index}/{len(windows)}] {filename} · {len(frame):,} 行")
         del frame, buffer
 
     if not files:
