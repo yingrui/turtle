@@ -67,10 +67,34 @@ def _job_to_dict(job) -> dict:
 
 @router.get("")
 def list_jobs(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
-    from app.models.job import Job
+    """任务列表。读 runs（统一表），字段形状保持不变以兼容现有前端与 openKMS 回调。"""
+    from app.models.run import Run
 
-    jobs = db.query(Job).order_by(Job.created_at.desc()).limit(50).all()
-    return {"jobs": [_job_to_dict(j) for j in jobs]}
+    job_kinds = ("simulation", "factor_compute", "screen", "portfolio_screen")
+    rows = (
+        db.query(Run)
+        .filter(Run.kind.in_(job_kinds))
+        .order_by(Run.started_at.desc())
+        .limit(50)
+        .all()
+    )
+    return {
+        "jobs": [
+            {
+                "id": run.id,
+                "type": run.kind,
+                "status": run.status,
+                "progress": run.progress,
+                "payload": run.params,
+                "result": __import__("json").dumps(run.result) if run.result else None,
+                "error": run.error,
+                "log": run.log,
+                "created_at": run.started_at.isoformat() if run.started_at else None,
+                "updated_at": run.finished_at.isoformat() if run.finished_at else None,
+            }
+            for run in rows
+        ]
+    }
 
 
 @router.get("/{job_id}")
@@ -89,11 +113,11 @@ def get_job(job_id: str, db: Session = Depends(get_db), _: User = Depends(get_cu
             "id": run.id,
             "type": run.kind,
             "status": run.status,
-            "progress": "",
+            "progress": run.progress,
             "payload": run.params,
             "result": None if not run.result else __import__("json").dumps(run.result),
             "error": run.error,
-            "log": "",
+            "log": run.log,
             "created_at": run.started_at.isoformat() if run.started_at else None,
             "updated_at": run.finished_at.isoformat() if run.finished_at else None,
         }
