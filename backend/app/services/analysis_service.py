@@ -82,6 +82,9 @@ def run_analysis(
     run.created_by = created_by or run.created_by
     db.commit()
 
+    from app.services.run_service import CURRENT_RUN
+
+    token = CURRENT_RUN.set(run.id)
     try:
         result = spec.run(db, parsed, dataset or {})  # type: ignore[misc]
         if spec.output_kind == "dataset":
@@ -148,8 +151,11 @@ def run_analysis(
         run.status = "failed"
         run.error = f"{type(exc).__name__}: {exc}"
         run.finished_at = datetime.utcnow()
+        run.progress = ""
         db.commit()
         raise
+    finally:
+        CURRENT_RUN.reset(token)
 
 
 def _store_model(db: Session, *, run: Run, spec, params, model: dict, dataset, created_by):

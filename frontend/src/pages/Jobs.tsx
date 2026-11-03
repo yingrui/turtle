@@ -13,6 +13,7 @@ type Task = {
   finished_at: string | null;
   error: string | null;
   detail: string | null;
+  progress: string;
 };
 
 /** 统一的运行记录：回测、因子计算、评分模型、导出训练集都在这里，不再分两处看。 */
@@ -36,6 +37,12 @@ export function Jobs() {
   const columns: Column<Task>[] = [
     { key: 'title', label: t('tasks.colTitle'), render: (row) => row.title },
     { key: 'status', label: t('tasks.colStatus'), render: (row) => row.status },
+    {
+      key: 'progress',
+      label: t('tasks.colProgress'),
+      // 任务自己上报的进度（如 "12/34 · 35%"）；没上报的完成后直接是 100%
+      render: (row) => (row.progress ? row.progress : row.status === 'completed' ? '100%' : '—'),
+    },
     {
       key: 'started',
       label: t('tasks.colStarted'),

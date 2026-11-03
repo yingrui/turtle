@@ -758,6 +758,7 @@
     "colFinished": "Finished",
     "colDetail": "Result",
     "colError": "Failure",
-    "empty": "No runs yet."
+    "empty": "No runs yet.",
+    "colProgress": "Progress"
   }
 }

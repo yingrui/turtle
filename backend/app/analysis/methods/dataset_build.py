@@ -65,15 +65,14 @@ def _factor_versions(db: Session, columns: list[str]) -> dict[str, int]:
     return {code: int(version) for code, version in rows}
 
 
-_PROGRESS: list[str] = []
-
-
-def _progress(message: str) -> None:
-    """导出是分钟级的长任务，必须能看到进度 —— 否则卡住时只能靠猜。"""
+def _progress(message: str, percent: int | None = None) -> None:
+    """导出是分钟级的长任务：日志写一行，进度写百分比，卡住时才有的看。"""
     import logging
 
-    _PROGRESS.append(message)
+    from app.services.run_service import report_progress
+
     logging.getLogger("uvicorn.error").info("dataset_build: %s", message)
+    report_progress(message, percent)
 
 
 def _windows(start: date, end: date, granularity: str) -> list[tuple[date, date]]:
@@ -121,7 +120,7 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
     total_rows = 0
     columns: list[str] = []
     windows = _windows(params.start, params.end, params.granularity)
-    _progress(f"共 {len(windows)} 个分块，粒度 {params.granularity}；目标 {params.dataset} v{version}")
+    _progress(f"共 {len(windows)} 个分块，粒度 {params.granularity}；目标 {params.dataset} v{version}", 0)
     for index, (window_start, window_end) in enumerate(windows, start=1):
         frame = build_slice(
             db,
@@ -140,7 +139,10 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
         frame.to_parquet(buffer, index=False)
         upload_slice(target["id"], version, filename, buffer.getvalue())
         files.append(filename)
-        _progress(f"[{index}/{len(windows)}] {filename} · {len(frame):,} 行")
+        _progress(
+            f"[{index}/{len(windows)}] {filename} · {len(frame):,} 行",
+            int(index / len(windows) * 100),
+        )
         del frame, buffer
 
     if not files:

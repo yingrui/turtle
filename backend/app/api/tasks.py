@@ -42,6 +42,7 @@ def list_tasks(
                 "finished_at": row.finished_at.isoformat() if row.finished_at else None,
                 "error": row.error,
                 "detail": (row.result or {}).get("source_id"),
+                "progress": row.progress or "",
             }
             for row in rows
         ]

@@ -9,7 +9,12 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
+import contextvars
+
 from app.models.run import Run
+
+#: 当前线程正在跑哪条 runs 记录。方法内部不需要知道 run_id，用它上报进度即可。
+CURRENT_RUN: contextvars.ContextVar[str | None] = contextvars.ContextVar("current_run", default=None)
 
 JOB_TITLES = {"simulation": "回测", "factor_compute": "因子计算", "screen": "选股计算"}
 ANALYSIS_TITLES = {
@@ -92,3 +97,22 @@ def mark_interrupted(db: Session) -> int:
     if stuck:
         db.commit()
     return len(stuck)
+
+
+def report_progress(detail: str, percent: int | None = None) -> None:
+    """由任务自己调用：把进度写到 runs.progress，界面上就能看到百分比变化。
+
+    不写也不算错 —— 没上报的任务在完成时从 0 直接变 100。
+    """
+    run_id = CURRENT_RUN.get()
+    if not run_id:
+        return
+    from app.database import SessionLocal
+
+    label = f"{percent}% · {detail}" if percent is not None else detail
+    with SessionLocal() as db:
+        run = db.get(Run, run_id)
+        if run is None:
+            return
+        run.progress = label[:255]
+        db.commit()

@@ -758,6 +758,7 @@
     "colFinished": "结束",
     "colDetail": "结果",
     "colError": "失败原因",
-    "empty": "暂无运行记录。"
+    "empty": "暂无运行记录。",
+    "colProgress": "进度"
   }
 }
