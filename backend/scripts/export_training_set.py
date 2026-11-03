@@ -43,8 +43,9 @@ SKILL_CONFIG = Path.home() / ".pi" / "agent" / "skills" / "openkms" / "config.ym
 
 def _api() -> tuple[str, str]:
     """Base URL and key from the environment, falling back to the skill's config."""
-    base = os.environ.get("OPENKMS_API_BASE")
-    key = os.environ.get("OPENKMS_API_KEY")
+    # 部署里用的是 STOCK_* 前缀；脚本早期用的是 OPENKMS_*，两者都认。
+    base = os.environ.get("OPENKMS_API_BASE") or os.environ.get("STOCK_OPENKMS_BASE_URL")
+    key = os.environ.get("OPENKMS_API_KEY") or os.environ.get("STOCK_OPENKMS_API_KEY")
     if base and key:
         return base.rstrip("/"), key
     if SKILL_CONFIG.exists():
@@ -55,9 +56,9 @@ def _api() -> tuple[str, str]:
                 values[name.strip()] = value.strip().strip('"')
         if values.get("api_base_url") and values.get("api_key"):
             return values["api_base_url"].rstrip("/"), values["api_key"]
-    raise SystemExit(
-        "openKMS credentials missing: set OPENKMS_API_BASE and OPENKMS_API_KEY "
-        f"(or configure {SKILL_CONFIG})"
+    raise RuntimeError(
+        "openKMS 凭据缺失：需要 OPENKMS_API_BASE/OPENKMS_API_KEY 或 STOCK_OPENKMS_BASE_URL/STOCK_OPENKMS_API_KEY "
+        f"（或配置 {SKILL_CONFIG}）"
     )
 
 

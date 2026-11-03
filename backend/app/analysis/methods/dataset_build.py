@@ -122,14 +122,20 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
     windows = _windows(params.start, params.end, params.granularity)
     _progress(f"共 {len(windows)} 个分块，粒度 {params.granularity}；目标 {params.dataset} v{version}", 0)
     for index, (window_start, window_end) in enumerate(windows, start=1):
-        frame = build_slice(
-            db,
-            start=window_start,
-            end=window_end,
-            horizon=params.horizon,
-            label=params.label,
-            benchmark=params.benchmark,
-        )
+        try:
+            frame = build_slice(
+                db,
+                start=window_start,
+                end=window_end,
+                horizon=params.horizon,
+                label=params.label,
+                benchmark=params.benchmark,
+            )
+        except ValueError:
+            # 区间末尾不足一个持有期时没有任何可用样本（标签要等未来收益），跳过这一块。
+            _progress(f"[{index}/{len(windows)}] {window_start} 起无可用样本（不足一个持有期），跳过",
+                      int(index / len(windows) * 100))
+            continue
         if frame.empty:
             continue
         columns = sorted(frame.columns.tolist())
