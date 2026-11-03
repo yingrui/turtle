@@ -11,7 +11,7 @@ from app.models.portfolio import (
     PortfolioStockEvent,
     PortfolioTransaction,
 )
-from app.models.ranking import AnalysisRun, RankingSource
+from app.models.ranking import RankingSource
 from app.models.run import Run
 from app.models.research import FactorSpec, Label
 from app.models.simulation import (
@@ -28,7 +28,6 @@ __all__ = [
     "FactorValue",
     "Job",
     "ModelArtifact",
-    "AnalysisRun",
     "Run",
     "RankingSource",
     "FactorSpec",

@@ -82,7 +82,7 @@ def build(body: dict, db: Session = Depends(get_db), user: User = Depends(get_cu
     """导出训练集：创建一个构建任务，后台跑，产物写进 openKMS。"""
     from app.analysis import methods, registry  # noqa: F401
     from app.api.analyses import _execute_in_background
-    from app.models.ranking import AnalysisRun
+    from app.models.run import Run
 
     try:
         spec = registry.get("dataset_build")
@@ -90,9 +90,10 @@ def build(body: dict, db: Session = Depends(get_db), user: User = Depends(get_cu
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=422, detail=str(exc)) from None
 
-    run = AnalysisRun(
+    run = Run(
         id=__import__("uuid").uuid4().hex,
-        method="dataset_build",
+        kind="dataset_build",
+        title="导出训练集",
         params=parsed.model_dump(mode="json"),
         status="pending",
         created_by=getattr(user, "login", None),
@@ -116,12 +117,12 @@ def build_history(dataset_id: str, db: Session = Depends(get_db), _: User = Depe
     """这份数据是哪几次导出的：谁、什么时候、哪段区间、多少行、结果如何。"""
     import json
 
-    from app.models.ranking import AnalysisRun
+    from app.models.run import Run
 
     runs = (
-        db.query(AnalysisRun)
-        .filter(AnalysisRun.method == "dataset_build")
-        .order_by(AnalysisRun.created_at.desc())
+        db.query(Run)
+        .filter(Run.kind == "dataset_build")
+        .order_by(Run.started_at.desc())
         .limit(50)
         .all()
     )

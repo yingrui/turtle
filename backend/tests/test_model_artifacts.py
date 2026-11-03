@@ -107,9 +107,9 @@ def test_training_is_registered_as_a_model_artifact(db_session):
         "metrics": {"train_auc": 0.62},
     }
     from app.services.analysis_service import _store_model
-    from app.models.ranking import AnalysisRun
+    from app.models.run import Run
 
-    run = AnalysisRun(id="run-model", method="scorecard_train", status="running", params={})
+    run = Run(id="run-model", kind="scorecard_train", status="running", params={})
     db_session.add(run)
     db_session.commit()
     stored, artifact = _store_model(

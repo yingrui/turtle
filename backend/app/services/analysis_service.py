@@ -16,10 +16,11 @@ from sqlalchemy.orm import Session
 from app.analysis import methods  # noqa: F401  (registration side effect)
 from app.analysis import registry
 from app.analysis.artifact import ScoreTable, read_scores, scores_on_or_before, write_score_table
-from app.models.ranking import AnalysisRun, RankingSource
+from app.models.ranking import RankingSource
+from app.models.run import Run
 
 
-def mark_interrupted(db: Session) -> int:
+def _legacy_mark_interrupted(db: Session) -> int:
     """把上次进程留下的 running 记录标记为失败。
 
     分析在后台线程里跑；进程重启（部署、OOM、崩溃）会让线程消失，但记录一直显示"运行中"，
@@ -27,9 +28,7 @@ def mark_interrupted(db: Session) -> int:
     """
     from datetime import datetime as _dt
 
-    from app.models.ranking import AnalysisRun
-
-    stuck = db.query(AnalysisRun).filter(AnalysisRun.status.in_(("running", "pending"))).all()
+    stuck = db.query(Run).filter(Run.status.in_(("running", "pending"))).all()
     for run in stuck:
         run.status = "failed"
         run.error = "运行被中断（服务重启）；请重新发起"
@@ -68,31 +67,20 @@ def run_analysis(
     created_by: str | None = None,
     run_id: str | None = None,
     progress=None,
-) -> tuple[AnalysisRun, RankingSource]:
+) -> tuple[Run, object]:
     spec = registry.get(method)
     parsed = spec.params_model(**params)
     # The API creates the row first so the caller gets an id immediately; the worker fills it in.
-    run = db.get(AnalysisRun, run_id) if run_id else None
+    run = db.get(Run, run_id) if run_id else None
     if run is None:
-        run = AnalysisRun(id=run_id or str(uuid.uuid4()), method=method, created_by=created_by)
+        run = Run(id=run_id or str(uuid.uuid4()), kind=method, title=spec.display_name)
         db.add(run)
-    run.method = method
+    run.kind = method
+    run.title = spec.display_name
     run.params = parsed.model_dump(mode="json")
-    run.dataset_name = (dataset or {}).get("name")
-    run.dataset_version = (dataset or {}).get("version")
     run.status = "running"
-    run.code_revision = code_revision()
+    run.created_by = created_by or run.created_by
     db.commit()
-    from app.services.run_service import start_run
-
-    start_run(
-        db,
-        run_id=run.id,
-        # 参数里可能带 kind，没有就用方法名 —— 括号不能省，否则整个表达式只在 else 分支上 or。
-        kind=(run.params.get("kind") if isinstance(run.params, dict) else None) or method,
-        params=run.params or {},
-        created_by=created_by,
-    )
 
     try:
         result = spec.run(db, parsed, dataset or {})  # type: ignore[misc]
@@ -151,13 +139,8 @@ def run_analysis(
         run.artifact_sha256 = digest
         run.source_id = source_id
         run.finished_at = datetime.utcnow()
+        run.result = {"source_id": source_id, "rows": summary["row_count"]}
         db.commit()
-        from app.services.run_service import finish_run
-
-        finish_run(
-            db, run.id, status="completed",
-            result={"source_id": source_id, "rows": summary["row_count"]},
-        )
         if progress:
             progress(f"{summary['row_count']:,} rows → {source_id}")
         return run, source
@@ -166,13 +149,10 @@ def run_analysis(
         run.error = f"{type(exc).__name__}: {exc}"
         run.finished_at = datetime.utcnow()
         db.commit()
-        from app.services.run_service import finish_run
-
-        finish_run(db, run.id, status="failed", error=run.error)
         raise
 
 
-def _store_model(db: Session, *, run: AnalysisRun, spec, params, model: dict, dataset, created_by):
+def _store_model(db: Session, *, run: Run, spec, params, model: dict, dataset, created_by):
     """A model artifact is a parameter file plus its fingerprint — no source, no score table."""
     import json
     import os
@@ -198,6 +178,7 @@ def _store_model(db: Session, *, run: AnalysisRun, spec, params, model: dict, da
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "model.json").write_text(payload, encoding="utf-8")
 
+    run.result = {"fingerprint": key, "period": str(model.get("trained_for_period"))}
     artifact = ModelArtifact(
         fingerprint=key,
         method=spec.name,

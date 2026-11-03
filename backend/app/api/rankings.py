@@ -36,7 +36,7 @@ def create_source(body: dict, db: Session = Depends(get_db), user: User = Depend
     """
     from app.analysis import methods, registry  # noqa: F401
     from app.api.analyses import _execute_in_background
-    from app.models.ranking import AnalysisRun
+    from app.models.run import Run
 
     method = body.get("method")
     try:
@@ -52,12 +52,11 @@ def create_source(body: dict, db: Session = Depends(get_db), user: User = Depend
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=422, detail=str(exc)) from None
 
-    run = AnalysisRun(
+    run = Run(
         id=__import__("uuid").uuid4().hex,
-        method=method,
+        kind=method,
+        title=spec.display_name,
         params=parsed.model_dump(mode="json"),
-        dataset_name=(body.get("dataset") or {}).get("name"),
-        dataset_version=(body.get("dataset") or {}).get("version"),
         status="pending",
         created_by=getattr(user, "login", None),
     )
