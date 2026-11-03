@@ -59,11 +59,6 @@ const t_inline = {
   willCreate: '数据集不存在，本次导出将新建该数据集。',
 };
 
-const LABEL_CHOICES = [
-  { value: 'benchmark', label: '跑赢基准（benchmark）' },
-  { value: 'relative', label: '横截面相对排名（relative）' },
-  { value: 'absolute', label: '绝对收益为正（absolute）' },
-];
 
 /**
  * 一个参数一个控件：日期用日期选择器、名单用多选、枚举用下拉、开关用复选框。
@@ -183,27 +178,14 @@ function Field({
     );
   }
 
-  if (name === 'label') {
-    return (
-      <div className="form-row">
-        <label htmlFor={id}>{label}</label>
-        <select id={id} value={value} onChange={(e) => onChange(e.target.value)} aria-describedby={describedBy}>
-          {LABEL_CHOICES.map((choice) => (
-            <option key={choice.value} value={choice.value}>
-              {choice.label}
-            </option>
-          ))}
-        </select>
-        {hintNode}
-      </div>
-    );
-  }
-
   if (property.enum) {
     const ENUM_LABELS: Record<string, string> = {
       month: '按月',
       week: '按周',
       day: '按日',
+      benchmark: '跑赢基准',
+      relative: '横截面相对排名',
+      absolute: '绝对收益为正',
     };
     return (
       <div className="form-row">

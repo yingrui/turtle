@@ -9,6 +9,7 @@ inputs, so a simulation asking for the same period and the same data reuses it i
 from __future__ import annotations
 
 from datetime import date
+from typing import Literal
 
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -28,7 +29,9 @@ class ScorecardTrainParams(BaseModel):
     end: date = Field(
         ..., title="训练数据终点", description="通常取目标月份之前最后一个交易日"
     )
-    label: str = Field("benchmark", title="预测目标", description="模型学的是跑赢基准、相对排名，还是绝对上涨")
+    label: Literal["benchmark", "relative", "absolute"] = Field(
+        "benchmark", title="预测目标", description="模型学的是跑赢基准、相对排名，还是绝对上涨"
+    )
     horizon: int = Field(20, ge=1, le=60, title="持有期（交易日）", description="预测未来多少个交易日的表现")
     benchmark: str = Field("000300.SH", title="基准指数", description="判断跑赢与否用的参照")
     bins: int = Field(10, ge=3, le=30, title="分箱数", description="每个因子切成几档，常用 10")
