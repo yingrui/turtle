@@ -77,37 +77,15 @@ runs (
 | 2 读切到 `runs` | 完成 | `/api/tasks` 只读 `runs`；重启收尾覆盖 `runs` |
 | 3 回填历史 | 完成 | `scripts/backfill_runs.py`，79 条历史并入 |
 | 4a 分析侧删旧表 | 完成 | 迁移 `022` 删 `analysis_runs`；分析与导出全部写 `runs` |
-| 4b 回测侧删旧表 | **未做** | `jobs` 仍在，见下 |
+| 4b 回测侧删旧表 | 完成 | 迁移 `023` 加日志/进度，`024` 删 `jobs`；`JobService` 改写 `runs` |
 
-## 六、剩下的一步：让 `JobService` 也写 `runs`
+## 六、完成后
 
-`jobs` 之所以还在，是因为回测、因子计算、选股计算都走 `JobService`，而它重度依赖 `jobs` 的三个字段：
+`JobService` 与分析方法都写 `runs`：`kind` 区分是回测、因子计算、选股、评分模型还是导出；
+`params` / `result` / `log` / `progress` / `error` / 起止时间都在一行里。
 
-| 字段 | 用途 | 迁移方式 |
-|---|---|---|
-| `payload` | 任务参数 | 已有 `runs.params` |
-| `result` | 结果 JSON 字符串 | 已有 `runs.result`（改成 JSONB，去掉手工 `json.dumps`） |
-| `log` | 逐行日志，界面直接展示 | 给 `runs` 加 `log` 列（迁移 `023`） |
-| `progress` | 一行进度文本 | 给 `runs` 加 `progress` 列 |
+库里的执行表只剩 `runs`。`jobs` 与 `analysis_runs` 的模型文件已删除，历史数据由
+`scripts/backfill_runs.py` 在删表前并入（幂等）。
 
-改法：
-
-1. 迁移 `023`：`runs` 加 `log text default ''`、`progress varchar(255) default ''`；
-2. `JobService._run_job` 改为读写 `Run`，`create_job` 只建 `runs` 行；
-3. `/api/jobs` 全部改读 `runs`（形状已由 4 步的兼容层定义）；
-4. 双写关闭 → 迁移 `024` 删 `jobs`；
-5. 前端把 `job.log` / `job.progress` 的字段名对齐 `runs`。
-
-### 验收
-
-| 检查 | 通过条件 |
-|---|---|
-| 回测跑通 | 新建回测 → `runs` 里出现 `simulation/completed`，`log` 有内容 |
-| 日志可见 | 回测详情页能显示日志（与现在一致） |
-| 表只剩一张 | `select tablename ... in ('runs','jobs')` 只返回 `runs` |
-| 历史可查 | 运行记录页行数与迁移前一致 |
-
-### 风险
-
-`JobService` 是回测、因子计算、选股三条路的主干，`log`/`progress` 在界面上直接用。这一步要一次改完并验证三条路，
-不能只改一半 —— 与 `analysis_runs` 那次不同，这里没有可以"先删一半"的分界。
+字段兼容：`Run` 上保留了 `type` / `payload` / `result_json` / `created_at` / `updated_at` 几个属性，
+让尚未改完的旧代码仍能工作；新代码直接读 `kind` / `params` / `result` / `started_at` / `finished_at`。

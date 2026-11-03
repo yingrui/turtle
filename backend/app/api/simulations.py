@@ -183,7 +183,6 @@ def launch_baselines(
     import json as _json
     import uuid
 
-    from app.models.job import Job
     from app.models.ranking import RankingSource
     from app.services.analysis_service import run_analysis
 
