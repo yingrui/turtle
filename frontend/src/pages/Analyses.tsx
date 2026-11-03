@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiFetch } from '../utils/api';
-import { DataTable, type Column } from '../components/DataTable';
 import './Analyses.scss';
 
 type Property = {
@@ -27,14 +26,6 @@ type Method = {
   params_schema: ParamsSchema;
 };
 
-type Run = {
-  id: string;
-  method: string;
-  status: string;
-  source_id: string | null;
-  error: string | null;
-  created_at: string | null;
-};
 
 function defaultsFor(schema: ParamsSchema): Record<string, string> {
   const values: Record<string, string> = {};
@@ -239,7 +230,6 @@ export function Analyses({
 }: { embedded?: boolean; only?: 'dataset' | 'model' | 'score_table' } = {}) {
   const { t } = useTranslation();
   const [methods, setMethods] = useState<Method[]>([]);
-  const [runs, setRuns] = useState<Run[]>([]);
   const [selected, setSelected] = useState<string>('');
   const [values, setValues] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -250,16 +240,12 @@ export function Analyses({
 
   const load = useCallback(async () => {
     try {
-      const [methodRes, runRes] = await Promise.all([
-        apiFetch<{ methods: Method[] }>('/api/analyses'),
-        apiFetch<{ runs: Run[] }>('/api/analyses/runs'),
-      ]);
+      const methodRes = await apiFetch<{ methods: Method[] }>('/api/analyses');
       // Only real analyses: a control basket is declared where controls are, not here.
       const analyses = methodRes.methods.filter(
         (item) => item.family !== 'control' && (!only || item.output_kind === only),
       );
       setMethods(analyses);
-      setRuns(runRes.runs);
       const first = methodRes.methods.find(
         (item) => item.family !== 'control' && (!only || item.output_kind === only),
       );
@@ -332,17 +318,6 @@ export function Analyses({
     }
   }
 
-  const columns: Column<Run>[] = [
-    { key: 'method', label: t('analyses.colMethod'), render: (row) => row.method },
-    { key: 'status', label: t('analyses.colStatus'), render: (row) => row.status },
-    { key: 'source', label: t('analyses.colSource'), render: (row) => row.source_id ?? '—' },
-    {
-      key: 'created',
-      label: t('analyses.colCreated'),
-      render: (row) => (row.created_at ? row.created_at.slice(0, 19).replace('T', ' ') : '—'),
-    },
-    { key: 'error', label: t('analyses.colError'), render: (row) => row.error ?? '—' },
-  ];
 
   return (
     <div className={embedded ? 'analyses-body' : 'analyses-page'}>
@@ -389,16 +364,6 @@ export function Analyses({
         </button>
       </div>
 
-      <details className="analyses-history">
-        <summary>{t('analyses.history')}</summary>
-        <DataTable<Run>
-          columns={columns}
-          rows={runs}
-          rowKey={(row) => row.id}
-          empty={t('analyses.empty')}
-          pageSize={10}
-        />
-      </details>
     </div>
   );
 }
