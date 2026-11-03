@@ -27,6 +27,9 @@ class Run(Base):
     params: Mapped[dict] = mapped_column(JSON_TYPE, default=dict, server_default="{}")
     result: Mapped[dict] = mapped_column(JSON_TYPE, default=dict, server_default="{}")
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: 逐行日志与一行进度：回测详情页直接展示，回测/因子计算都要用。
+    log: Mapped[str] = mapped_column(Text, default="", server_default="")
+    progress: Mapped[str] = mapped_column(String(255), default="", server_default="")
     artifact_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
     artifact_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)

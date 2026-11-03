@@ -52,6 +52,23 @@ def mark_running(db: Session, run_id: str) -> None:
     db.commit()
 
 
+def append_log(db: Session, run_id: str, line: str) -> None:
+    """日志按行追加到 runs.log；找不到记录就静默跳过（双写过渡期的旧记录）。"""
+    run = db.get(Run, run_id)
+    if run is None:
+        return
+    run.log = f"{run.log}\n{line}" if run.log else line
+    db.commit()
+
+
+def set_progress(db: Session, run_id: str, text: str) -> None:
+    run = db.get(Run, run_id)
+    if run is None:
+        return
+    run.progress = text[:255]
+    db.commit()
+
+
 def finish_run(
     db: Session, run_id: str, *, status: str, result: dict | None = None, error: str | None = None
 ) -> None:

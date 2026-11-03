@@ -104,6 +104,10 @@ class JobService:
                 logs.append(msg)
                 job.log = "\n".join(logs)
                 db.commit()
+                # 双写：同一行日志也写进 runs，下一轮读路径切过去时日志已经齐了。
+                from app.services.run_service import append_log
+
+                append_log(db, job.id, msg)
 
             if job.type == "portfolio_screen":
                 as_of = date.fromisoformat(payload["as_of_date"])
