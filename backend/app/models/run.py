@@ -35,3 +35,43 @@ class Run(Base):
     created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
     started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # --- 兼容旧字段名 -------------------------------------------------------
+    # JobService 的历史代码按 jobs 的字段读写（type / payload / result 是字符串）。
+    # 这里给出同名属性，让调用方可以逐步迁移，而不用一次性改几十处。
+    @property
+    def type(self) -> str:
+        return self.kind
+
+    @type.setter
+    def type(self, value: str) -> None:
+        self.kind = value
+
+    @property
+    def payload(self) -> str:
+        import json as _json
+
+        return _json.dumps(self.params or {}, ensure_ascii=False)
+
+    @payload.setter
+    def payload(self, value: str) -> None:
+        import json as _json
+
+        try:
+            self.params = _json.loads(value or "{}")
+        except _json.JSONDecodeError:
+            self.params = {}
+
+    @property
+    def result_json(self) -> str | None:
+        import json as _json
+
+        return None if not self.result else _json.dumps(self.result, ensure_ascii=False)
+
+    @property
+    def created_at(self):
+        return self.started_at
+
+    @property
+    def updated_at(self):
+        return self.finished_at

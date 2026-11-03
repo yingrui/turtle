@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import SessionLocal
-from app.models.job import Job
+from app.models.run import Run
 from app.models.simulation import SimulationDaily, SimulationRun, SimulationTrade
 from app.services.portfolio_service import PortfolioService
 from app.services.factor_service import FactorError, FactorService
@@ -52,19 +52,18 @@ def _decimal_or_none(value) -> Decimal | None:
 
 
 class JobService:
-    def create_job(self, db: Session, job_type: str, payload: dict) -> Job:
-        job = Job(
+    def create_job(self, db: Session, job_type: str, payload: dict) -> Run:
+        job = Run(
             id=str(uuid.uuid4()),
-            type=job_type,
+            kind=job_type,
+            title=payload.get("name") or job_type,
             status="pending",
-            payload=json.dumps(payload),
+            params=payload,
         )
         db.add(job)
         db.commit()
         db.refresh(job)
-        from app.services.run_service import start_run
-
-        start_run(db, run_id=job.id, kind=job_type, params=payload)
+        
         thread = threading.Thread(target=self._run_job, args=(job.id,), daemon=True)
         thread.start()
         return job
@@ -76,7 +75,7 @@ class JobService:
         abandons whatever was in flight. Without this the row keeps saying ``running`` and the UI
         polls something that will never finish. Called once at startup.
         """
-        jobs = db.query(Job).filter(Job.status.in_(("pending", "running"))).all()
+        jobs = db.query(Run).filter(Run.status.in_(("pending", "running"))).all()
         for job in jobs:
             job.status = "failed"
             job.error = "Interrupted: the API process restarted while this job was running."
@@ -89,7 +88,7 @@ class JobService:
     def _run_job(self, job_id: str) -> None:
         db = SessionLocal()
         try:
-            job = db.get(Job, job_id)
+            job = db.get(Run, job_id)
             if not job:
                 return
             job.status = "running"
@@ -109,7 +108,7 @@ class JobService:
 
                 append_log(db, job.id, msg)
 
-            if job.type == "portfolio_screen":
+            if job.kind == "portfolio_screen":
                 as_of = date.fromisoformat(payload["as_of_date"])
                 rows = ScreeningService().run_screen(
                     as_of,
@@ -308,9 +307,9 @@ class JobService:
                         f"{code}: {result['rows_written']} values, "
                         f"{result['stocks']} stocks, {result['dates']} days"
                     )
-                job.result = json.dumps({"factors": results})
+                job.result = {"factors": results}
             else:
-                raise ValueError(f"Unknown job type: {job.type}")
+                raise ValueError(f"Unknown job type: {job.kind}")
 
             job.status = "completed"
             job.log = "\n".join(logs)
@@ -320,7 +319,7 @@ class JobService:
 
             _finish_ok(db, job.id, status="completed")
         except Exception as exc:
-            job = db.get(Job, job_id)
+            job = db.get(Run, job_id)
             if job:
                 job.status = "failed"
                 job.error = str(exc)

@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.database import get_db
-from app.models.job import Job
+from app.models.run import Run
 from app.models.portfolio import Portfolio
 from app.models.ranking import RankingSource
 from app.models.simulation import SimulationDaily, SimulationHolding, SimulationPool, SimulationRun
@@ -115,7 +115,7 @@ def overview(db: Session = Depends(get_db), _: User = Depends(get_current_user))
             {"source_id": source.id, "name": source.display_name, "day": picks_day, "top": top}
         )
 
-    failed_jobs = db.scalar(select(func.count()).select_from(Job).where(Job.status == "failed")) or 0
+    failed_jobs = db.scalar(select(func.count()).select_from(Run).where(Run.status == "failed")) or 0
 
     return {
         "market_day": None if market_day is None else str(market_day),

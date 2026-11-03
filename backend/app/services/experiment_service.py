@@ -53,7 +53,7 @@ class ExperimentService:
         """
         import json as _json
 
-        from app.models.job import Job
+        from app.services.job_service import JobService
 
         launched = []
         for variant, spec, is_control in self.cells(experiment):
@@ -71,10 +71,7 @@ class ExperimentService:
             }
             if not payload["ranking_source_id"] or not payload["start_date"]:
                 raise ValueError(f"cell {variant} is missing a ranking source or a window")
-            job = Job(id=str(uuid.uuid4()), type="simulation", status="pending",
-                      payload=_json.dumps(payload, ensure_ascii=False), log="")
-            db.add(job)
-            db.commit()
+            job = JobService().create_job(db, "simulation", payload)
             self.attach(db, experiment.id, variant, job_id=job.id, is_control=is_control)
             launched.append({"variant": variant, "job_id": job.id, "is_control": is_control})
         experiment.status = "running"

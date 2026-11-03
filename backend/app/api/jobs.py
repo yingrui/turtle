@@ -104,7 +104,6 @@ def get_job(job_id: str, db: Session = Depends(get_db), _: User = Depends(get_cu
     读 runs（统一表）；若那里没有（回填之前的极老记录），回落到 jobs。返回值形状保持不变 ——
     openKMS 的 Action 回调仍在读这个接口。
     """
-    from app.models.job import Job
     from app.models.run import Run
 
     run = db.get(Run, job_id)
@@ -122,10 +121,7 @@ def get_job(job_id: str, db: Session = Depends(get_db), _: User = Depends(get_cu
             "updated_at": run.finished_at.isoformat() if run.finished_at else None,
         }
 
-    job = db.get(Job, job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return _job_to_dict(job)
+    raise HTTPException(status_code=404, detail="Job not found")
 
 
 @router.post("", status_code=201)

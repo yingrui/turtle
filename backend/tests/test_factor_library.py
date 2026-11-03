@@ -172,12 +172,12 @@ def test_a_restart_closes_the_jobs_it_killed(db_session):
     """A job is a thread in the API process; a restart abandons it, so the row must not say running."""
     import json
 
-    from app.models import Job
+    from app.models.run import Run
     from app.services.job_service import JobService
 
-    stale = Job(id="job-stale", type="factor_compute", status="running", payload=json.dumps({}))
-    queued = Job(id="job-queued", type="factor_compute", status="pending", payload=json.dumps({}))
-    done = Job(id="job-done", type="factor_compute", status="completed", payload=json.dumps({}))
+    stale = Run(id="job-stale", kind="factor_compute", status="running", params={})
+    queued = Run(id="job-queued", kind="factor_compute", status="pending", params={})
+    done = Run(id="job-done", kind="factor_compute", status="completed", params={})
     db_session.add_all([stale, queued, done])
     db_session.commit()
 

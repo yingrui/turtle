@@ -86,7 +86,7 @@ def test_expanding_creates_one_job_per_cell_and_remembers_them(db_session):
     """The matrix is the point: variants and controls must run under the same window and strategy."""
     import json
 
-    from app.models.job import Job
+    from app.models.run import Run
 
     service = ExperimentService()
     experiment = service.create(db_session, _payload(
@@ -98,9 +98,9 @@ def test_expanding_creates_one_job_per_cell_and_remembers_them(db_session):
     assert [cell["variant"] for cell in launched] == ["regime", "random11"]
     assert launched[0]["is_control"] is False and launched[1]["is_control"] is True
     assert experiment.status == "running"
-    jobs = db_session.query(Job).all()
+    jobs = db_session.query(Run).all()
     assert len(jobs) == 2
-    payload = json.loads(jobs[0].payload)
+    payload = jobs[0].params
     assert payload["ranking_source_id"] == "regime-ma60-v1"
     assert payload["start_date"] == "2025-07-01" and payload["buy_rule"] == "pool_entry"
 
@@ -111,7 +111,7 @@ def test_expanding_creates_one_job_per_cell_and_remembers_them(db_session):
     assert all(cell.job_id for cell in cells)
 
     # Leave the global job table as we found it: another test asserts what a restart does to *all* jobs.
-    db_session.query(Job).delete()
+    db_session.query(Run).delete()
     db_session.commit()
 
 

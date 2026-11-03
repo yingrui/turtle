@@ -463,9 +463,9 @@ def delete_run(run_id: str, db: Session = Depends(get_db), _: User = Depends(get
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
     if run.job_id:
-        from app.models.job import Job
+        from app.models.run import Run
 
-        job = db.get(Job, run.job_id)
+        job = db.get(Run, run.job_id)
         if job and job.status in {"pending", "running"}:
             raise HTTPException(status_code=409, detail="The job that owns this run is still running")
     removed = {}
