@@ -62,3 +62,10 @@
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
+
+// 表单以嵌入方式使用（新建模型 / 新建导出），本身不承担页面标题。
+.analyses-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

@@ -16,7 +16,7 @@ export function DatasetBuild() {
           <Link to="/datasets">{t('datasets.backToList')}</Link>
         </p>
       </header>
-      <Analyses embedded only="dataset" />
+      <Analyses only="dataset" />
     </div>
   );
 }

@@ -224,10 +224,7 @@ function Field({
   );
 }
 
-export function Analyses({
-  embedded = false,
-  only,
-}: { embedded?: boolean; only?: 'dataset' | 'model' | 'score_table' } = {}) {
+export function Analyses({ only }: { only?: 'dataset' | 'model' | 'score_table' } = {}) {
   const { t } = useTranslation();
   const [methods, setMethods] = useState<Method[]>([]);
   const [selected, setSelected] = useState<string>('');
@@ -320,14 +317,7 @@ export function Analyses({
 
 
   return (
-    <div className={embedded ? 'analyses-body' : 'analyses-page'}>
-      {!embedded && (
-        <>
-          <h1>{t('analyses.title')}</h1>
-          <p className="analyses-subtitle">{t('analyses.subtitle')}</p>
-        </>
-      )}
-
+    <div className="analyses-body">
       <div className="analyses-form">
         <div className="form-row">
           <label htmlFor="analysis-method">{t('analyses.method')}</label>

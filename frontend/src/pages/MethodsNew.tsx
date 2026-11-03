@@ -17,7 +17,7 @@ export function MethodsNew() {
         </p>
       </header>
 
-      <Analyses embedded only="score_table" />
+      <Analyses only="score_table" />
     </div>
   );
 }
