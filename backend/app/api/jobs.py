@@ -75,7 +75,28 @@ def list_jobs(db: Session = Depends(get_db), _: User = Depends(get_current_user)
 
 @router.get("/{job_id}")
 def get_job(job_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """单个任务的查询。
+
+    读 runs（统一表）；若那里没有（回填之前的极老记录），回落到 jobs。返回值形状保持不变 ——
+    openKMS 的 Action 回调仍在读这个接口。
+    """
     from app.models.job import Job
+    from app.models.run import Run
+
+    run = db.get(Run, job_id)
+    if run is not None:
+        return {
+            "id": run.id,
+            "type": run.kind,
+            "status": run.status,
+            "progress": "",
+            "payload": run.params,
+            "result": None if not run.result else __import__("json").dumps(run.result),
+            "error": run.error,
+            "log": "",
+            "created_at": run.started_at.isoformat() if run.started_at else None,
+            "updated_at": run.finished_at.isoformat() if run.finished_at else None,
+        }
 
     job = db.get(Job, job_id)
     if not job:
