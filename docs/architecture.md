@@ -38,6 +38,22 @@ flowchart TB
 | **Trading engine** | `backend/app/core/` — policies, simulation, screening; **factor layer planned**. |
 | **Jobs** | Screening, factor compute, and simulation in background threads; status in `jobs` table. **Not** in-app data sync. |
 
+## Execution records
+
+Every background execution — backtest, factor computation, screening, score model, dataset export — is one row in
+`runs`: `kind`, `status`, `params`, `result`, `log`, `progress`, `error`, `started_at`, `finished_at`, `artifact_key`.
+`/api/tasks` and `/api/jobs` both read it; the UI has a single 「运行记录」 page.
+
+The business result of a backtest (fills, holdings, equity) stays in `simulation_runs` and its child tables —
+`runs` records *that something ran*, not what it produced.
+
+Two conventions worth keeping:
+
+- **Interrupts are closed out at startup.** A background thread dies with the process; without this, a row keeps
+  saying `running` and the UI polls something that will never finish.
+- **`Run` carries legacy-shaped properties** (`type`, `payload`, `result_json`, `created_at`, `updated_at`) so code
+  written against the old `jobs` table keeps working. New code reads `kind`, `params`, `result`, `started_at`.
+
 ## Frontend structure
 
 ```
