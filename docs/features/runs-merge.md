@@ -66,3 +66,48 @@ runs (
 
 - **回测的明细**（成交、净值、股票池）在 `simulation_runs` 及其子表里，`runs` 只存"这次执行"。迁移时不要把两者混为一谈；
 - 有外部调用方在读 `/api/jobs`（openKMS 的 Action 回调也用它），第 4 步之前要保留这个路由做兼容转发。
+
+---
+
+## 五、进度
+
+| 步 | 状态 | 说明 |
+|---|---|---|
+| 1 建表 + 双写 | 完成 | 迁移 `021`，`RunService` |
+| 2 读切到 `runs` | 完成 | `/api/tasks` 只读 `runs`；重启收尾覆盖 `runs` |
+| 3 回填历史 | 完成 | `scripts/backfill_runs.py`，79 条历史并入 |
+| 4a 分析侧删旧表 | 完成 | 迁移 `022` 删 `analysis_runs`；分析与导出全部写 `runs` |
+| 4b 回测侧删旧表 | **未做** | `jobs` 仍在，见下 |
+
+## 六、剩下的一步：让 `JobService` 也写 `runs`
+
+`jobs` 之所以还在，是因为回测、因子计算、选股计算都走 `JobService`，而它重度依赖 `jobs` 的三个字段：
+
+| 字段 | 用途 | 迁移方式 |
+|---|---|---|
+| `payload` | 任务参数 | 已有 `runs.params` |
+| `result` | 结果 JSON 字符串 | 已有 `runs.result`（改成 JSONB，去掉手工 `json.dumps`） |
+| `log` | 逐行日志，界面直接展示 | 给 `runs` 加 `log` 列（迁移 `023`） |
+| `progress` | 一行进度文本 | 给 `runs` 加 `progress` 列 |
+
+改法：
+
+1. 迁移 `023`：`runs` 加 `log text default ''`、`progress varchar(255) default ''`；
+2. `JobService._run_job` 改为读写 `Run`，`create_job` 只建 `runs` 行；
+3. `/api/jobs` 全部改读 `runs`（形状已由 4 步的兼容层定义）；
+4. 双写关闭 → 迁移 `024` 删 `jobs`；
+5. 前端把 `job.log` / `job.progress` 的字段名对齐 `runs`。
+
+### 验收
+
+| 检查 | 通过条件 |
+|---|---|
+| 回测跑通 | 新建回测 → `runs` 里出现 `simulation/completed`，`log` 有内容 |
+| 日志可见 | 回测详情页能显示日志（与现在一致） |
+| 表只剩一张 | `select tablename ... in ('runs','jobs')` 只返回 `runs` |
+| 历史可查 | 运行记录页行数与迁移前一致 |
+
+### 风险
+
+`JobService` 是回测、因子计算、选股三条路的主干，`log`/`progress` 在界面上直接用。这一步要一次改完并验证三条路，
+不能只改一半 —— 与 `analysis_runs` 那次不同，这里没有可以"先删一半"的分界。
