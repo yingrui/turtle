@@ -55,8 +55,11 @@ async def lifespan(_: FastAPI):
     yield
 
 
+from app.middleware_utc import UtcTimestampsMiddleware
+
 app = FastAPI(title="Stock Trading API", lifespan=lifespan)
 
+app.add_middleware(UtcTimestampsMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.stock_frontend_url, "http://localhost:3200"],
