@@ -25,6 +25,9 @@ def list_tasks(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
+    from app.services.run_service import fail_stale
+
+    fail_stale(db, minutes=15)
     query = db.query(Run)
     if status:
         query = query.filter(Run.status == status)

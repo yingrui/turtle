@@ -30,6 +30,8 @@ class Run(Base):
     #: 逐行日志与一行进度：回测详情页直接展示，回测/因子计算都要用。
     log: Mapped[str] = mapped_column(Text, default="", server_default="")
     progress: Mapped[str] = mapped_column(String(255), default="", server_default="")
+    #: 最后一次心跳。长时间不更新说明线程已死，可以被判定为失败。
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     artifact_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
     artifact_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_by: Mapped[str | None] = mapped_column(String(64), nullable=True)

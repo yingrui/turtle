@@ -54,7 +54,30 @@ def mark_running(db: Session, run_id: str) -> None:
     if run is None:
         return
     run.status = "running"
+    run.heartbeat_at = datetime.utcnow()
     db.commit()
+
+
+def fail_stale(db: Session, *, minutes: int = 15) -> int:
+    """把"很久没有心跳"的运行标为失败。
+
+    后台线程随进程消失时不会有人来收尾；靠心跳时间判定，界面才不会一直显示运行中。
+    """
+    from datetime import timedelta
+
+    cutoff = datetime.utcnow() - timedelta(minutes=minutes)
+    stale = db.query(Run).filter(Run.status == "running").all()
+    failed = 0
+    for run in stale:
+        last = run.heartbeat_at or run.started_at
+        if last is not None and last < cutoff:
+            run.status = "failed"
+            run.error = f"超过 {minutes} 分钟没有进展，判定为中断；请重试"
+            run.finished_at = datetime.utcnow()
+            failed += 1
+    if failed:
+        db.commit()
+    return failed
 
 
 def append_log(db: Session, run_id: str, line: str) -> None:
@@ -115,4 +138,5 @@ def report_progress(detail: str, percent: int | None = None) -> None:
         if run is None:
             return
         run.progress = label[:255]
+        run.heartbeat_at = datetime.utcnow()
         db.commit()
