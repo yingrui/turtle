@@ -126,10 +126,20 @@ def build_history(dataset_id: str, db: Session = Depends(get_db), _: User = Depe
         .limit(50)
         .all()
     )
+    # 运行记录里存的是数据集**名字**（建的时候只有名字），这里要按名字比对，而不是按 id。
+    listing = _openkms("/datasets?kind=file")
+    name = next(
+        (
+            item.get("display_name") or item.get("name")
+            for item in (listing.get("items") or [])
+            if item.get("id") == dataset_id
+        ),
+        None,
+    )
     matched = []
     for run in runs:
         params = run.params or {}
-        if params.get("dataset") not in (dataset_id, None):
+        if params.get("dataset") not in (name, dataset_id):
             continue
         rows = None
         if run.artifact_key:
