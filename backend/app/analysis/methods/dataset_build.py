@@ -122,6 +122,11 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
     windows = _windows(params.start, params.end, params.granularity)
     _progress(f"共 {len(windows)} 个分块，粒度 {params.granularity}；目标 {params.dataset} v{version}", 0)
     for index, (window_start, window_end) in enumerate(windows, start=1):
+        import time as _time
+
+        _t0 = _time.time()
+        _progress(f"[{index}/{len(windows)}] 开始取数 {window_start} → {window_end}",
+                  int((index - 1) / len(windows) * 100))
         try:
             frame = build_slice(
                 db,
@@ -138,6 +143,8 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
             continue
         if frame.empty:
             continue
+        _progress(f"[{index}/{len(windows)}] 取数完成 {len(frame):,} 行，用时 {_time.time()-_t0:.0f}s，开始上传",
+                  int((index - 1) / len(windows) * 100))
         columns = sorted(frame.columns.tolist())
         total_rows += len(frame)
         filename = f"{window_start.isoformat()}_{window_end.isoformat()}.parquet"
