@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../utils/api';
 import { DataTable, type Column } from '../components/DataTable';
+import './Jobs.scss';
 
 /** 后端给的是 UTC 的裸时间戳（不带时区），直接切片会显示成 UTC 时钟。 */
 function localTime(value: string | null): string {
@@ -75,6 +76,8 @@ export function Jobs() {
     {
       key: 'actions',
       label: '',
+      className: 'tasks-action',
+      cellClassName: () => 'tasks-action',
       render: (row) =>
         row.status === 'failed' || row.status === 'completed' ? (
           <button type="button" className="btn-link" onClick={() => retry(row.id)}>

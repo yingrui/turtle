@@ -1,0 +1,8 @@
+@use '../styles/design-system/local-tokens' as lt;
+@use '../styles/design-system/mixins' as *;
+
+// 操作列只放一个词，但中文两个字会被挤成竖排 —— 给它一个最小宽度并禁止换行。
+.tasks-action {
+  min-width: 4.5rem;
+  white-space: nowrap;
+}
