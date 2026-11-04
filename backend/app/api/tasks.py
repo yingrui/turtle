@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
@@ -15,6 +15,44 @@ from app.models.run import Run
 from app.models.user import User
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"], dependencies=[Depends(get_current_user)])
+
+
+@router.post("/{task_id}/retry")
+def retry_task(task_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """按原来的参数再跑一次。
+
+    失败多半是环境问题（重启、凭据、网络），参数本身通常没问题 —— 让用户重新填一遍没有意义。
+    """
+    from app.api.analyses import _execute_in_background
+    from app.models.run import Run as RunModel
+
+    run = db.get(RunModel, task_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if run.status in ("pending", "running"):
+        raise HTTPException(status_code=409, detail="该运行仍在进行中")
+
+    job_kinds = {"simulation", "factor_compute", "screen", "portfolio_screen"}
+    if run.kind in job_kinds:
+        from app.services.job_service import JobService
+
+        new_run = JobService().create_job(db, run.kind, run.params or {})
+        return {"run_id": new_run.id, "kind": run.kind}
+
+    new_run = RunModel(
+        id=__import__("uuid").uuid4().hex,
+        kind=run.kind,
+        title=run.title,
+        params=run.params or {},
+        status="pending",
+        created_by=getattr(user, "login", None),
+    )
+    db.add(new_run)
+    db.commit()
+    _execute_in_background(
+        new_run.id, run.kind, run.params or {}, {}, None, None, getattr(user, "login", None)
+    )
+    return {"run_id": new_run.id, "kind": run.kind}
 
 
 @router.get("")

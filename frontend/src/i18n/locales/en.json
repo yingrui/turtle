@@ -759,6 +759,7 @@
     "colDetail": "Result",
     "colError": "Failure",
     "empty": "No runs yet.",
-    "colProgress": "Progress"
+    "colProgress": "Progress",
+    "retry": "Run again"
   }
 }

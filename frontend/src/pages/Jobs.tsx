@@ -29,6 +29,15 @@ export function Jobs() {
   const { t } = useTranslation();
   const [tasks, setTasks] = useState<Task[]>([]);
 
+  async function retry(id: string) {
+    try {
+      await apiFetch(`/api/tasks/${encodeURIComponent(id)}/retry`, { method: 'POST', body: '{}' });
+      await load();
+    } catch {
+      // 失败信息会出现在运行记录里，这里不额外打扰
+    }
+  }
+
   const load = useCallback(async () => {
     try {
       const res = await apiFetch<{ tasks: Task[] }>('/api/tasks?limit=200');
@@ -63,6 +72,18 @@ export function Jobs() {
     },
     { key: 'detail', label: t('tasks.colDetail'), render: (row) => row.detail ?? '—' },
     { key: 'error', label: t('tasks.colError'), render: (row) => row.error ?? '—' },
+    {
+      key: 'actions',
+      label: '',
+      render: (row) =>
+        row.status === 'failed' || row.status === 'completed' ? (
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => retry(row.id)}>
+            {t('tasks.retry')}
+          </button>
+        ) : (
+          '—'
+        ),
+    },
   ];
 
   return (
