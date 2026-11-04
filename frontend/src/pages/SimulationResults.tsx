@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../utils/api';
+import { localDateTime } from '../utils/time';
 import { LineChart } from '../components/Chart';
 import { Tabs } from '../components/Tabs';
 import { DataTable, type Column } from '../components/DataTable';
@@ -272,7 +273,7 @@ export function SimulationResults() {
             <option value="">{t('results.allRecent')}</option>
             {recentJobs.map((j) => (
               <option key={j.id} value={j.id}>
-                {j.created_at?.slice(0, 16).replace('T', ' ') ?? j.id} — {j.status}
+                {localDateTime(j.created_at)} — {j.status}
               </option>
             ))}
           </select>

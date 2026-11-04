@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
+import { localDateTime } from '../utils/time';
 import { DataTable, type Column } from '../components/DataTable';
 import './Datasets.scss';
 
@@ -109,7 +110,7 @@ export function DatasetDetail() {
             {
               key: 'finished',
               label: t('datasets.colBuildTime'),
-              render: (row) => (row.finished_at ? row.finished_at.slice(0, 19).replace('T', ' ') : '—'),
+              render: (row) => localDateTime(row.finished_at),
             },
             { key: 'version', label: t('datasets.colVersion'), render: (row) => `v${row.version ?? '?'}` },
             {
