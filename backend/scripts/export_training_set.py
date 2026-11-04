@@ -111,7 +111,11 @@ def upload_slice(dataset_id: str, version: int, filename: str, payload: bytes) -
             with urllib.request.urlopen(request, timeout=60) as response:
                 return json.loads(response.read().decode())
         except urllib.error.HTTPError as exc:
-            raise RuntimeError(f"upload → {exc.code}: {exc.read().decode()[:400]}") from exc
+            detail = exc.read().decode()[:400]
+            # 同一段区间重复导出：文件已在该版本里，说明这一块之前已经传过 —— 直接算完成，不当作错误。
+            if exc.code == 400 and "already in" in detail:
+                return {"name": filename, "skipped": True, "detail": detail}
+            raise RuntimeError(f"upload → {exc.code}: {detail}") from exc
         except Exception as exc:  # noqa: BLE001 — 超时/连接中断可以重试
             last = exc
             time.sleep(2 * (attempt + 1))
