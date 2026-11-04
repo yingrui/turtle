@@ -24,6 +24,7 @@ import argparse
 import io
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 from datetime import date, datetime, timedelta
@@ -71,7 +72,7 @@ def _request(method: str, path: str, *, body: bytes | None = None, headers: dict
         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json", **(headers or {})},
     )
     try:
-        with urllib.request.urlopen(request, timeout=120) as response:
+        with urllib.request.urlopen(request, timeout=60) as response:
             raw = response.read().decode()
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as exc:
@@ -103,11 +104,18 @@ def upload_slice(dataset_id: str, version: int, filename: str, payload: bytes) -
             "Content-Type": f"multipart/form-data; boundary={boundary}",
         },
     )
-    try:
-        with urllib.request.urlopen(request, timeout=300) as response:
-            return json.loads(response.read().decode())
-    except urllib.error.HTTPError as exc:
-        raise SystemExit(f"upload → {exc.code}: {exc.read().decode()[:400]}") from exc
+    # 上传正常 1 秒内完成；给 60 秒超时，卡住时快速失败而不是挂十几分钟等心跳判定。
+    last: Exception | None = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                return json.loads(response.read().decode())
+        except urllib.error.HTTPError as exc:
+            raise RuntimeError(f"upload → {exc.code}: {exc.read().decode()[:400]}") from exc
+        except Exception as exc:  # noqa: BLE001 — 超时/连接中断可以重试
+            last = exc
+            time.sleep(2 * (attempt + 1))
+    raise RuntimeError(f"upload 失败：{type(last).__name__}: {last}")
 
 
 # --- the slice --------------------------------------------------------------------------
