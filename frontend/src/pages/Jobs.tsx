@@ -3,6 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../utils/api';
 import { DataTable, type Column } from '../components/DataTable';
 
+/** 后端给的是 UTC 的裸时间戳（不带时区），直接切片会显示成 UTC 时钟。 */
+function localTime(value: string | null): string {
+  if (!value) return '—';
+  const iso = value.endsWith('Z') || value.includes('+') ? value : `${value}Z`;
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? value.slice(0, 19) : date.toLocaleString();
+}
+
 type Task = {
   id: string;
   source: 'job' | 'analysis';
@@ -46,12 +54,12 @@ export function Jobs() {
     {
       key: 'started',
       label: t('tasks.colStarted'),
-      render: (row) => (row.started_at ? row.started_at.slice(0, 19).replace('T', ' ') : '—'),
+      render: (row) => localTime(row.started_at),
     },
     {
       key: 'finished',
       label: t('tasks.colFinished'),
-      render: (row) => (row.finished_at ? row.finished_at.slice(0, 19).replace('T', ' ') : '—'),
+      render: (row) => localTime(row.finished_at),
     },
     { key: 'detail', label: t('tasks.colDetail'), render: (row) => row.detail ?? '—' },
     { key: 'error', label: t('tasks.colError'), render: (row) => row.error ?? '—' },
