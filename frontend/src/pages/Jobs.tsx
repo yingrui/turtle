@@ -77,7 +77,7 @@ export function Jobs() {
       label: '',
       render: (row) =>
         row.status === 'failed' || row.status === 'completed' ? (
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => retry(row.id)}>
+          <button type="button" className="btn-link" onClick={() => retry(row.id)}>
             {t('tasks.retry')}
           </button>
         ) : (
@@ -89,7 +89,12 @@ export function Jobs() {
   return (
     <div className="datasets-page">
       <header className="datasets-header">
-        <h1>{t('tasks.title')}</h1>
+        <div className="datasets-head-row">
+          <h1>{t('tasks.title')}</h1>
+          <button type="button" className="btn btn-secondary" onClick={() => void load()}>
+            {t('tasks.refresh')}
+          </button>
+        </div>
         <p className="datasets-lead">{t('tasks.lead')}</p>
       </header>
       <DataTable<Task>

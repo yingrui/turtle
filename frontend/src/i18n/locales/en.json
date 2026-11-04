@@ -760,6 +760,7 @@
     "colError": "Failure",
     "empty": "No runs yet.",
     "colProgress": "Progress",
-    "retry": "Run again"
+    "retry": "Run again",
+    "refresh": "Refresh"
   }
 }
