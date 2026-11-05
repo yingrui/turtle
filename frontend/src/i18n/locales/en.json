@@ -741,12 +741,7 @@
     "backToVersions": "← Back to versions",
     "noFiles": "No files recorded for this version.",
     "buildTitle": "New export",
-    "buildLead": "Pick the target dataset and version, a date range and a label; one run writes that slice as parquet into openKMS. Re-exporting the same range overwrites the same file.",
-    "buildsTitle": "Build history",
-    "buildsHint": "Which exports produced this data: who, when, which window, how many rows.",
-    "colBuildTime": "Exported at",
-    "colBy": "Triggered by",
-    "noBuilds": "No exports recorded yet."
+    "buildLead": "Pick the target dataset and version, a date range and a label; one run writes that slice as parquet into openKMS. Re-exporting the same range overwrites the same file."
   },
   "tasks": {
     "nav": "Runs",

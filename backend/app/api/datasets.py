@@ -112,61 +112,6 @@ def create_version(dataset_id: str, body: dict | None = None, _: User = Depends(
     return {"dataset_id": dataset_id, "version": payload.get("version"), "status": payload.get("status")}
 
 
-@router.get("/{dataset_id}/builds")
-def build_history(dataset_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
-    """这份数据是哪几次导出的：谁、什么时候、哪段区间、多少行、结果如何。"""
-    import json
-
-    from app.models.run import Run
-
-    runs = (
-        db.query(Run)
-        .filter(Run.kind == "dataset_build")
-        .order_by(Run.started_at.desc())
-        .limit(50)
-        .all()
-    )
-    # 运行记录里存的是数据集**名字**（建的时候只有名字），这里要按名字比对，而不是按 id。
-    listing = _openkms("/datasets?kind=file")
-    name = next(
-        (
-            item.get("display_name") or item.get("name")
-            for item in (listing.get("items") or [])
-            if item.get("id") == dataset_id
-        ),
-        None,
-    )
-    matched = []
-    for run in runs:
-        params = run.params or {}
-        if params.get("dataset") not in (name, dataset_id):
-            continue
-        rows = None
-        if run.artifact_key:
-            from pathlib import Path
-
-            descriptor = Path(run.artifact_key) / "descriptor.json"
-            if descriptor.exists():
-                try:
-                    rows = json.loads(descriptor.read_text()).get("rows")
-                except Exception:  # noqa: BLE001 — 描述坏掉不该让整页打不开
-                    rows = None
-        matched.append(
-            {
-                "run_id": run.id,
-                "status": run.status,
-                "version": params.get("version"),
-                "window": [params.get("start"), params.get("end")],
-                "label": params.get("label"),
-                "rows": rows,
-                "created_by": run.created_by,
-                "finished_at": run.finished_at.isoformat() if run.finished_at else None,
-                "error": run.error,
-            }
-        )
-    return {"dataset_id": dataset_id, "builds": matched}
-
-
 @router.get("/{dataset_id}/versions/{version}/files")
 def version_files(dataset_id: str, version: int, _: User = Depends(get_current_user)):
     """某个版本里到底有哪些文件 —— 知道版本号之后，下一步就是看它包含什么。"""
