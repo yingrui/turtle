@@ -125,7 +125,11 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
     total_rows = 0
     columns: list[str] = []
     windows = _windows(params.start, params.end, params.granularity)
-    _progress(f"共 {len(windows)} 个分块，粒度 {params.granularity}；目标 {params.dataset} v{version}", 0)
+    _progress(
+        f"共 {len(windows)} 个分块，粒度 {params.granularity}；目标 {params.dataset} v{version}"
+        + (f"（{note}）" if note else ""),
+        0,
+    )
     for index, (window_start, window_end) in enumerate(windows, start=1):
         import time as _time
 
