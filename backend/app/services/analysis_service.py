@@ -207,6 +207,33 @@ def _store_model(db: Session, *, run: Run, spec, params, model: dict, dataset, c
         status="published",
         trained_by=created_by,
     )
+    # MLflow 记录：默认关闭。开启后训练进程会加载 mlflow（体积大、内存高），在 3Gi 的 API pod 里
+    # 曾导致重启；由 MLFLOW_TRACKING_ENABLED=1 显式打开。
+    import os as _os
+
+    try:
+        if _os.environ.get("MLFLOW_TRACKING_ENABLED") != "1":
+            raise RuntimeError("MLflow 记录未启用（MLFLOW_TRACKING_ENABLED!=1）")
+        from scripts.mlflow_tracking import log_scorecard_run
+
+        recorded = log_scorecard_run(
+            model=model,
+            params=params.model_dump(mode="json"),
+            metrics=model.get("metrics") or {},
+            artifacts={"model.json": directory / "model.json"},
+            target_month=period_value,
+            tags={"source": "product", "method": spec.name},
+        )
+        if recorded:
+            artifact.mlflow_run_id = recorded.get("run_id")
+            artifact.mlflow_model_version = str(recorded.get("model_version") or "")
+            model["mlflow_run_id"] = recorded.get("run_id")
+            model["mlflow_model_version"] = artifact.mlflow_model_version
+    except Exception as exc:  # noqa: BLE001 — 追踪失败不影响模型产出
+        import logging
+
+        logging.getLogger("uvicorn.error").info("mlflow 记录跳过：%s", exc)
+
     db.merge(artifact)
 
     # 训练完的模型要能立刻被回测选中：登记成一个"单期模型"的排序来源。
