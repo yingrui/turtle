@@ -113,11 +113,11 @@ def run(db: Session, params: DatasetBuildParams, dataset: dict | None = None) ->
     note = None
     if version not in status:
         # 目标版本不存在就新建一个（openKMS 的版本号由服务端分配，用返回的那个）。
-        created = _request("POST", f"/dataset-versions/{target['id']}", b"{}")
+        created = _request("POST", f"/dataset-versions/{target['id']}", body=b"{}")
         version = int(created.get("version") or version)
         note = f"v{params.version} 不存在，已新建 v{version}"
     elif status.get(version) == "published":
-        created = _request("POST", f"/dataset-versions/{target['id']}", b"{}")
+        created = _request("POST", f"/dataset-versions/{target['id']}", body=b"{}")
         version = int(created.get("version") or version + 1)
         note = f"v{params.version} 已发布，改为写入新版本 v{version}"
 
