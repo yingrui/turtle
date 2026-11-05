@@ -180,9 +180,12 @@ def _store_model(db: Session, *, run: Run, spec, params, model: dict, dataset, c
         label=label,
         dataset=dataset or {},
     )
+    period_value = str(model.get("trained_for_period"))
     directory = Path(ARTIFACT_ROOT) / "models" / key / digest
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "model.json").write_text(payload, encoding="utf-8")
+    # 同时按 <期次>.json 存一份：排序来源按"日期 → 期次 → 文件"读取，单期模型也能直接当来源用。
+    (directory / f"{period_value}.json").write_text(payload, encoding="utf-8")
 
     run.result = {"fingerprint": key, "period": str(model.get("trained_for_period"))}
     artifact = ModelArtifact(
@@ -199,10 +202,38 @@ def _store_model(db: Session, *, run: Run, spec, params, model: dict, dataset, c
         artifact_key=str(directory),
         artifact_sha256=digest,
         metrics=model.get("metrics") or {},
+        mlflow_run_id=model.get("mlflow_run_id"),
+        mlflow_model_version=model.get("mlflow_model_version"),
         status="published",
         trained_by=created_by,
     )
     db.merge(artifact)
+
+    # 训练完的模型要能立刻被回测选中：登记成一个"单期模型"的排序来源。
+    from app.models.ranking import RankingSource
+
+    source_id = f"{spec.name}-{period_value}"
+    db.merge(
+        RankingSource(
+            id=source_id,
+            kind="model",
+            display_name=f"{spec.display_name} · {period_value}",
+            description=f"只含 {period_value} 一期的模型；用于该月的横截面打分。",
+            method=spec.name,
+            params={"periods": [period_value]},
+            artifact_key=str(directory),
+            artifact_sha256=digest,
+            dataset_name=(dataset or {}).get("name"),
+            dataset_version=(dataset or {}).get("version"),
+            dataset_sha256=(dataset or {}).get("manifest_sha256") or (dataset or {}).get("sha256"),
+            label=label,
+            status="published",
+            analysis_run_id=None,
+            created_by=created_by,
+        )
+    )
+    run.result = {**(run.result or {}), "source_id": source_id}
+
     run.status = "completed"
     run.artifact_key = str(directory)
     run.artifact_sha256 = digest

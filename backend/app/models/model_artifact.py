@@ -38,6 +38,9 @@ class ModelArtifact(Base):
     artifact_key: Mapped[str] = mapped_column(String(512))
     artifact_sha256: Mapped[str] = mapped_column(String(64))
     metrics: Mapped[dict] = mapped_column(JSON_TYPE, default=dict, server_default="{}")
+    #: MLflow 身份：哪次实验、注册成第几版。没有记录时为空。
+    mlflow_run_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    mlflow_model_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
     status: Mapped[str] = mapped_column(String(16), default="published")
     trained_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

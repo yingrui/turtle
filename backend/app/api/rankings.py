@@ -43,9 +43,10 @@ def create_source(body: dict, db: Session = Depends(get_db), user: User = Depend
         spec = registry.get(method)
     except (KeyError, TypeError):
         raise HTTPException(status_code=422, detail=f"unknown method: {method}") from None
-    if spec.output_kind != "score_table":
+    if spec.output_kind not in ("score_table", "model"):
+        # 评分模型的两种形态：打分表（规则加分）与训练出来的模型。导出训练集不是模型，走 /api/datasets/build。
         raise HTTPException(
-            status_code=422, detail="这个入口只创建评分模型；导出训练集请用 POST /api/datasets"
+            status_code=422, detail="这个入口只创建评分模型；导出训练集请用 POST /api/datasets/build"
         )
     try:
         parsed = spec.params_model(**(body.get("params") or {}))
