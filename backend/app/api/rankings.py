@@ -301,22 +301,22 @@ def _contribution(spec: dict, percentile: float) -> float:
     return float(spec.get("coef", 0.0)) * float(woe[index])
 
 
-@router.get("/{source_id}/members")
-def list_members(source_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
-    """这套评分模型包含哪几期，以及库里还有哪些训练好的模型可以加进来。"""
+@router.get("/{source_id}/months")
+def list_months(source_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """这套评分模型包含哪些月份，以及库里还有哪些训好的月份可以加进来。"""
     from app.models.model_artifact import ModelArtifact
 
     source = db.get(RankingSource, source_id)
     if not source:
         raise HTTPException(status_code=404, detail="Ranking source not found")
     if source.kind != "model":
-        return {"source_id": source_id, "members": [], "available": []}
+        return {"source_id": source_id, "months": [], "available": []}
 
     periods = (source.params or {}).get("periods") or []
     artifacts = {row.period: row for row in db.query(ModelArtifact).all()}
     return {
         "source_id": source_id,
-        "members": [
+        "months": [
             {
                 "period": period,
                 "trained": period in artifacts,
@@ -331,9 +331,9 @@ def list_members(source_id: str, db: Session = Depends(get_db), _: User = Depend
     }
 
 
-@router.post("/{source_id}/members")
-def add_member(source_id: str, body: dict, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
-    """把某一期训练好的模型加进这套评分模型。"""
+@router.post("/{source_id}/months")
+def add_month(source_id: str, body: dict, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """把某个月训练好的模型加进这套评分模型。"""
     import shutil
     from pathlib import Path
 
@@ -363,9 +363,9 @@ def add_member(source_id: str, body: dict, db: Session = Depends(get_db), _: Use
     return {"source_id": source_id, "periods": periods}
 
 
-@router.delete("/{source_id}/members/{period}")
-def remove_member(source_id: str, period: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
-    """从这套评分模型里去掉某一期（文件保留在模型产物里，随时可再加回来）。"""
+@router.delete("/{source_id}/months/{period}")
+def remove_month(source_id: str, period: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """从这套评分模型里去掉某个月（模型文件仍在模型产物里，随时可以再加回来）。"""
     from pathlib import Path
 
     source = db.get(RankingSource, source_id)
