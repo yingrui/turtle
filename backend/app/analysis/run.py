@@ -29,6 +29,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--created-by", default=None)
     args = parser.parse_args(argv)
 
+    import logging
+
+    from app.services.run_service import CURRENT_RUN
+
+    CURRENT_RUN.set(args.run_id)
+
     with SessionLocal() as db:
         try:
             run, source = run_analysis(
