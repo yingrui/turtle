@@ -301,6 +301,87 @@ def _contribution(spec: dict, percentile: float) -> float:
     return float(spec.get("coef", 0.0)) * float(woe[index])
 
 
+@router.get("/{source_id}/members")
+def list_members(source_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """这套评分模型包含哪几期，以及库里还有哪些训练好的模型可以加进来。"""
+    from app.models.model_artifact import ModelArtifact
+
+    source = db.get(RankingSource, source_id)
+    if not source:
+        raise HTTPException(status_code=404, detail="Ranking source not found")
+    if source.kind != "model":
+        return {"source_id": source_id, "members": [], "available": []}
+
+    periods = (source.params or {}).get("periods") or []
+    artifacts = {row.period: row for row in db.query(ModelArtifact).all()}
+    return {
+        "source_id": source_id,
+        "members": [
+            {
+                "period": period,
+                "trained": period in artifacts,
+                "mlflow_run_id": artifacts[period].mlflow_run_id if period in artifacts else None,
+                "mlflow_model_version": artifacts[period].mlflow_model_version if period in artifacts else None,
+                "train_auc": (artifacts[period].metrics or {}).get("train_auc") if period in artifacts else None,
+            }
+            for period in periods
+        ],
+        # 可以加进来的：训练好但还不在这一套里的期次
+        "available": sorted(period for period in artifacts if period not in periods),
+    }
+
+
+@router.post("/{source_id}/members")
+def add_member(source_id: str, body: dict, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """把某一期训练好的模型加进这套评分模型。"""
+    import shutil
+    from pathlib import Path
+
+    from app.models.model_artifact import ModelArtifact
+
+    source = db.get(RankingSource, source_id)
+    if not source or source.kind != "model":
+        raise HTTPException(status_code=404, detail="评分模型不存在")
+    period = str(body.get("period") or "").strip()
+    artifact = db.query(ModelArtifact).filter(ModelArtifact.period == period).first()
+    if not artifact:
+        raise HTTPException(status_code=404, detail=f"没有 {period} 的训练产物")
+
+    directory = Path(source.artifact_key)
+    directory.mkdir(parents=True, exist_ok=True)
+    target = directory / f"{period}.json"
+    # 模型产物可能本来就在这个目录里（导入的模型如此），同文件不必复制。
+    if Path(artifact.artifact_key).resolve() != target.resolve():
+        shutil.copyfile(artifact.artifact_key, target)
+
+    params = dict(source.params or {})
+    periods = sorted({*(params.get("periods") or []), period})
+    params["periods"] = periods
+    source.params = params
+    source.date_from = min(filter(None, [source.date_from, f"{periods[0]}-01"]))
+    db.commit()
+    return {"source_id": source_id, "periods": periods}
+
+
+@router.delete("/{source_id}/members/{period}")
+def remove_member(source_id: str, period: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    """从这套评分模型里去掉某一期（文件保留在模型产物里，随时可再加回来）。"""
+    from pathlib import Path
+
+    source = db.get(RankingSource, source_id)
+    if not source or source.kind != "model":
+        raise HTTPException(status_code=404, detail="评分模型不存在")
+    params = dict(source.params or {})
+    periods = [item for item in (params.get("periods") or []) if item != period]
+    params["periods"] = periods
+    source.params = params
+    target = Path(source.artifact_key) / f"{period}.json"
+    if target.exists():
+        target.unlink()
+    db.commit()
+    return {"source_id": source_id, "periods": periods}
+
+
 @router.post("/{source_id}/deprecate")
 def deprecate(source_id: str, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     from datetime import datetime

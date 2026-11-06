@@ -1,0 +1,55 @@
+# 训练与导出的执行者：与 API 分离，各有内存预算。API 只写 pending，worker 认领执行。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: stock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: turtle-backend:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "app.analysis.worker", "--poll-seconds", "5"]
+          envFrom:
+            - configMapRef:
+                name: stock-config
+            - secretRef:
+                name: stock-secrets
+          env:
+            - name: STOCK_RANKINGS_DIR
+              value: /app/reports/rankings
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow-service.mlops-hub.svc.cluster.local:5000
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: http://minio-service.mlops-hub.svc.cluster.local:9000
+            - name: AWS_ACCESS_KEY_ID
+              value: minioadmin
+            - name: AWS_SECRET_ACCESS_KEY
+              value: minioadmin
+            - name: AWS_DEFAULT_REGION
+              value: us-east-1
+            # 训练在 worker 里跑，mlflow 的内存开销只影响这里，不影响 API。
+            - name: MLFLOW_TRACKING_ENABLED
+              value: "1"
+          resources:
+            limits:
+              memory: 8Gi
+            requests:
+              cpu: 100m
+              memory: 512Mi
+          volumeMounts:
+            - name: rankings
+              mountPath: /app/reports/rankings
+      volumes:
+        - name: rankings
+          persistentVolumeClaim:
+            claimName: rankings-pvc

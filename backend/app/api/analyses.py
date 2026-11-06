@@ -76,30 +76,11 @@ def start_run(
 
 
 def _execute_in_background(run_id, method, params, dataset, source_id, display_name, created_by) -> None:
-    """把分析交给**独立子进程**执行。
+    """不再在这里执行：记录已经是 pending，由 worker 进程认领（见 app/analysis/worker.py）。
 
-    训练/导出要拉 1.5 年的因子面板，放在 API 进程里会把整个服务一起 OOM 掉（已经发生过）。子进程至少
-    让崩溃只影响这一个任务；进度与结果由子进程自己写回 runs。
+    训练与导出要几 GB 内存，跑在 API 容器里会把接口一起拖死；分开之后各有预算、互不影响。
     """
-    import json
-    import subprocess
-    import sys
-
-    command = [
-        sys.executable, "-m", "app.analysis.run",
-        "--method", method,
-        "--run-id", run_id,
-        "--params", json.dumps(params, ensure_ascii=False),
-        "--dataset", json.dumps(dataset or {}, ensure_ascii=False),
-    ]
-    if source_id:
-        command += ["--source-id", str(source_id)]
-    if display_name:
-        command += ["--display-name", str(display_name)]
-    if created_by:
-        command += ["--created-by", str(created_by)]
-    # 不等待：父进程只负责派活，日志与状态由子进程写进 runs。
-    subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return None
 
 
 @router.get("/runs")
